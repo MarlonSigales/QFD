@@ -20,9 +20,69 @@ ITENS DO QA ANTERIOR
             Os aspectos agora vêm preenchidos pelas correlações -- do telhado
             (antes ficavam vazios se o telhado fosse feito depois dos requisitos).
 
-[CONFIRMAR] Relatório quebrou após a adição das especificações.
+[Resolvido] Relatório quebrou após a adição das especificações.
             No teste automático o relatório abre e gera a prévia sem erros,
             incluindo a seção de especificações. Falta confirmar gerando o PDF.
+
+[fazer] Tanto pro cliente quanto pro projeto fazer uma caixa de selecao para Requisito formador de função, requisito formador de boa pratica de projeto (intensão), exigir comentario ao marcar, colocar em um espaco especial no relatorio, remover do qfd, 
+
+[fazer] colocar um campo inicial com os emails de todos os envolvidos, que ao terminar de editar e exportar, envie um email com assunto "qfd - <nome projeto>" contendo o json gerado, 
+
+[fazer] Rodapé ainda diz "© 2024". atualizr para 2026 e colocar os nomes de quem gerou o software Desenvolvedor Marlon Soares Sigales, Equipe de projeto Roger Toscan Spagnolo, Ângelo Vieira dos Reis, Ádamo de Sousa Araújo, Gizele Ingrid Gadotti, Eduardo Walker, Giuseppe Stefanello, Fabrício Ardais, Equipe Inova Agro - UFPel - EMBRAPII, remover o que fala em LLMs
+
+[fazer] o relatório não precisa ter todas as comparações entre requisitos de projeto uma a uma, apenas mostrar a tabela do QFD
+
+[fazer] os botões de avançar e voltar estão com design esquisito, o texto do botão não está correspondendo
+
+[fazer] Diagrama de Mudge recarrega a página inteira a cada comparação salva.
+
+[fazer] Mostrar o texto explicativo da especificação também no balão da Matriz QFD.
+
+[fazer] Unificar o código dos balões, que ainda é diferente em cada página.
+
+[fazer] Limpar CSS duplicado e estilos injetados via JavaScript.
+
+[fazer] Remover qfd_system_updated.zip (versão antiga) do repositório.
+
+[fazer] hoje em especificações a coluna "valor" substituir por valor meta, e propor se deve ser maior que, menor que, ou igua em funçao do sentido de melhoria, ter campo para intervalo
+
+[fazer] campo índice na comparação de concorrentes, onde se possa fazer operações matemáticas entre as linhas, adicionar mais indices indices para verificação
+
+[fazer] campo voltar em todo campo que apertar enter vai a frente, ter um botão de retornar 
+
+[fazer] 2 relatórios um pra equipe de projeto, e um para ser apresentado (sem comentários internos)
+
+[fazer] relatório ajustar as comparações entre clientes para não cortar, talvez colocar um glosário do concorrente e indicar c1 a cn
+
+[fazer] relatório margens todas em 2cm 
+
+[fazer] fazer linha de somas de requisitos de projeto no quadro de qfd (uma de somas totais e uma normalizada percentual)
+
+[fazer] fazer revisão das somas e ranqueamento dos requisitos de projeto
+
+[fazer] no qfd quando passar o mouse sobre a resposta aparecer as relaçoes que o roger tras no documento
+
+[fazer] Caderno de ideias de solução (final de tudo)
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um caderno de
+ideias conforme Pahl & Beitz, Engineering Design, Seção 5.4: durante o
+levantamento dos requisitos surgem funções e ideias de solução; elas devem ser
+registradas para uso posterior na busca sistemática de soluções, mas NÃO devem
+entrar na lista de requisitos (para não enviesá-la). A análise de falhas de
+produtos existentes também é fonte de requisitos, que devem ser formulados de
+forma neutra.
+
+O que fazer:
+- Nova página pages/ideias.html (+ js): ideias com título, descrição, autor,
+  data, requisitos relacionados (cliente e/ou projeto) e status ("nova",
+  "promissora", "descartada").
+- Botão "Registrar ideia" acessível nas páginas de requisitos (abre um cadastro
+  rápido já ligado ao requisito em edição).
+- Registro de falhas conhecidas (de produtos anteriores/concorrentes): falha,
+  causa, e botão "Criar requisito neutro a partir desta falha".
+- Relatório: anexo "Ideias de solução registradas" e "Falhas analisadas".
+
+[fazer sem prioridade] Uso das matrizes em celular.
 
 ==========================================================================================
 ROTEIRO DE QA MANUAL (fazer no site publicado, depois do git push)
