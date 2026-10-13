@@ -25,7 +25,7 @@
  * Ao mudar a estrutura, incremente este número e adicione a migração
  * correspondente em SCHEMA_MIGRATIONS.
  */
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 7;
 
 /** ID fixo do nosso produto na avaliação competitiva */
 const PRODUTO_NOSSO_ID = 'nosso';
@@ -164,14 +164,159 @@ function metaVazia() {
     return { tipoMeta: '', valorMeta: null, valorMax: null, tolerancia: null, metaTexto: '', revisarMeta: false };
 }
 
+// ========================================================================
+// REQUISITOS FORA DO QFD
+// ========================================================================
+// Um requisito pode ser marcado como formador de função ou como boa prática
+// de projeto (intenção), com justificativa obrigatória. Ele continua
+// cadastrado, mas sai de todo o QFD (comparação, telhado, matriz,
+// especificações, avaliação competitiva, atendimento) e aparece numa seção
+// própria do relatório. Comparações e relações já feitas ficam guardadas e
+// voltam a valer se a marcação for retirada.
+
+const CLASSIFICACOES_REQUISITO = {
+    'funcao': 'Requisito formador de função',
+    'boa-pratica': 'Requisito de boa prática de projeto (intenção)'
+};
+
+/** O requisito participa do QFD? (não marcado como função / boa prática) */
+function estaNoQFD(req) {
+    return !(req && CLASSIFICACOES_REQUISITO[req.classificacao]);
+}
+
+/**
+ * Caderno de ideias (Pahl & Beitz, 5.4): ideias de solução que surgem no
+ * levantamento dos requisitos ficam registradas para a busca de soluções,
+ * mas FORA da lista de requisitos; falhas de produtos existentes geram
+ * requisitos formulados de forma neutra.
+ */
+const STATUS_IDEIA = { nova: 'Nova', promissora: 'Promissora', descartada: 'Descartada' };
+
+function criarCadernoVazio() {
+    return {
+        ideias: [],  // { id, titulo, descricao, autor, data, requisitos: [{ tipo: 'cliente'|'projeto', id }], status }
+        falhas: []   // { id, falha, causa, produto, data, requisitoGerado: { tipo, id } | null }
+    };
+}
+
+/** Dados gerais do projeto: nome e e-mails de quem recebe o backup */
+function criarProjetoVazio() {
+    return { nome: '', emails: [] };
+}
+
+/**
+ * Separa uma lista de e-mails (vírgula, ponto e vírgula, espaço ou linha)
+ * @returns {{ validos: string[], invalidos: string[] }} sem repetidos
+ */
+function separarEmails(texto) {
+    const validos = [], invalidos = [];
+    String(texto || '').split(/[\s,;]+/).filter(Boolean).forEach(e => {
+        const email = e.trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) invalidos.push(email);
+        else if (!validos.some(v => v.toLowerCase() === email.toLowerCase())) validos.push(email);
+    });
+    return { validos, invalidos };
+}
+
 /** Estrutura inicial da avaliação competitiva: só o nosso produto, sem notas */
 function criarAvaliacaoCompetitivaVazia() {
     return {
         produtos: [{ id: PRODUTO_NOSSO_ID, nome: 'Nosso produto', tipo: 'nosso' }],
         notasCliente: [],     // { requisitoClienteId, produtoId, nota (1 a 5) }
         metasCliente: [],     // { requisitoClienteId, meta (1 a 5) }
-        valoresTecnicos: []   // { requisitoProjetoId, produtoId, valor (texto) }
+        valoresTecnicos: [],  // { requisitoProjetoId, produtoId, valor (texto) }
+        indices: []           // { id, nome, formula ({rp:ID}), unidade, sentido }
     };
+}
+
+// ========================================================================
+// ÍNDICES DA AVALIAÇÃO COMPETITIVA (fórmulas entre requisitos de projeto)
+// ========================================================================
+// O usuário escreve "RP2 / RP1" ou "(RP3 - RP4) * 100". A fórmula é guardada
+// com o ID de cada requisito ({rp:ID}), para não quebrar se a numeração
+// mudar, e é avaliada por um analisador próprio (sem eval): números, RPn,
+// + - * / e parênteses.
+
+/** Troca RPn pelo ID do requisito; erro se o número não existir */
+function formulaParaArmazenar(texto, rps) {
+    const formula = String(texto || '').trim();
+    if (!formula) throw new Error('Informe a fórmula (ex.: RP2 / RP1).');
+    const armazenada = formula.replace(/RP\s*(\d+)/gi, (_, n) => {
+        const rp = rps[Number(n) - 1];
+        if (!rp) throw new Error(`RP${n} não existe.`);
+        return `{rp:${rp.id}}`;
+    });
+    parseFormula(armazenada); // valida a sintaxe
+    return armazenada;
+}
+
+/** Troca {rp:ID} pelo número atual (RPn), ou "RP?" se o requisito saiu do QFD */
+function formulaParaExibir(armazenada, rps) {
+    return String(armazenada || '').replace(/\{rp:([^}]+)\}/g, (_, id) => {
+        const i = rps.findIndex(r => r.id === id);
+        return i === -1 ? 'RP?' : `RP${i + 1}`;
+    });
+}
+
+/** Árvore da fórmula; lança Error com mensagem amigável se a sintaxe estiver errada */
+function parseFormula(armazenada) {
+    const tokens = [];
+    const re = /\s*(?:(\{rp:[^}]+\})|(\d+(?:[.,]\d+)?)|([-+*/()]))/y;
+    const s = String(armazenada);
+    let pos = 0;
+    while (pos < s.length) {
+        if (/^\s*$/.test(s.slice(pos))) break;
+        re.lastIndex = pos;
+        const m = re.exec(s);
+        if (!m) throw new Error(`Símbolo inválido na fórmula: "${s.slice(pos).trim().slice(0, 10)}".`);
+        if (m[1]) tokens.push({ t: 'ref', id: m[1].slice(4, -1) });
+        else if (m[2]) tokens.push({ t: 'num', v: parseFloat(m[2].replace(',', '.')) });
+        else tokens.push({ t: m[3] });
+        pos = re.lastIndex;
+    }
+    let i = 0;
+    const ver = () => tokens[i] && tokens[i].t;
+    const expr = () => {
+        let no = termo();
+        while (ver() === '+' || ver() === '-') no = { op: tokens[i++].t, a: no, b: termo() };
+        return no;
+    };
+    const termo = () => {
+        let no = fator();
+        while (ver() === '*' || ver() === '/') no = { op: tokens[i++].t, a: no, b: fator() };
+        return no;
+    };
+    const fator = () => {
+        const tk = tokens[i++];
+        if (!tk) throw new Error('A fórmula está incompleta.');
+        if (tk.t === '-') return { op: 'neg', a: fator() };
+        if (tk.t === '+') return fator();
+        if (tk.t === 'num' || tk.t === 'ref') return tk;
+        if (tk.t === '(') {
+            const no = expr();
+            if (tokens[i++]?.t !== ')') throw new Error('Falta fechar um parêntese.');
+            return no;
+        }
+        throw new Error('A fórmula está mal escrita.');
+    };
+    const arvore = expr();
+    if (i < tokens.length) throw new Error('A fórmula está mal escrita.');
+    return arvore;
+}
+
+/** Valor da fórmula; null se faltar algum valor ou houver divisão por zero */
+function avaliarFormula(no, valorDe) {
+    if (no.t === 'num') return no.v;
+    if (no.t === 'ref') return valorDe(no.id);
+    const a = avaliarFormula(no.a, valorDe);
+    if (a === null) return null;
+    if (no.op === 'neg') return -a;
+    const b = avaliarFormula(no.b, valorDe);
+    if (b === null) return null;
+    if (no.op === '+') return a + b;
+    if (no.op === '-') return a - b;
+    if (no.op === '*') return a * b;
+    return b === 0 ? null : a / b;
 }
 
 /**
@@ -215,6 +360,26 @@ const SCHEMA_MIGRATIONS = {
         }
     },
 
+    // v7: caderno de ideias de solução e falhas analisadas (Pahl & Beitz, 5.4)
+    7(data) {
+        if (!data.cadernoIdeias || typeof data.cadernoIdeias !== 'object') data.cadernoIdeias = criarCadernoVazio();
+    },
+
+    // v6: dados do projeto (nome e e-mails dos envolvidos)
+    6(data) {
+        if (!data.projeto || typeof data.projeto !== 'object') data.projeto = criarProjetoVazio();
+    },
+
+    // v5: classificação do requisito (formador de função / boa prática), fora do QFD
+    5(data) {
+        ['requisitosCliente', 'requisitosProjeto'].forEach(key => {
+            (data[key] || []).forEach(req => {
+                if (!CLASSIFICACOES_REQUISITO[req.classificacao]) req.classificacao = '';
+                if (typeof req.justificativaClassificacao !== 'string') req.justificativaClassificacao = '';
+            });
+        });
+    },
+
     // v4: "valor unitário" (texto livre) vira meta tipada (tipoMeta, valorMeta...)
     4(data) {
         (data.especificacoesProjeto || []).forEach(esp => {
@@ -252,6 +417,8 @@ class QFDDatabase {
             matrizQFD: [],
             especificacoesProjeto: [],
             avaliacaoCompetitiva: criarAvaliacaoCompetitivaVazia(),
+            projeto: criarProjetoVazio(),
+            cadernoIdeias: criarCadernoVazio(),
             metadata: {
                 created: new Date().toISOString(),
                 lastModified: new Date().toISOString(),
@@ -401,7 +568,7 @@ class QFDDatabase {
     findRequisitoDuplicado(tipo, descricao, ignoreId = null) {
         const normalizar = texto => String(texto || '').trim().replace(/\s+/g, ' ').toLowerCase();
         const alvo = normalizar(descricao);
-        const lista = tipo === 'cliente' ? this.getRequisitosCliente() : this.getRequisitosProjeto();
+        const lista = tipo === 'cliente' ? this.getRequisitosCliente({ todos: true }) : this.getRequisitosProjeto({ todos: true });
         return lista.find(req => req.id !== ignoreId && normalizar(req.descricao) === alvo) || null;
     }
 
@@ -440,6 +607,8 @@ class QFDDatabase {
             id: this.generateUUID(),
             descricao: descricao.trim(),
             observacao: (observacao || '').trim(),
+            classificacao: '',
+            justificativaClassificacao: '',
             importancia: 0,
             peso: 0,
             created: new Date().toISOString()
@@ -451,13 +620,15 @@ class QFDDatabase {
     }
 
     /**
-     * Obtém todos os requisitos de cliente cadastrados
-     * 
-     * @returns {Array} Array com todos os requisitos de cliente
+     * Requisitos de cliente que participam do QFD
+     *
+     * @param {Object} [opcoes] - { todos: true } inclui os marcados como
+     *   formador de função / boa prática (fora do QFD)
+     * @returns {Array}
      */
-    getRequisitosCliente() {
-        const data = this.loadData();
-        return data.requisitosCliente || [];
+    getRequisitosCliente(opcoes = {}) {
+        const lista = this.loadData().requisitosCliente || [];
+        return opcoes.todos ? lista : lista.filter(estaNoQFD);
     }
 
     /**
@@ -497,9 +668,16 @@ class QFDDatabase {
         const data = this.loadData();
         const index = data.requisitosCliente.findIndex(req => req.id === id);
         if (index !== -1) {
+            const mudouQFD = updates.classificacao !== undefined &&
+                estaNoQFD(updates) !== estaNoQFD(data.requisitosCliente[index]);
             data.requisitosCliente[index] = { ...data.requisitosCliente[index], ...updates };
             this.saveData(data);
-            return data.requisitosCliente[index];
+            if (mudouQFD) {
+                // entrou ou saiu do QFD: pesos e ranking mudam
+                this.calculateImportanciaCliente();
+                this.calculateImportanciaProjeto();
+            }
+            return this.loadData().requisitosCliente[index];
         }
         return null;
     }
@@ -528,6 +706,8 @@ class QFDDatabase {
             id: this.generateUUID(),
             descricao: descricao.trim(),
             observacao: (observacao || '').trim(),
+            classificacao: '',
+            justificativaClassificacao: '',
             sentidoMelhoria: sentidoMelhoria, // 'up', 'down', 'none'
             dificuldadeTecnica: dificuldadeTecnica,
             importanciaAbsoluta: 0,
@@ -544,13 +724,22 @@ class QFDDatabase {
     }
 
     /**
-     * Obtém todos os requisitos de projeto cadastrados
-     * 
-     * @returns {Array} Array com todos os requisitos de projeto
+     * Requisitos de projeto que participam do QFD
+     *
+     * @param {Object} [opcoes] - { todos: true } inclui os que estão fora do QFD
+     * @returns {Array}
      */
-    getRequisitosProjeto() {
-        const data = this.loadData();
-        return data.requisitosProjeto || [];
+    getRequisitosProjeto(opcoes = {}) {
+        const lista = this.loadData().requisitosProjeto || [];
+        return opcoes.todos ? lista : lista.filter(estaNoQFD);
+    }
+
+    /** IDs dos requisitos que participam do QFD: { rc: Set, rp: Set } */
+    _idsNoQFD(data) {
+        return {
+            rc: new Set((data.requisitosCliente || []).filter(estaNoQFD).map(r => r.id)),
+            rp: new Set((data.requisitosProjeto || []).filter(estaNoQFD).map(r => r.id))
+        };
     }
 
     /**
@@ -593,9 +782,16 @@ class QFDDatabase {
         const data = this.loadData();
         const index = data.requisitosProjeto.findIndex(req => req.id === id);
         if (index !== -1) {
+            const mudouQFD = updates.classificacao !== undefined &&
+                estaNoQFD(updates) !== estaNoQFD(data.requisitosProjeto[index]);
             data.requisitosProjeto[index] = { ...data.requisitosProjeto[index], ...updates };
             this.saveData(data);
-            return data.requisitosProjeto[index];
+            if (mudouQFD) {
+                // entrou ou saiu do QFD: pesos e ranking mudam
+                this.calculateImportanciaCliente();
+                this.calculateImportanciaProjeto();
+            }
+            return this.loadData().requisitosProjeto[index];
         }
         return null;
     }
@@ -688,7 +884,8 @@ class QFDDatabase {
      */
     getComparacoesCliente() {
         const data = this.loadData();
-        return data.comparacaoCliente || [];
+        const ids = this._idsNoQFD(data).rc;
+        return (data.comparacaoCliente || []).filter(c => ids.has(c.requisito1) && ids.has(c.requisito2));
     }
 
     /**
@@ -701,8 +898,11 @@ class QFDDatabase {
      */
     calculateImportanciaCliente() {
         const data = this.loadData();
-        const requisitos = data.requisitosCliente;
-        const comparacoes = data.comparacaoCliente;
+        const ids = this._idsNoQFD(data).rc;
+        const requisitos = data.requisitosCliente.filter(estaNoQFD);
+        const comparacoes = data.comparacaoCliente.filter(c => ids.has(c.requisito1) && ids.has(c.requisito2));
+        // fora do QFD: sem importância nem peso
+        data.requisitosCliente.filter(r => !estaNoQFD(r)).forEach(r => { r.importancia = 0; r.peso = 0; });
         
         // Calcula pontuação para cada requisito
         requisitos.forEach(req => {
@@ -719,13 +919,11 @@ class QFDDatabase {
             req.importancia = pontuacao;
         });
         
-        // Normaliza os pesos
+        // Normaliza os pesos (sem comparações, zera em vez de manter o valor antigo)
         const totalImportancia = requisitos.reduce((sum, req) => sum + req.importancia, 0);
-        if (totalImportancia > 0) {
-            requisitos.forEach(req => {
-                req.peso = req.importancia / totalImportancia;
-            });
-        }
+        requisitos.forEach(req => {
+            req.peso = totalImportancia > 0 ? req.importancia / totalImportancia : 0;
+        });
         
         this.saveData(data);
     }
@@ -796,7 +994,8 @@ class QFDDatabase {
     // Obtém todas as correlações de projeto
     getCorrelacoesProjeto() {
         const data = this.loadData();
-        return data.correlacaoProjeto || [];
+        const ids = this._idsNoQFD(data).rp;
+        return (data.correlacaoProjeto || []).filter(c => ids.has(c.requisito1) && ids.has(c.requisito2));
     }
 
     // === MATRIZ QFD ===
@@ -847,7 +1046,8 @@ class QFDDatabase {
      */
     getMatrizQFDCompleta() {
         const data = this.loadData();
-        return data.matrizQFD || [];
+        const ids = this._idsNoQFD(data);
+        return (data.matrizQFD || []).filter(m => ids.rc.has(m.requisitoCliente) && ids.rp.has(m.requisitoProjeto));
     }
 
     /**
@@ -861,9 +1061,13 @@ class QFDDatabase {
      */
     calculateImportanciaProjeto() {
         const data = this.loadData();
-        const requisitosProjeto = data.requisitosProjeto;
-        const requisitosCliente = data.requisitosCliente;
+        const requisitosProjeto = data.requisitosProjeto.filter(estaNoQFD);
+        const requisitosCliente = data.requisitosCliente.filter(estaNoQFD);
         const matrizQFD = data.matrizQFD;
+        // fora do QFD: sem importância nem posição no ranking
+        data.requisitosProjeto.filter(r => !estaNoQFD(r)).forEach(r => {
+            r.importanciaAbsoluta = 0; r.importanciaRelativa = 0; r.pesoRelativo = 0;
+        });
         
         // Calcula importância absoluta para cada requisito de projeto
         requisitosProjeto.forEach(reqProj => {
@@ -927,7 +1131,7 @@ class QFDDatabase {
      */
     buildAspectosIndesejaveisFromRoof(requisitoProjetoId) {
         const data = this.loadData();
-        const requisitos = data.requisitosProjeto || [];
+        const requisitos = (data.requisitosProjeto || []).filter(estaNoQFD);
         const conflitos = [];
 
         (data.correlacaoProjeto || []).forEach(corr => {
@@ -1058,11 +1262,13 @@ class QFDDatabase {
     getEspecificacoesStats() {
         const data = this.loadData();
         this._syncEspecificacoesEntries(data);
-        const total = (data.requisitosProjeto || []).length;
+        const noQFD = this._idsNoQFD(data).rp;
+        const total = noQFD.size;
         if (total === 0) {
             return { total: 0, completed: 0, percent: 0 };
         }
         const completed = (data.especificacoesProjeto || []).filter(esp =>
+            noQFD.has(esp.requisitoProjetoId) &&
             String(esp.unidadeMedida || '').trim() !== '' && metaDefinida(esp)
         ).length;
         return {
@@ -1137,7 +1343,7 @@ class QFDDatabase {
         if (!av || typeof av !== 'object' || Array.isArray(av)) {
             av = data.avaliacaoCompetitiva = criarAvaliacaoCompetitivaVazia();
         }
-        ['produtos', 'notasCliente', 'metasCliente', 'valoresTecnicos'].forEach(key => {
+        ['produtos', 'notasCliente', 'metasCliente', 'valoresTecnicos', 'indices'].forEach(key => {
             if (!Array.isArray(av[key])) av[key] = [];
         });
         if (!av.produtos.some(p => p.id === PRODUTO_NOSSO_ID)) {
@@ -1146,8 +1352,200 @@ class QFDDatabase {
         return av;
     }
 
+    // ========================================================================
+    // SEÇÃO: CADERNO DE IDEIAS E FALHAS ANALISADAS
+    // ========================================================================
+
+    _ensureCaderno(data) {
+        if (!data.cadernoIdeias || typeof data.cadernoIdeias !== 'object') data.cadernoIdeias = criarCadernoVazio();
+        ['ideias', 'falhas'].forEach(k => { if (!Array.isArray(data.cadernoIdeias[k])) data.cadernoIdeias[k] = []; });
+        return data.cadernoIdeias;
+    }
+
+    /** Ligações de requisitos que ainda existem (requisito excluído some da lista) */
+    _requisitosExistentes(data, lista) {
+        const existe = r => ((r.tipo === 'cliente' ? data.requisitosCliente : data.requisitosProjeto) || [])
+            .some(x => x.id === r.id);
+        return (lista || []).filter(r => r && (r.tipo === 'cliente' || r.tipo === 'projeto') && existe(r));
+    }
+
+    _camposIdeia(data, campos) {
+        const out = {};
+        if (campos.titulo !== undefined) {
+            out.titulo = String(campos.titulo || '').trim().slice(0, 120);
+            if (!out.titulo) throw new Error('Informe o título da ideia.');
+        }
+        if (campos.descricao !== undefined) out.descricao = String(campos.descricao || '').trim().slice(0, 2000);
+        if (campos.autor !== undefined) out.autor = String(campos.autor || '').trim().slice(0, 60);
+        if (campos.status !== undefined) out.status = STATUS_IDEIA[campos.status] ? campos.status : 'nova';
+        if (campos.requisitos !== undefined) out.requisitos = this._requisitosExistentes(data, campos.requisitos);
+        return out;
+    }
+
+    getIdeias() {
+        const data = this.loadData();
+        return this._ensureCaderno(data).ideias.map(i => ({ ...i, requisitos: this._requisitosExistentes(data, i.requisitos) }));
+    }
+
+    /** Nova ideia: { titulo, descricao, autor, status, requisitos: [{ tipo, id }] } */
+    addIdeia(campos) {
+        const data = this.loadData();
+        const caderno = this._ensureCaderno(data);
+        const ideia = {
+            id: this.generateUUID(), descricao: '', autor: '', status: 'nova', requisitos: [],
+            data: new Date().toISOString(),
+            ...this._camposIdeia(data, { titulo: campos.titulo, ...campos })
+        };
+        caderno.ideias.push(ideia);
+        this.saveData(data);
+        return ideia;
+    }
+
+    updateIdeia(id, campos) {
+        const data = this.loadData();
+        const ideia = this._ensureCaderno(data).ideias.find(i => i.id === id);
+        if (!ideia) return null;
+        Object.assign(ideia, this._camposIdeia(data, campos));
+        this.saveData(data);
+        return ideia;
+    }
+
+    removeIdeia(id) {
+        const data = this.loadData();
+        const caderno = this._ensureCaderno(data);
+        caderno.ideias = caderno.ideias.filter(i => i.id !== id);
+        this.saveData(data);
+    }
+
+    /** Quantas ideias estão ligadas a um requisito (mostrado nas páginas de requisitos) */
+    contarIdeias(tipo, id) {
+        return this.getIdeias().filter(i => i.requisitos.some(r => r.tipo === tipo && r.id === id)).length;
+    }
+
+    getFalhas() {
+        const data = this.loadData();
+        return this._ensureCaderno(data).falhas.map(f => {
+            const gerado = f.requisitoGerado && this._requisitosExistentes(data, [f.requisitoGerado])[0];
+            return { ...f, requisitoGerado: gerado || null };
+        });
+    }
+
+    /** Falha conhecida de um produto anterior ou concorrente: { falha, causa, produto } */
+    addFalha(campos) {
+        const data = this.loadData();
+        const falha = String(campos.falha || '').trim().slice(0, 300);
+        if (!falha) throw new Error('Descreva a falha.');
+        const nova = {
+            id: this.generateUUID(), falha,
+            causa: String(campos.causa || '').trim().slice(0, 1000),
+            produto: String(campos.produto || '').trim().slice(0, 100),
+            data: new Date().toISOString(),
+            requisitoGerado: null
+        };
+        this._ensureCaderno(data).falhas.push(nova);
+        this.saveData(data);
+        return nova;
+    }
+
+    removeFalha(id) {
+        const data = this.loadData();
+        const caderno = this._ensureCaderno(data);
+        caderno.falhas = caderno.falhas.filter(f => f.id !== id);
+        this.saveData(data);
+    }
+
+    /**
+     * Cria um requisito (de cliente ou de projeto), formulado de forma neutra
+     * pelo usuário, a partir de uma falha; a falha fica ligada a ele
+     */
+    criarRequisitoDeFalha(falhaId, tipo, descricao) {
+        const falha = this.getFalhas().find(f => f.id === falhaId);
+        if (!falha) throw new Error('Falha não encontrada.');
+        const texto = String(descricao || '').trim();
+        if (texto.length < 10) throw new Error('A descrição deve ter pelo menos 10 caracteres.');
+        if (this.findRequisitoDuplicado(tipo, texto)) throw new Error('Já existe um requisito com esta descrição.');
+        const obs = `Origem: falha analisada — ${falha.falha}${falha.produto ? ` (${falha.produto})` : ''}`;
+        const req = tipo === 'cliente'
+            ? this.addRequisitoCliente(texto, obs)
+            : this.addRequisitoProjeto(texto, 'none', 1, obs);
+        const data = this.loadData();
+        const f = this._ensureCaderno(data).falhas.find(x => x.id === falhaId);
+        f.requisitoGerado = { tipo: tipo === 'cliente' ? 'cliente' : 'projeto', id: req.id };
+        this.saveData(data);
+        return req;
+    }
+
+    /** Nome do projeto e e-mails dos envolvidos */
+    getProjeto() {
+        const p = this.loadData().projeto || {};
+        return { nome: p.nome || '', emails: Array.isArray(p.emails) ? p.emails : [] };
+    }
+
+    /**
+     * Salva nome e/ou e-mails do projeto. emails pode ser texto livre ou lista;
+     * lança Error listando os e-mails inválidos (nada é salvo nesse caso).
+     */
+    setProjeto(campos) {
+        const data = this.loadData();
+        const projeto = { ...criarProjetoVazio(), ...(data.projeto || {}) };
+        if (campos.nome !== undefined) projeto.nome = String(campos.nome || '').trim().slice(0, 100);
+        if (campos.emails !== undefined) {
+            const texto = Array.isArray(campos.emails) ? campos.emails.join(',') : campos.emails;
+            const { validos, invalidos } = separarEmails(texto);
+            if (invalidos.length) throw new Error(`E-mail inválido: ${invalidos.join(', ')}`);
+            projeto.emails = validos;
+        }
+        data.projeto = projeto;
+        this.saveData(data);
+        return projeto;
+    }
+
     getAvaliacaoCompetitiva() {
         return this._ensureAvaliacao(this.loadData());
+    }
+
+    /** Valida os campos de um índice (fórmula com RPn) e devolve-os normalizados */
+    _camposIndice(data, campos) {
+        const rps = (data.requisitosProjeto || []).filter(estaNoQFD);
+        const out = {};
+        if (campos.nome !== undefined) {
+            out.nome = String(campos.nome || '').trim().slice(0, 60);
+            if (!out.nome) throw new Error('Informe o nome do índice.');
+        }
+        if (campos.formula !== undefined) out.formula = formulaParaArmazenar(campos.formula, rps);
+        if (campos.unidade !== undefined) out.unidade = String(campos.unidade || '').trim().slice(0, 30);
+        if (campos.sentido !== undefined) out.sentido = ['up', 'down'].includes(campos.sentido) ? campos.sentido : 'none';
+        return out;
+    }
+
+    /** Novo índice: { nome, formula ("RP2 / RP1"), unidade, sentido 'up' | 'down' | 'none' } */
+    addIndice(campos) {
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        const indice = {
+            id: this.generateUUID(), unidade: '', sentido: 'none',
+            ...this._camposIndice(data, { nome: campos.nome, formula: campos.formula, unidade: campos.unidade, sentido: campos.sentido })
+        };
+        av.indices.push(indice);
+        this.saveData(data);
+        return indice;
+    }
+
+    updateIndice(id, campos) {
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        const indice = av.indices.find(x => x.id === id);
+        if (!indice) return null;
+        Object.assign(indice, this._camposIndice(data, campos));
+        this.saveData(data);
+        return indice;
+    }
+
+    removeIndice(id) {
+        const data = this.loadData();
+        const av = this._ensureAvaliacao(data);
+        av.indices = av.indices.filter(x => x.id !== id);
+        this.saveData(data);
     }
 
     /** Normaliza e valida o nome de um produto avaliado */
@@ -1273,8 +1671,8 @@ class QFDDatabase {
         const av = this._ensureAvaliacao(data);
         const produtos = av.produtos;
         const concorrentes = produtos.filter(p => p.tipo !== 'nosso');
-        const rcs = data.requisitosCliente || [];
-        const rps = data.requisitosProjeto || [];
+        const rcs = (data.requisitosCliente || []).filter(estaNoQFD);
+        const rps = (data.requisitosProjeto || []).filter(estaNoQFD);
 
         const notaDe = (rcId, pId) => {
             const n = av.notasCliente.find(x => x.requisitoClienteId === rcId && x.produtoId === pId);
@@ -1381,6 +1779,37 @@ class QFDDatabase {
             }
         });
 
+        // índices: fórmula avaliada para cada produto
+        const indices = av.indices.map(indice => {
+            let arvore = null, erro = '';
+            try { arvore = parseFormula(indice.formula); } catch (e) { erro = e.message; }
+            const valores = {};
+            produtos.forEach(p => {
+                valores[p.id] = arvore ? avaliarFormula(arvore, id => {
+                    if (!rps.some(r => r.id === id)) return null;
+                    return parseNumero(valorDe(id, p.id));
+                }) : null;
+            });
+            let melhor = null;
+            if (indice.sentido === 'up' || indice.sentido === 'down') {
+                concorrentes.forEach(p => {
+                    const n = valores[p.id];
+                    if (n === null) return;
+                    if (!melhor || ehMelhor(indice.sentido, n, melhor.valor)) melhor = { valor: n, produtos: [p.nome] };
+                    else if (n === melhor.valor) melhor.produtos.push(p.nome);
+                });
+            }
+            const nosso = valores[PRODUTO_NOSSO_ID];
+            return {
+                indice,
+                formula: formulaParaExibir(indice.formula, rps),
+                erro,
+                valores,
+                melhor,
+                situacao: melhor && nosso !== null ? comparar(indice.sentido, nosso, melhor.valor) : 'sem-dados'
+            };
+        });
+
         const total = rcs.length * produtos.length;
         const preenchidas = clientes.reduce((s, c) => s + produtos.filter(p => c.notas[p.id]).length, 0);
         return {
@@ -1388,6 +1817,7 @@ class QFDDatabase {
             concorrentes,
             clientes,
             tecnicos,
+            indices,
             inconsistencias,
             stats: {
                 notasTotal: total,
@@ -1436,9 +1866,11 @@ class QFDDatabase {
         if (recalcular) this.calculateImportanciaProjeto();
         const data = this.loadData();
         const av = this._ensureAvaliacao(data);
-        const rcs = data.requisitosCliente || [];
-        const rps = data.requisitosProjeto || [];
-        const matriz = (data.matrizQFD || []).filter(m => m.influencia > 0);
+        const rcs = (data.requisitosCliente || []).filter(estaNoQFD);
+        const rps = (data.requisitosProjeto || []).filter(estaNoQFD);
+        const ids = this._idsNoQFD(data);
+        const matriz = (data.matrizQFD || []).filter(m =>
+            m.influencia > 0 && ids.rc.has(m.requisitoCliente) && ids.rp.has(m.requisitoProjeto));
         const especificacoes = data.especificacoesProjeto || [];
 
         const valorNosso = rpId => {
@@ -1588,20 +2020,22 @@ class QFDDatabase {
         const espStats = this.getEspecificacoesStats();
 
         const av = this._ensureAvaliacao(data);
-        const notasTotal = data.requisitosCliente.length * av.produtos.length;
+        const ids = this._idsNoQFD(data);
+        const notasTotal = ids.rc.size * av.produtos.length;
         const notasValidas = av.notasCliente.filter(n =>
-            data.requisitosCliente.some(r => r.id === n.requisitoClienteId) &&
+            ids.rc.has(n.requisitoClienteId) &&
             av.produtos.some(p => p.id === n.produtoId)
         ).length;
 
         return {
             concorrentes: av.produtos.length - 1,
             competitivaPercent: notasTotal > 0 ? Math.round((notasValidas / notasTotal) * 100) : 0,
-            requisitosCliente: data.requisitosCliente.length,
-            requisitosProjeto: data.requisitosProjeto.length,
-            comparacoesCliente: data.comparacaoCliente.length,
-            correlacoesProjeto: data.correlacaoProjeto.length,
-            relacoesQFD: data.matrizQFD.length,
+            requisitosCliente: ids.rc.size,
+            requisitosProjeto: ids.rp.size,
+            requisitosForaQFD: (data.requisitosCliente.length - ids.rc.size) + (data.requisitosProjeto.length - ids.rp.size),
+            comparacoesCliente: this.getComparacoesCliente().length,
+            correlacoesProjeto: this.getCorrelacoesProjeto().length,
+            relacoesQFD: this.getMatrizQFDCompleta().length,
             especificacoesTotal: espStats.total,
             especificacoesCompletas: espStats.completed,
             especificacoesPercent: espStats.percent,
@@ -1698,14 +2132,72 @@ function exportProjectData() {
     const data = qfdDB.exportData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
-    a.download = `qfd-project-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = nomeArquivoBackup();
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+/** Nome do arquivo de backup: qfd-<nome do projeto>-<data>.json */
+function nomeArquivoBackup() {
+    const nome = qfdDB.getProjeto().nome
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase();
+    return `qfd-${nome || 'project'}-${new Date().toISOString().split('T')[0]}.json`;
+}
+
+/** Assunto e texto do e-mail com o backup */
+function mensagemBackup(nomeArquivo) {
+    const projeto = qfdDB.getProjeto();
+    const nome = projeto.nome || 'projeto sem nome';
+    return {
+        assunto: `qfd - ${nome}`,
+        corpo: `Segue o backup do projeto QFD "${nome}" (${nomeArquivo}), exportado em ${new Date().toLocaleString('pt-BR')}.\n\n`
+            + 'Para abrir: Sistema QFD → Backup & Export → Importar Backup (JSON).'
+    };
+}
+
+/**
+ * Baixa o backup e abre o programa de e-mail com os envolvidos, o assunto
+ * "qfd - <nome do projeto>" e o texto. Links mailto não levam anexo: o
+ * texto pede para anexar o arquivo que acabou de ser baixado.
+ */
+function exportarEEnviarEmail() {
+    const nomeArquivo = nomeArquivoBackup();
+    downloadFile(JSON.stringify(qfdDB.exportData(), null, 2), nomeArquivo, 'application/json');
+    const { assunto, corpo } = mensagemBackup(nomeArquivo);
+    const para = qfdDB.getProjeto().emails.join(',');
+    const link = document.createElement('a');
+    link.href = `mailto:${para}?subject=${encodeURIComponent(assunto)}`
+        + `&body=${encodeURIComponent(`${corpo}\n\nANEXE o arquivo ${nomeArquivo}, que acabou de ser baixado.`)}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
+/** O navegador consegue compartilhar arquivos (ex.: celular, Edge/Chrome no Windows)? */
+function podeCompartilharArquivo() {
+    try {
+        return !!(navigator.canShare && navigator.canShare({ files: [new File(['{}'], 'teste.json', { type: 'application/json' })] }));
+    } catch (e) {
+        return false;
+    }
+}
+
+/** Compartilha o backup já anexado (o destinatário é escolhido na janela do sistema) */
+async function compartilharBackup() {
+    const nomeArquivo = nomeArquivoBackup();
+    const arquivo = new File([JSON.stringify(qfdDB.exportData(), null, 2)], nomeArquivo, { type: 'application/json' });
+    const { assunto, corpo } = mensagemBackup(nomeArquivo);
+    try {
+        await navigator.share({ files: [arquivo], title: assunto, text: corpo });
+    } catch (e) {
+        if (e.name !== 'AbortError') exportarEEnviarEmail();
+    }
 }
 
 /**

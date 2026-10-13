@@ -28,6 +28,12 @@ function obsInterna(texto) {
 
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
+    const nomeProjeto = qfdDB.getProjeto().nome;
+    if (nomeProjeto) {
+        reportConfig.title = nomeProjeto;
+        const titulo = document.getElementById('project-title');
+        if (titulo) titulo.value = nomeProjeto;
+    }
     setupReport();
 
     const dateInput = document.getElementById('report-date');
@@ -151,6 +157,7 @@ function generatePreview() {
         if (isSectionChecked('section-summary')) html += safeSection('Resumo', generateSummary);
         if (isSectionChecked('section-client-req')) html += safeSection('Req. Cliente', generateClientReqs);
         if (isSectionChecked('section-project-req')) html += safeSection('Req. Projeto', generateProjectReqs);
+        if (isSectionChecked('section-fora-qfd')) html += safeSection('Fora do QFD', generateForaQFD);
         if (isSectionChecked('section-roof')) html += safeSection('Telhado', generateRoof);
         if (isSectionChecked('section-correlations')) html += safeSection('Correlações', generateCorrelationsAnalysis);
         if (isSectionChecked('section-qfd-matrix')) html += safeSection('Matriz QFD', generateMatrix);
@@ -160,6 +167,7 @@ function generatePreview() {
         if (isSectionChecked('section-ranking')) html += safeSection('Ranking', generateRankingSection);
         if (isSectionChecked('section-analysis') && !isApresentacao()) html += safeSection('Análises', generateAnalysisSection);
         if (isSectionChecked('section-comparisons')) html += safeSection('Comparações', generateComparisonsSection);
+        if (isSectionChecked('section-ideias')) html += safeSection('Anexo: ideias e falhas', generateAnexoIdeias);
 
         html += '</div>';
         content.innerHTML = html;
@@ -192,6 +200,71 @@ function generateDictionary() {
         html += `<li><strong>RP${i + 1}</strong> ${getSentidoSymbol(r.sentidoMelhoria)} — ${escapeHtml(r.descricao)}${obs}</li>`;
     });
     return html + '</ul></div>';
+}
+
+/**
+ * Requisitos marcados como formadores de função ou de boa prática de
+ * projeto: ficam fora do QFD e aparecem aqui, com a justificativa
+ */
+function generateForaQFD() {
+    const fora = [
+        ...qfdDB.getRequisitosCliente({ todos: true }).filter(r => !estaNoQFD(r)).map(r => ({ ...r, origem: 'Cliente' })),
+        ...qfdDB.getRequisitosProjeto({ todos: true }).filter(r => !estaNoQFD(r)).map(r => ({ ...r, origem: 'Projeto' }))
+    ];
+    if (!fora.length) return '';
+
+    let html = '<div class="report-section report-fora-qfd"><h3>Requisitos fora do QFD</h3>';
+    html += '<p class="report-hint">Requisitos que formam uma função do produto ou registram uma boa prática de projeto (intenção). Não entram na comparação, no telhado, na matriz nem nas especificações.</p>';
+    Object.entries(CLASSIFICACOES_REQUISITO).forEach(([tipo, titulo]) => {
+        const lista = fora.filter(r => r.classificacao === tipo);
+        if (!lista.length) return;
+        html += `<h4>${titulo} (${lista.length})</h4>`;
+        html += '<table class="report-table"><thead><tr><th>Origem</th><th>Requisito</th><th>Justificativa</th></tr></thead><tbody>';
+        lista.forEach(r => {
+            html += `<tr><td>${r.origem}</td><td>${escapeHtml(r.descricao)}</td><td>${escapeHtml(r.justificativaClassificacao || '—')}</td></tr>`;
+        });
+        html += '</tbody></table>';
+    });
+    return html + '</div>';
+}
+
+/** Anexo com o Caderno de Ideias: ideias de solução e falhas analisadas */
+function generateAnexoIdeias() {
+    const ideias = qfdDB.getIdeias(), falhas = qfdDB.getFalhas();
+    if (!ideias.length && !falhas.length) return '';
+    const rotulo = ref => {
+        const lista = ref.tipo === 'cliente' ? requisitosCliente : requisitosProjeto;
+        const i = lista.findIndex(r => r.id === ref.id);
+        return i === -1 ? (ref.tipo === 'cliente' ? 'RC (fora do QFD)' : 'RP (fora do QFD)') : `${ref.tipo === 'cliente' ? 'RC' : 'RP'}${i + 1}`;
+    };
+    let html = '<div class="report-section report-ideias"><h3>Anexo: Caderno de Ideias</h3>';
+    if (ideias.length) {
+        html += '<h4>Ideias de solução registradas</h4>';
+        html += '<table class="report-table"><thead><tr><th>Ideia</th><th>Status</th><th>Requisitos</th><th>Autor / data</th></tr></thead><tbody>';
+        ideias.forEach(i => {
+            html += `<tr>
+                <td><strong>${escapeHtml(i.titulo)}</strong>${i.descricao ? `<br><small>${escapeHtml(i.descricao)}</small>` : ''}</td>
+                <td>${STATUS_IDEIA[i.status] || ''}</td>
+                <td>${i.requisitos.map(rotulo).join(', ') || '—'}</td>
+                <td>${escapeHtml(i.autor || '—')}<br><small>${formatDate(i.data)}</small></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+    }
+    if (falhas.length) {
+        html += '<h4>Falhas analisadas</h4>';
+        html += '<table class="report-table"><thead><tr><th>Falha</th><th>Produto</th><th>Causa</th><th>Requisito gerado</th></tr></thead><tbody>';
+        falhas.forEach(f => {
+            html += `<tr>
+                <td>${escapeHtml(f.falha)}</td>
+                <td>${escapeHtml(f.produto || '—')}</td>
+                <td>${escapeHtml(f.causa || '—')}</td>
+                <td>${f.requisitoGerado ? rotulo(f.requisitoGerado) : '—'}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+    }
+    return html + '</div>';
 }
 
 function generateSummary() {
@@ -420,6 +493,26 @@ function generateAvaliacaoCompetitiva() {
                 ${analise.produtos.map(p => `<td>${escapeHtml(t.valores[p.id] || '—')}</td>`).join('')}
                 <td>${melhor}</td>
                 <td>${situacao(t.situacao)}</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+    }
+
+    if (analise.indices.length) {
+        const fmt = v => (v === null || v === undefined ? '—' : formatarNumero(Math.round(v * 1000) / 1000));
+        html += '<h4>Índices</h4>';
+        html += `<table class="report-table competitiva-table"><thead><tr><th>Índice</th><th>Fórmula</th>${cabecalhoProdutos}<th>Melhor concor&shy;rente</th><th>Nosso × melhor</th></tr></thead><tbody>`;
+        analise.indices.forEach(x => {
+            const un = x.indice.unidade ? ` ${escapeHtml(x.indice.unidade)}` : '';
+            const melhor = x.melhor
+                ? `${fmt(x.melhor.valor)}${un}<small class="competitiva-quem">${escapeHtml(x.melhor.produtos.map(codigoPorNome).join(', '))}</small>`
+                : (x.indice.sentido === 'none' ? 'só comparar' : '—');
+            html += `<tr>
+                <td class="competitiva-desc"><strong>${escapeHtml(x.indice.nome)}</strong> ${getSentidoSymbol(x.indice.sentido)}</td>
+                <td>${escapeHtml(x.formula)}${un ? ` <small>(${un.trim()})</small>` : ''}</td>
+                ${analise.produtos.map(p => `<td>${fmt(x.valores[p.id])}</td>`).join('')}
+                <td>${melhor}</td>
+                <td>${situacao(x.situacao)}</td>
             </tr>`;
         });
         html += '</tbody></table>';

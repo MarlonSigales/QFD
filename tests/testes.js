@@ -144,6 +144,33 @@ suite('Banco de dados', () => {
         const soma = qfdDB.getRequisitosProjeto().reduce((s, r) => s + (r.pesoRelativo || 0), 0);
         assert(Math.abs(soma - 1) < 1e-9, `soma = ${soma}`);
     });
+    test('requisito fora do QFD: sai da comparação, dos pesos, da matriz e das especificações; volta ao desmarcar', () => {
+        const { rc, rp } = criarProjetoExemplo();
+        qfdDB.updateRequisitoCliente(rc[0].id, { classificacao: 'funcao', justificativaClassificacao: 'Define a função' });
+        qfdDB.updateRequisitoProjeto(rp[2].id, { classificacao: 'boa-pratica', justificativaClassificacao: 'Boa prática' });
+        qfdDB.calculateImportanciaCliente();
+        qfdDB.calculateImportanciaProjeto();
+
+        assertEqual(qfdDB.getRequisitosCliente().map(r => r.id), [rc[1].id, rc[2].id], 'RC no QFD');
+        assertEqual(qfdDB.getRequisitosCliente({ todos: true }).length, 3, 'cadastro mantém todos');
+        assertEqual(qfdDB.getComparacoesCliente().length, 1, 'só a comparação RC2 × RC3');
+        const pesos = qfdDB.getRequisitosCliente({ todos: true }).map(r => r.peso);
+        assertEqual(pesos[0], 0, 'peso do RC fora do QFD');
+        assert(Math.abs(pesos[1] + pesos[2] - 1) < 1e-9, 'pesos dos demais somam 100%');
+        assert(qfdDB.getMatrizQFDCompleta().every(m => m.requisitoCliente !== rc[0].id && m.requisitoProjeto !== rp[2].id), 'relações fora do QFD');
+        const rp3 = qfdDB.getRequisitosProjeto({ todos: true })[2];
+        assertEqual([rp3.importanciaAbsoluta, rp3.pesoRelativo], [0, 0]);
+        assertEqual(qfdDB.getEspecificacoesOrdenadas().length, 2, 'especificações só dos RP no QFD');
+        assertEqual(qfdDB.getEspecificacoesStats().total, 2);
+        assertEqual(qfdDB.getAnaliseAtendimento().projetos.length, 2);
+
+        // os dados guardados voltam a valer ao desmarcar
+        assertEqual(qfdDB.loadData().comparacaoCliente.length, 3, 'comparações guardadas');
+        qfdDB.updateRequisitoCliente(rc[0].id, { classificacao: '', justificativaClassificacao: '' });
+        qfdDB.calculateImportanciaCliente();
+        assertEqual([qfdDB.getRequisitosCliente().length, qfdDB.getComparacoesCliente().length], [3, 3]);
+        assert(qfdDB.getRequisitosCliente()[0].peso > 0, 'peso voltou');
+    });
     test('soma de cada RP = Σ relação × importância do RC', () => {
         const { rc, rp } = criarProjetoExemplo();
         qfdDB.calculateImportanciaProjeto();
@@ -277,6 +304,26 @@ suite('Versionamento dos dados', () => {
             [true, false, true, false]);
         assertEqual(metaDefinida({ tipoMeta: 'faixa', valorMeta: 10, valorMax: 10 }), false, 'faixa vazia');
     });
+    test('v4 → v5: requisitos ganham classificação vazia (todos continuam no QFD)', () => {
+        const d = {
+            requisitosCliente: [{ id: 'c1', descricao: 'Leve', observacao: '', importancia: 0, peso: 0 }],
+            requisitosProjeto: [{ id: 'p1', descricao: 'Peso', sentidoMelhoria: 'down', dificuldadeTecnica: 1, observacao: '' }],
+            comparacaoCliente: [], correlacaoProjeto: [], matrizQFD: [], especificacoesProjeto: [],
+            metadata: { created: '2026-01-01', schemaVersion: 4 }
+        };
+        assert(qfdDB.importData(d), qfdDB.lastImportError);
+        const r = qfdDB.loadData();
+        assertEqual([r.requisitosCliente[0].classificacao, r.requisitosProjeto[0].justificativaClassificacao], ['', '']);
+        assertEqual([qfdDB.getRequisitosCliente().length, qfdDB.getRequisitosProjeto().length], [1, 1]);
+    });
+    test('v5 → v6: projeto ganha nome e e-mails vazios', () => {
+        const d = {
+            requisitosCliente: [], requisitosProjeto: [], comparacaoCliente: [], correlacaoProjeto: [],
+            matrizQFD: [], especificacoesProjeto: [], metadata: { created: '2026-01-01', schemaVersion: 5 }
+        };
+        assert(qfdDB.importData(d), qfdDB.lastImportError);
+        assertEqual(qfdDB.loadData().projeto, { nome: '', emails: [] });
+    });
     test('banco novo já nasce na versão atual', () => {
         qfdDB.clearAllData();
         assertEqual(qfdDB.loadData().metadata.schemaVersion, SCHEMA_VERSION);
@@ -306,6 +353,74 @@ suite('Versionamento dos dados', () => {
 // ============================================================================
 // TRATAMENTO DE ERROS
 // ============================================================================
+
+suite('Caderno de ideias', () => {
+    test('ideias: ligadas a requisitos, contador, status e fora das tabelas de requisitos', () => {
+        const { rc, rp } = criarProjetoExemplo();
+        const ideia = qfdDB.addIdeia({ titulo: 'Chassi de alumínio', descricao: 'Perfil extrudado', autor: 'Ana',
+            requisitos: [{ tipo: 'cliente', id: rc[1].id }, { tipo: 'projeto', id: rp[0].id }, { tipo: 'projeto', id: 'nao-existe' }] });
+        assertEqual(ideia.requisitos.length, 2, 'ligação a requisito inexistente');
+        assertEqual([qfdDB.contarIdeias('cliente', rc[1].id), qfdDB.contarIdeias('cliente', rc[0].id)], [1, 0]);
+        assertEqual([qfdDB.getRequisitosCliente().length, qfdDB.getRequisitosProjeto().length], [3, 3], 'ideia não vira requisito');
+        let erro = '';
+        try { qfdDB.addIdeia({ titulo: '  ' }); } catch (e) { erro = e.message; }
+        assert(/título/.test(erro), 'aceitou ideia sem título');
+        qfdDB.updateIdeia(ideia.id, { status: 'promissora' });
+        qfdDB.removeRequisitoProjeto(rp[0].id);
+        const salva = qfdDB.getIdeias()[0];
+        assertEqual([salva.status, salva.requisitos.map(r => r.tipo)], ['promissora', ['cliente']], 'requisito excluído sai da ideia');
+    });
+    test('falhas: criar requisito neutro a partir da falha', () => {
+        criarProjetoExemplo();
+        const falha = qfdDB.addFalha({ falha: 'Cabo do acelerador rompe', causa: 'Fadiga por flexão', produto: 'Modelo 2019' });
+        let erro = '';
+        try { qfdDB.criarRequisitoDeFalha(falha.id, 'projeto', 'curto'); } catch (e) { erro = e.message; }
+        assert(/10 caracteres/.test(erro), 'aceitou descrição curta');
+        const req = qfdDB.criarRequisitoDeFalha(falha.id, 'projeto', 'Resistir a 100 mil ciclos de flexão do comando');
+        assert(req.observacao.includes('Cabo do acelerador rompe'), 'origem não registrada no requisito');
+        assertEqual(qfdDB.getFalhas()[0].requisitoGerado, { tipo: 'projeto', id: req.id });
+        assertEqual(qfdDB.getRequisitosProjeto().length, 4);
+    });
+    test('v6 → v7: caderno de ideias vazio', () => {
+        const d = {
+            requisitosCliente: [], requisitosProjeto: [], comparacaoCliente: [], correlacaoProjeto: [],
+            matrizQFD: [], especificacoesProjeto: [], metadata: { created: '2026-01-01', schemaVersion: 6 }
+        };
+        assert(qfdDB.importData(d), qfdDB.lastImportError);
+        assertEqual(qfdDB.loadData().cadernoIdeias, { ideias: [], falhas: [] });
+    });
+});
+
+suite('Projeto e envio por e-mail', () => {
+    test('e-mails: separa por vírgula/linha, tira repetidos e recusa inválidos', () => {
+        qfdDB.clearAllData();
+        const p = qfdDB.setProjeto({ nome: '  Semeadora Ágil  ', emails: 'a@x.com; b@y.com.br\nA@X.com, ' });
+        assertEqual([p.nome, p.emails], ['Semeadora Ágil', ['a@x.com', 'b@y.com.br']]);
+        let erro = '';
+        try { qfdDB.setProjeto({ emails: 'ok@x.com, sem-arroba, c@d' }); } catch (e) { erro = e.message; }
+        assert(/sem-arroba, c@d/.test(erro), 'não listou os inválidos: ' + erro);
+        assertEqual(qfdDB.getProjeto().emails, ['a@x.com', 'b@y.com.br'], 'inválido não pode sobrescrever');
+    });
+    test('enviar por e-mail: baixa o backup e abre mailto com envolvidos e assunto "qfd - nome"', () => {
+        qfdDB.clearAllData();
+        qfdDB.setProjeto({ nome: 'Semeadora Ágil', emails: 'a@x.com, b@y.com' });
+        const baixados = [], links = [];
+        const downloadOriginal = window.downloadFile, clickOriginal = HTMLAnchorElement.prototype.click;
+        window.downloadFile = (conteudo, nome) => baixados.push({ conteudo, nome });
+        HTMLAnchorElement.prototype.click = function() { links.push(this.href); };
+        try {
+            exportarEEnviarEmail();
+        } finally {
+            window.downloadFile = downloadOriginal;
+            HTMLAnchorElement.prototype.click = clickOriginal;
+        }
+        assertEqual(baixados.length, 1, 'backup não baixado');
+        assert(/^qfd-semeadora-agil-\d{4}-\d{2}-\d{2}\.json$/.test(baixados[0].nome), 'nome do arquivo: ' + baixados[0].nome);
+        assertEqual(JSON.parse(baixados[0].conteudo).projeto.nome, 'Semeadora Ágil');
+        assert(links[0].startsWith('mailto:a@x.com,b@y.com?subject=' + encodeURIComponent('qfd - Semeadora Ágil')), links[0]);
+        assert(decodeURIComponent(links[0]).includes(baixados[0].nome), 'texto não cita o arquivo a anexar');
+    });
+});
 
 suite('Tratamento de erros', () => {
     test('dados corrompidos são restaurados do backup automático', () => {
@@ -410,6 +525,39 @@ function criarAvaliacaoExemplo() {
 }
 
 suite('Avaliação competitiva', () => {
+    test('índices: fórmula com RPn, precedência, divisão por zero e erros de sintaxe', () => {
+        const arv = t => parseFormula(t);
+        const v = (t, valores = {}) => avaliarFormula(arv(t), id => (id in valores ? valores[id] : null));
+        assertEqual([v('2 + 3 * 4'), v('(2 + 3) * 4'), v('-2 * -3'), v('1,5 * 2'), v('1 / 0')], [14, 20, 6, 3, null]);
+        assertEqual(v('{rp:a} / {rp:b}', { a: 10, b: 4 }), 2.5);
+        assertEqual(v('{rp:a} + 1', {}), null, 'valor faltando');
+        ['2 +', '(2', '2 ^ 3', 'RP1 RP2', ''].forEach(t => {
+            let erro = '';
+            try { parseFormula(t.replace(/RP\d/g, '{rp:x}')); } catch (e) { erro = e.message; }
+            assert(erro, `aceitou "${t}"`);
+        });
+    });
+    test('índices: valores por produto, melhor concorrente e numeração que muda', () => {
+        const { rp, a, b } = criarAvaliacaoExemplo(); // RP1: nós 1,4 | A 1,5 kg | B 0,9 ; RP3: A 4
+        qfdDB.setValorTecnico(rp[2].id, PRODUTO_NOSSO_ID, '2');
+        qfdDB.setValorTecnico(rp[2].id, b.id, '3');
+        const indice = qfdDB.addIndice({ nome: 'Botões por kg', formula: 'RP3 / RP1', unidade: '1/kg', sentido: 'up' });
+        let x = qfdDB.getAnaliseCompetitiva().indices[0];
+        assertEqual(x.formula, 'RP3 / RP1');
+        assert(Math.abs(x.valores[a.id] - 4 / 1.5) < 1e-9 && Math.abs(x.valores[b.id] - 3 / 0.9) < 1e-9, 'valores');
+        assertEqual([x.melhor.produtos, x.situacao], [['Marca "B" <x>'], 'atras']);
+
+        let erro = '';
+        try { qfdDB.addIndice({ nome: 'X', formula: 'RP9 * 2' }); } catch (e) { erro = e.message; }
+        assert(/RP9 não existe/.test(erro), 'aceitou RP inexistente');
+
+        // RP2 sai do QFD: RP3 vira RP2 e a fórmula acompanha
+        qfdDB.updateRequisitoProjeto(rp[1].id, { classificacao: 'funcao', justificativaClassificacao: 'teste' });
+        x = qfdDB.getAnaliseCompetitiva().indices[0];
+        assertEqual(x.formula, 'RP2 / RP1');
+        qfdDB.removeIndice(indice.id);
+        assertEqual(qfdDB.getAnaliseCompetitiva().indices.length, 0);
+    });
     test('concorrentes: adicionar, nome repetido, renomear, limite e o nosso produto não sai', () => {
         qfdDB.clearAllData();
         const a = qfdDB.addConcorrente('  Marca   A ');
@@ -562,7 +710,7 @@ suite('Atendimento aos requisitos', () => {
 // ============================================================================
 
 const PAGINAS = [
-    { arquivo: '../index.html', funcao: 'updateDashboard' },
+    { arquivo: '../index.html', funcao: 'updateDashboard', seletores: ['#projeto-nome', '#projeto-emails'] },
     { arquivo: '../pages/requisitos-cliente.html', funcao: 'loadRequisitos', texto: 'Fácil de usar por idosos' },
     { arquivo: '../pages/comparacao-cliente.html', funcao: 'generateComparisonMatrix', balao: 'Obs RC1' },
     { arquivo: '../pages/requisitos-projeto.html', funcao: 'loadRequisitos', texto: 'Peso total (kg)' },
@@ -573,8 +721,13 @@ const PAGINAS = [
     },
     { arquivo: '../pages/especificacoes.html', funcao: 'renderTable', texto: 'Custo de produção' },
     {
+        arquivo: '../pages/ideias.html', funcao: 'renderIdeias',
+        preparar: () => { const { rc } = criarProjetoExemplo(); qfdDB.addIdeia({ titulo: 'Ideia <b>teste</b>', requisitos: [{ tipo: 'cliente', id: rc[0].id }] }); qfdDB.addFalha({ falha: 'Falha X' }); },
+        texto: 'Ideia <b>teste</b>', seletores: ['#lista-ideias .ideia-chip', '#lista-falhas .falha-neutro', '#ideia-requisitos input[type=checkbox]']
+    },
+    {
         arquivo: '../pages/avaliacao-competitiva.html', funcao: 'updateComputed', preparar: criarAvaliacaoExemplo,
-        texto: 'Marca "B" <x>', seletores: ['#grafico-clientes svg circle', '#clientes-tbody .sit-atras', '#tecnicos-tbody .valor-input']
+        texto: 'Marca "B" <x>', seletores: ['#grafico-clientes svg circle', '#clientes-tbody .sit-atras', '#tecnicos-tbody .valor-input', '#form-indice #indice-formula']
     },
     {
         arquivo: '../pages/atendimento-requisitos.html', funcao: 'updateComputed', preparar: criarAvaliacaoExemplo,
@@ -617,8 +770,14 @@ function testarPagina(pagina) {
                 assert(doc.querySelector(sel), `elemento "${sel}" não encontrado`);
             });
 
+            // barra lateral com as 9 etapas + Dashboard + Caderno de Ideias, página atual destacada
+            assertEqual(doc.querySelectorAll('.sidebar .sidebar-link').length, 11, 'links da barra lateral');
+            const ativo = doc.querySelector('.sidebar .sidebar-link.ativo');
+            assert(ativo && pagina.arquivo.endsWith(ativo.getAttribute('href').split('/').pop()), 'página atual não destacada na barra lateral');
+            assert(doc.getElementById('topbar-projeto-nome').textContent.trim(), 'nome do projeto na barra superior');
+
             const toggles = [...doc.querySelectorAll('.nav-dropdown .dropdown-toggle')];
-            assertEqual(toggles.length, 2, 'quantidade de menus');
+            assertEqual(toggles.length, 1, 'quantidade de menus (Backup & Export)');
             toggles.forEach((t, i) => {
                 t.click();
                 assert(t.nextElementSibling.classList.contains('show'), `menu ${i + 1} não abriu`);
@@ -644,6 +803,60 @@ function testarPagina(pagina) {
 
 suite('Páginas', () => {
     PAGINAS.forEach(p => test(p.arquivo.replace('../', ''), testarPagina(p)));
+    test('Requisitos de cliente: marcar como fora do QFD exige justificativa; relatório lista à parte', async () => {
+        const { rc } = criarProjetoExemplo();
+        let iframe = await carregarPagina('../pages/requisitos-cliente.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            win.editRequisito(rc[1].id);
+            doc.getElementById(`edit-class-${rc[1].id}`).value = 'boa-pratica';
+            win.saveEdit(rc[1].id);
+            assertEqual(qfdDB.getRequisitosCliente({ todos: true })[1].classificacao, '', 'salvou sem justificativa');
+            doc.getElementById(`edit-just-${rc[1].id}`).value = 'Prática consagrada de ergonomia';
+            win.saveEdit(rc[1].id);
+            assertEqual(qfdDB.getRequisitosCliente({ todos: true })[1].classificacao, 'boa-pratica');
+            const item = doc.querySelector(`.requisito-item[data-id="${rc[1].id}"]`);
+            assert(item.querySelector('.classificacao-selo'), 'selo "fora do QFD" ausente');
+            assert(item.querySelector('.requisito-number.fora-qfd'), 'número deveria indicar fora do QFD');
+            assertEqual(doc.querySelector(`.requisito-item[data-id="${rc[2].id}"] .number`).textContent.trim(), '2', 'numeração do QFD (RC3 vira RC2)');
+        } finally {
+            iframe.remove();
+        }
+        iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const doc = iframe.contentDocument;
+            const secao = doc.querySelector('#report-content .report-fora-qfd');
+            assert(secao && secao.textContent.includes('Prática consagrada de ergonomia'), 'seção "Requisitos fora do QFD" ausente');
+            assert(!doc.querySelector('#report-content .qfd-matrix-report').textContent.includes('RC3'), 'matriz do relatório ainda tem 3 RC');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Requisitos de projeto: registro rápido de ideia (💡) com contador; anexo no relatório', async () => {
+        const { rp } = criarProjetoExemplo();
+        let iframe = await carregarPagina('../pages/requisitos-projeto.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            const item = () => doc.querySelector(`.requisito-item[data-id="${rp[0].id}"]`);
+            item().querySelector('.btn-ideia').click();
+            const janela = doc.querySelector('.ideia-rapida-overlay');
+            assert(janela && janela.textContent.includes('Peso total (kg)'), 'janela não mostra o requisito');
+            janela.querySelector('#ideia-rapida-titulo').value = 'Usar plástico reforçado';
+            janela.querySelector('[data-acao="salvar"]').click();
+            assert(!doc.querySelector('.ideia-rapida-overlay'), 'janela não fechou');
+            assertEqual(item().querySelector('.ideia-contador').textContent, '1', 'contador de ideias');
+            assertEqual(qfdDB.getIdeias()[0].requisitos, [{ tipo: 'projeto', id: rp[0].id }]);
+        } finally {
+            iframe.remove();
+        }
+        iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const anexo = iframe.contentDocument.querySelector('#report-content .report-ideias');
+            assert(anexo && anexo.textContent.includes('Usar plástico reforçado') && anexo.textContent.includes('RP1'), 'anexo de ideias');
+        } finally {
+            iframe.remove();
+        }
+    });
     test('Especificações: editor da meta sugere o tipo, valida intervalo e salva', async () => {
         const { rp } = criarProjetoExemplo();
         const iframe = await carregarPagina('../pages/especificacoes.html');

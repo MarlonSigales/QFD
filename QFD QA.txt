@@ -1,269 +1,413 @@
 QFD - QA
 Site: https://marlonsigales.github.io/QFD/index.html
-Atualizado em 24/09/2026
+Atualizado em 13/10/2026 — dados na versão 7 — 75 testes automáticos
+
+Legenda: [fazer] pendente · [aguardando] depende de material externo ·
+         [RESOLVIDO] feito e testado · [rejeitado] não será feito
 
 ==========================================================================================
-ITENS DO QA ANTERIOR
+RESUMO
 
-[RESOLVIDO] Texto explicativo em cada requisito e cada especificação, nas suas
-            páginas próprias, aparecendo como balão flutuante nas demais páginas.
-            - Requisitos de cliente e de projeto: campo no cadastro e na edição;
-              balão na comparação, correlação, matriz QFD e relatório.
-            - Especificações: coluna "Texto explicativo"; balão e texto no relatório.
+  Por fazer ............ 7   (1 aguardando material)
+  Resolvidos ........... 26
+  Rejeitados ........... 11  (9 "por hora", podem voltar)
 
-[RESOLVIDO] Menu da página de especificações não funcionava.
-            Os menus foram padronizados em todas as páginas (antes, o "Backup &
-            Export" não abria em algumas e o menu não funcionava em outras).
+==========================================================================================
+1. POR FAZER (em ordem de prioridade)
 
-[RESOLVIDO] Página de especificações sem os quadros a preencher.
-            A tabela tem unidade, valor, texto explicativo e aspectos indesejáveis.
-            Os aspectos agora vêm preenchidos pelas correlações -- do telhado
-            (antes ficavam vazios se o telhado fosse feito depois dos requisitos).
+[aguardando] Matriz QFD: ao passar o mouse sobre uma relação, mostrar as relações
+            que o Roger traz no documento.
+            Falta: o documento do Roger (colocar na pasta do projeto).
 
-[Resolvido] Relatório quebrou após a adição das especificações.
-            No teste automático o relatório abre e gera a prévia sem erros,
-            incluindo a seção de especificações. Falta confirmar gerando o PDF.
-			
-[fazer] mudar a identidade visual para ficar parecida com a do gestão de peojetos, incluir os simbolos da inovaagro, do nimeq e do lab instagri	nos rodapés		
+[fazer] linhas abaixo do qfd, onde se analise o somatório das linhas, verificando a pontuação de cada requisito de projeto, verificando tanto somatório quanto percentual normalizado.
 
-[fazer] Tanto pro cliente quanto pro projeto fazer uma caixa de selecao para Requisito formador de função, requisito formador de boa pratica de projeto (intensão), exigir comentario ao marcar, colocar em um espaco especial no relatorio, remover do qfd, 
+[fazer] P05 - Ligar a análise da concorrência às Especificações: mostrar o melhor
+            valor dos concorrentes abaixo da meta, botão "Usar como meta" e aviso
+            quando a meta está abaixo do melhor concorrente. (prompt abaixo)
 
-[fazer] colocar um campo inicial com os emails de todos os envolvidos, que ao terminar de editar e exportar, envie um email com assunto "qfd - <nome projeto>" contendo o json gerado, 
+[fazer] P16 - Usar a dificuldade técnica: linha na Matriz QFD, coluna nas
+            Especificações e lista de "requisitos críticos" no relatório. (prompt abaixo)
 
-[RESOLVIDO] Rodapé ainda diz "© 2024". atualizr para 2026 e colocar os nomes de quem gerou o software Desenvolvedor Marlon Soares Sigales, Equipe de projeto Roger Toscan Spagnolo, Ângelo Vieira dos Reis, Ádamo de Sousa Araújo, Gizele Ingrid Gadotti, Eduardo Walker, Giuseppe Stefanello, Fabrício Ardais, Equipe Inova Agro - UFPel - EMBRAPII, remover o que fala em LLMs
+[fazer] P13 - Estado da técnica e referências (patentes, normas, artigos) ligados
+            aos requisitos. (prompt abaixo)
 
-[RESOLVIDO] o relatório não precisa ter todas as comparações entre requisitos de projeto uma a uma, apenas mostrar a tabela do QFD
-            A seção "Análise de Correlações" mostra só a contagem por tipo; os pares
-            ficam no telhado e na Matriz QFD.
-
-[RESOLVIDO] os botões de avançar e voltar estão com design esquisito, o texto do botão não está correspondendo
-            O texto saía cinza sobre o botão (o estilo do menu sobrepunha o do
-            botão). Agora o texto é branco e o botão mostra o destino
-            ("← Correlação", "Especificações →"). O "Avançar" desabilitado fica
-            esmaecido (antes não tinha diferença visual).
-
-[RESOLVIDO] Diagrama de Mudge recarrega a página inteira a cada comparação salva.
-            Salvar/remover atualiza só a matriz, o status e o ranking (mantém a
-            rolagem); Enter abre a próxima célula na hora. Corrigido também:
-            "Remover" não recalculava a importância dos requisitos.
-
-[RESOLVIDO] Mostrar o texto explicativo da especificação também no balão da Matriz QFD.
-
-[RESOLVIDO] Unificar o código dos balões, que ainda é diferente em cada página.
-            Um só balão (js/utils.js, classe .app-tooltip) em todas as páginas e
-            no relatório; texto puro com quebras de linha. Removidas as 4 versões
-            antigas e o CSS duplicado.
-
-[RESOLVIDO] Limpar CSS duplicado e estilos injetados via JavaScript.
-            ~1.240 linhas de CSS que o JS injetava (requisitos, correlação, popup,
-            dashboard, alertas) foram para o style.css, restritas à página por
-            :where(body.page-...). Removidas 123 declarações redefinidas e 26
-            regras vazias; tirada a seção oculta "Resultados" da Matriz QFD.
-            Conferido com capturas antes/depois de 17 telas. Mudanças visíveis
-            (correções): o rodapé do Dashboard não se move mais ao abrir os
-            detalhes; o cabeçalho do telhado não pula 1px ao abrir o 1º popup.
-
-[RESOLVIDO] Remover qfd_system_updated.zip (versão antiga) do repositório.
-
-[RESOLVIDO] hoje em especificações a coluna "valor" substituir por valor meta, e propor se deve ser maior que, menor que, ou igua em funçao do sentido de melhoria, ter campo para intervalo
-            Coluna "Valor meta": tipo (≥ mínimo, ≤ máximo, = nominal com ± opcional,
-            intervalo "a"), sugerido pelo sentido de melhoria; valida números e
-            intervalo. Avaliação Competitiva e Atendimento usam o tipo. Dados na
-            versão 4: valores antigos numéricos migram sozinhos; texto como
-            "aprox. 3" fica marcado "Revisar meta". (Equivale ao P02.)
-
-[fazer] campo índice na comparação de concorrentes, onde se possa fazer operações matemáticas entre as linhas, adicionar mais indices indices para verificação
-
-[RESOLVIDO] campo voltar em todo campo que apertar enter vai a frente, ter um botão de retornar
-            Mudge, telhado e Matriz QFD: botão "← Anterior" na janela e atalho
-            Shift+Enter, na ordem inversa do Enter (não salva a célula atual;
-            desabilitado na primeira).
-
-[RESOLVIDO] 2 relatórios um pra equipe de projeto, e um para ser apresentado (sem comentários internos)
-            Relatório -> Configurações -> "Versão do relatório": Equipe de projeto
-            (completo) ou Apresentação (sem textos explicativos, inconsistências,
-            diagnóstico do atendimento e seção Análises). Vale para prévia,
-            impressão e PDF (arquivo com "-apresentacao").
-
-[RESOLVIDO] relatório ajustar as comparações entre clientes para não cortar, talvez colocar um glosário do concorrente e indicar c1 a cn
-            Quadro "Produtos comparados" (Nosso, C1...Cn com cor e nome); as
-            tabelas usam os códigos e quebram texto para caber na página
-            (conferido com 6 concorrentes de nomes longos).
-
-[RESOLVIDO] relatório margens todas em 2cm
-            PDF com 2 cm nos 4 lados em todas as páginas (o conteúdo é recortado
-            por página, não invade mais as margens) e impressão com @page 2cm.
-            Conferir gerando o PDF de um projeto com várias páginas.
-
-[RESOLVIDO] fazer linha de somas de requisitos de projeto no quadro de qfd (uma de somas totais e uma normalizada percentual)
-            Rodapé da matriz com Soma (Σ relação × importância), Percentual (%) e
-            Ranking; atualiza ao preencher. As mesmas linhas saem no relatório.
-
-[RESOLVIDO] fazer revisão das somas e ranqueamento dos requisitos de projeto
-            Fórmula conferida por teste. Corrigido: empates agora ficam na mesma
-            posição (1, 1, 3); o percentual zera quando não há relações (antes
-            ficava o valor antigo); a matriz recalcula ao abrir (se a comparação
-            dos clientes mudou depois). Rótulo "Requisitos" da matriz estava
-            invisível (branco no cinza) -- corrigido.
-
-[fazer] no qfd quando passar o mouse sobre a resposta aparecer as relaçoes que o roger tras no documento
-
-[fazer] Caderno de ideias de solução (final de tudo)
-
-No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um caderno de
-ideias conforme Pahl & Beitz, Engineering Design, Seção 5.4: durante o
-levantamento dos requisitos surgem funções e ideias de solução; elas devem ser
-registradas para uso posterior na busca sistemática de soluções, mas NÃO devem
-entrar na lista de requisitos (para não enviesá-la). A análise de falhas de
-produtos existentes também é fonte de requisitos, que devem ser formulados de
-forma neutra.
-
-O que fazer:
-- Nova página pages/ideias.html (+ js): ideias com título, descrição, autor,
-  data, requisitos relacionados (cliente e/ou projeto) e status ("nova",
-  "promissora", "descartada").
-- Botão "Registrar ideia" acessível nas páginas de requisitos (abre um cadastro
-  rápido já ligado ao requisito em edição).
-- Registro de falhas conhecidas (de produtos anteriores/concorrentes): falha,
-  causa, e botão "Criar requisito neutro a partir desta falha".
-- Relatório: anexo "Ideias de solução registradas" e "Falhas analisadas".
+[fazer] P15 - Fechamento: abstração da lista de requisitos e função global
+            (caixa-preta). (prompt abaixo)
 
 [fazer sem prioridade] Uso das matrizes em celular.
 
+[futuro] P14 - Módulo de planejamento do produto. (prompt abaixo)
+
 ==========================================================================================
-ROTEIRO DE QA MANUAL (fazer no site publicado, depois do git push)
+2. RESOLVIDOS
+
+--- Requisitos ---------------------------------------------------------------------------
+
+[RESOLVIDO] Texto explicativo em cada requisito e especificação, com balão
+            flutuante nas demais páginas (comparação, correlação, matriz, relatório).
+
+[RESOLVIDO] Requisito formador de função / de boa prática de projeto (intenção),
+            para cliente e projeto, com comentário obrigatório, fora do QFD e com
+            espaço próprio no relatório.
+            Campo "Tipo de requisito" no cadastro e na edição. O requisito marcado
+            sai da comparação, do telhado, da matriz, das especificações, da
+            avaliação competitiva e do atendimento, e vai para a seção "Requisitos
+            fora do QFD" do relatório. Comparações e relações ficam guardadas e
+            voltam ao desmarcar.
+
+[RESOLVIDO] Caderno de ideias de solução e falhas analisadas (P10).
+            Página "Caderno de Ideias" (Menu e Dashboard); botão 💡 com contador em
+            cada requisito para registro rápido; "Criar requisito neutro" a partir
+            de uma falha; anexo no relatório.
+
+--- Comparação, telhado e Matriz QFD -----------------------------------------------------
+
+[RESOLVIDO] Diagrama de Mudge recarregava a página a cada comparação salva.
+            Agora atualiza só a matriz e mantém a rolagem; "Remover" passou a
+            recalcular a importância.
+
+[RESOLVIDO] Botão de voltar onde o Enter avança: "← Anterior" e Shift+Enter no
+            Mudge, no telhado e na Matriz QFD.
+
+[RESOLVIDO] Linhas de soma na Matriz QFD: Soma (Σ relação × importância),
+            Percentual (%) e Ranking, também no relatório.
+
+[RESOLVIDO] Revisão das somas e do ranking: empates na mesma posição (1, 1, 3);
+            percentual zera sem relações; matriz recalcula ao abrir; rótulo
+            "Requisitos" estava invisível.
+
+[RESOLVIDO] Texto explicativo da especificação no balão da Matriz QFD.
+
+--- Especificações, concorrentes e atendimento -------------------------------------------
+
+[RESOLVIDO] Especificações sem os quadros a preencher; aspectos indesejáveis vêm
+            das correlações -- do telhado.
+
+[RESOLVIDO] "Valor" virou "Valor meta" (P02): ≥ mínimo, ≤ máximo, = nominal com ±,
+            ou intervalo; tipo sugerido pelo sentido de melhoria. Valores antigos
+            migram sozinhos; texto não numérico fica marcado "Revisar meta".
+
+[RESOLVIDO] Índices na comparação de concorrentes: fórmulas entre requisitos
+            (RP2 / RP1, (RP3 - RP4) * 100), valor por produto, melhor concorrente e
+            situação; também no relatório e no CSV.
+
+--- Relatório ----------------------------------------------------------------------------
+
+[RESOLVIDO] Relatório quebrava após a adição das especificações.
+
+[RESOLVIDO] Sem a lista de pares RPx ↔ RPy; só a contagem por tipo (os pares
+            estão no telhado e na matriz).
+
+[RESOLVIDO] Comparação com concorrentes não corta mais: quadro "Produtos
+            comparados" (Nosso, C1...Cn) e tabelas com códigos.
+
+[RESOLVIDO] Margens de 2 cm em todas as páginas do PDF e na impressão.
+
+[RESOLVIDO] Dois relatórios: "Equipe de projeto" (completo) e "Apresentação" (sem
+            textos explicativos, inconsistências, diagnóstico e análises).
+
+--- Projeto, backup e e-mail -------------------------------------------------------------
+
+[RESOLVIDO] Nome do projeto e e-mails dos envolvidos (cartão "Projeto" no
+            Dashboard). "Exportar e enviar por e-mail" baixa o JSON e abre o e-mail
+            com os envolvidos e o assunto "qfd - <nome>" (anexar o arquivo à mão);
+            "Compartilhar" anexa o JSON onde o navegador permite.
+
+--- Aparência e navegação ----------------------------------------------------------------
+
+[RESOLVIDO] Identidade visual igual à do Gestão de Projetos.
+            Paleta teal (#085357) / verde (#409580) / limão (#a8e156) com fundo
+            #f4f7f6; barra superior branca com o logo da Inova Agro, "Sistema QFD",
+            o nome do projeto, "guardado no navegador", Voltar/Avançar e Backup;
+            barra lateral teal com as 9 etapas numeradas (página atual destacada)
+            e o Caderno de Ideias. No celular a barra lateral abre pelo botão ☰.
+            Tabelas com cabeçalho verde-claro; relatório com cabeçalho teal.
+
+[RESOLVIDO] Logos da Inova Agro (EMBRAPII), do NIMEq e do Lab InstAgri no rodapé
+            de todas as páginas (versões leves em img/logo-*.png).
+
+[RESOLVIDO] Rodapé com © 2026, desenvolvedor, equipe de projeto e Equipe Inova
+            Agro - UFPel - EMBRAPII; removida a menção a IA.
+
+[RESOLVIDO] Botões Voltar/Avançar com texto legível e o nome do destino.
+
+[RESOLVIDO] Menus padronizados em todas as páginas (Menu e Backup & Export).
+
+[RESOLVIDO] Balões unificados (um só código e estilo em todas as páginas).
+
+[RESOLVIDO] CSS duplicado e estilos injetados via JavaScript movidos para o
+            style.css (conferido com capturas antes/depois de 17 telas).
+
+[RESOLVIDO] Removido qfd_system_updated.zip (versão antiga).
+
+[RESOLVIDO] QA reorganizado em "por fazer", "resolvidos" e "rejeitados".
+
+==========================================================================================
+3. REJEITADOS
+
+[rejeitado] P01 - Exigência ou Desejo.
+[rejeitado] P12 - Listas parciais por departamento.
+[rejeitado por hora] P03 - Origem, responsável e revisões da lista.
+[rejeitado por hora] P04 - Categorias do checklist e painel de cobertura.
+[rejeitado por hora] P06 - Definição do projeto.
+[rejeitado por hora] P07 - Cenários do ciclo de vida.
+[rejeitado por hora] P08 - Tipos de requisito do cliente.
+[rejeitado por hora] P09 - Árvore de requisitos do cliente.
+[rejeitado por hora] P11 - Requisitos de restrição.
+[não recomendado] Trocar o armazenamento por IndexedDB.
+[baixa prioridade] Acessibilidade (rever quando o resto estiver pronto).
+
+==========================================================================================
+4. ROTEIRO DE QA MANUAL (no site publicado, depois do git push)
 
 Dica: antes de começar, exporte um backup (Backup & Export -> Exportar Backup).
 
-[ ] 1. Requisitos de cliente: cadastrar 3, um com texto explicativo com aspas
-       (ex.: tela de 6" ou mais). Tentar cadastrar um repetido -> deve recusar.
-[ ] 2. Comparação: passar o mouse nos requisitos -> balão com o texto explicativo,
-       sem aparecer <br>, <em> ou código.
-[ ] 3. Requisitos de projeto: cadastrar 3 com texto explicativo.
-[ ] 4. Correlação: marcar uma correlação -- entre dois requisitos; conferir balões.
-[ ] 5. Matriz QFD: preencher; conferir balões dos RC e RP (texto em linha separada).
-[ ] 6. Especificações: conferir se os aspectos indesejáveis vieram do --;
-       preencher unidade, valor e texto explicativo.
-[ ] 6b. Avaliação Competitiva: adicionar 2 concorrentes (tentar um nome repetido
-       -> deve recusar), dar notas 1 a 5 e metas, conferir situação (à frente /
-       atrás), índice, prioridade e o gráfico. Preencher valores técnicos
-       (ex.: "1,5 kg") e conferir o melhor concorrente em requisitos ↑ e ↓.
-       Forçar uma inconsistência: relação 9 na matriz + notas e valores
-       contraditórios -> deve aparecer em "Inconsistências". Exportar o CSV e
-       abrir no Excel (acentos corretos). Remover um concorrente.
-[ ] 6c. Atendimento aos Requisitos: informar valores medidos que atinjam e que
-       não atinjam a meta (↑, ↓ e *), conferir ✓/✗, a porcentagem de cada
-       requisito de cliente (ex.: RP (9) ✓ + RP (3) ✗ = 75%) e o atendimento
-       geral. Deixar um requisito de cliente sem relação na matriz e um de
-       projeto sem relação -> devem aparecer no diagnóstico. O valor medido
-       digitado aqui deve aparecer na Avaliação Competitiva (e vice-versa).
-[ ] 7. Relatório: gerar a prévia (seções Avaliação Competitiva e Atendimento aos Requisitos),
-       passar o mouse nas linhas, GERAR O PDF e ver se o gráfico saiu no PDF.
-[ ] 8. Em todas as páginas: abrir e fechar os dois menus (Menu e Backup & Export).
-[ ] 9. Exportar CSV de requisitos e importar de volta -> deve ignorar os repetidos.
-[ ] 10. Exportar backup JSON, limpar os dados e importar -> projeto volta igual.
+[ ] 1. Dashboard: preencher nome do projeto e 2 e-mails (um inválido -> deve
+       avisar). "Exportar e enviar por e-mail": baixa o JSON e abre o e-mail com
+       os envolvidos e o assunto "qfd - <nome>".
+[ ] 2. Requisitos de cliente: cadastrar 4, um com texto explicativo com aspas
+       (ex.: tela de 6" ou mais); tentar um repetido -> deve recusar. Marcar um
+       como "formador de função" sem justificativa -> deve recusar; com
+       justificativa -> número vira etiqueta cinza. Registrar uma ideia pelo 💡.
+[ ] 3. Comparação (Mudge): o requisito marcado não aparece; salvar com Enter
+       (não recarrega, abre a próxima); Shift+Enter volta; balões sem código.
+[ ] 4. Requisitos de projeto: cadastrar 4 com texto explicativo.
+[ ] 5. Correlação: marcar uma correlação --; "← Anterior" e Shift+Enter.
+[ ] 6. Matriz QFD: preencher; conferir as linhas Soma / Percentual / Ranking e os
+       balões (RP com o texto da especificação).
+[ ] 7. Especificações: aspectos indesejáveis vindos do --; metas ≥, ≤, = com ± e
+       intervalo (intervalo invertido -> deve avisar).
+[ ] 8. Avaliação Competitiva: 2 concorrentes (nome repetido -> recusa), notas,
+       metas, valores técnicos; criar o índice "RP2 / RP1"; forçar uma
+       inconsistência; exportar o CSV e abrir no Excel (acentos e índices).
+[ ] 9. Atendimento aos Requisitos: valores que atinjam e não atinjam cada tipo de
+       meta; conferir ✓/✗ e o diagnóstico.
+[ ] 10. Caderno de Ideias: ideia com 2 requisitos; falha -> "Criar requisito
+       neutro" -> o requisito aparece em Requisitos de Projeto.
+[ ] 11. Relatório: versão "Equipe" e "Apresentação"; seções "Requisitos fora do
+       QFD" e "Anexo: Caderno de Ideias"; GERAR O PDF e conferir margens de 2 cm,
+       gráfico e tabelas de concorrentes sem corte.
+[ ] 12. Em todas as páginas: barra lateral (etapa atual destacada), menu Backup,
+       botões Voltar/Avançar, nome do projeto no topo e logos no rodapé. No
+       celular: botão ☰ abre e fecha a barra lateral.
+[ ] 13. Exportar backup JSON, limpar os dados e importar -> projeto volta igual.
+[ ] 14. Importar um backup antigo (antes de out/2026) -> metas convertidas e nada
+       perdido.
 
-Testes automáticos (62): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+Testes automáticos (75): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 
 ==========================================================================================
-PRÓXIMOS PASSOS
+5. PRÓXIMOS PASSOS
 
-Publicar
-- Fazer git push (há commits locais ainda não enviados) e conferir o site.
+- Fazer o commit e o git push; conferir o site publicado e o roteiro acima.
 - Conferir em Settings -> Pages do repositório se o GitHub Pages está ativo.
-
-Melhorias sugeridas (detalhes no todo.md)
-- Uso das matrizes em celular.
-
-Baixa prioridade: acessibilidade.
-Não recomendado: IndexedDB.
-
-Projeto informacional completo (Pahl & Beitz): 16 itens, prompts P01-P16 abaixo.
+- Enviar o documento do Roger (item [aguardando]).
+- Depois: P05, P16, P13 e P15, nessa ordem (prompts abaixo).
 
 ==========================================================================================
-PROMPTS PARA DESENVOLVIMENTO - PROJETO INFORMACIONAL (Pahl & Beitz)
+6. PROMPTS PARA DESENVOLVIMENTO - PROJETO INFORMACIONAL (Pahl & Beitz)
 
 Como usar:
 - Copie o bloco inteiro de UM prompt (de "=== Pxx" até "=== fim Pxx") e cole numa
   conversa nova com o Claude, com a pasta do projeto aberta.
-- Faça um prompt por vez, na ordem sugerida: P01, P02, P03, P04, P05, P06, depois
-  os de prioridade média e baixa. P01 a P04 mudam a estrutura dos dados; não
-  junte dois deles numa mesma sessão.
-- Depois de cada um: rodar os testes, fazer o QA manual do item e o commit.
+- Faça um prompt por vez. Depois de cada um: rodar os testes, fazer o QA manual
+  do item e o commit.
+- Feitos e removidos daqui: P02 (metas) e P10 (caderno de ideias).
+  Rejeitados e removidos: P01 e P12.
+- A estrutura dos dados está na versão 7: um prompt que mude a estrutura deve
+  criar a versão 8 (SCHEMA_VERSION e SCHEMA_MIGRATIONS em js/database.js).
 - Referência: Pahl, Beitz, Feldhusen, Grote - Engineering Design, 3ª ed.
   (Springer, 2007). As seções citadas estão em cada prompt.
 
+Pendentes, em ordem: P05, P16, P13, P15, P14.
+Rejeitados por hora (guardados caso voltem): P03, P04, P06, P07, P08, P09, P11.
 ------------------------------------------------------------------------------------------
-=== P01 - Exigência ou Desejo (prioridade ALTA) [rejeitado - remover]
+=== P05 - Análise da concorrência (QUASE PRONTO: falta a ligação com as Especificações) [útil]
 
-No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente a
-classificação de requisitos como Exigência ou Desejo, conforme Pahl & Beitz,
-Engineering Design, Seção 5.2.1: exigências são requisitos que devem ser
-cumpridos em qualquer circunstância (se não forem, a solução é inaceitável);
-desejos devem ser atendidos quando possível e são classificados como de
-importância alta, média ou baixa.
+A página pages/avaliacao-competitiva.html (js/avaliacao-competitiva.js) já faz
+a avaliação competitiva completa (notas dos clientes, valores técnicos, gráfico,
+inconsistências, seção no relatório). Os cálculos estão em
+qfdDB.getAnaliseCompetitiva() (js/database.js); cada item de "tecnicos" traz
+"melhor" = { valor, produtos } do melhor concorrente, pelo sentido de melhoria.
 
-O que fazer:
-- Requisitos de projeto e especificações ganham o campo tipo: "E" (exigência)
-  ou "D" (desejo). Desejos ganham importanciaDesejo: "alta" | "media" | "baixa".
-- Cadastro e edição em pages/requisitos-projeto.html e pages/especificacoes.html
-  (onde fizer mais sentido; evite duplicar o dado nos dois lugares).
-- Mostrar "E" ou "D (alta)" nas listas, na tabela de Especificações e no relatório.
-- Dados antigos: migrar todos como "E" (exigência) e avisar isso no README.
-- Filtro na página de Especificações: todas / só exigências / só desejos.
+Falta, no sistema QFD desta pasta (HTML/CSS/JS puro, sem build):
+- Na página de Especificações (js/especificacoes.js), mostrar abaixo do campo
+  "Valor meta" o melhor valor dos concorrentes (ex.: "Melhor concorrente:
+  0,9 kg — Marca B"), só quando houver, usando getAnaliseCompetitiva().
+- Botão "Usar como meta" ao lado, que copia esse valor (formatado com vírgula
+  decimal) para o valor da meta e salva.
+- Indicar na linha se a meta atual está abaixo do melhor concorrente (mesma
+  situação "Atrás" da página de avaliação competitiva).
 
 Critérios de aceite:
-- Um projeto antigo (backup JSON anterior) importa sem erro e fica com tudo "E".
-- O relatório mostra a coluna E/D e a importância dos desejos.
+- Com 2 concorrentes avaliados, as Especificações mostram o melhor valor
+  correto para requisitos ↑ e ↓, e nada para requisitos nominais (*).
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Não muda a estrutura dos dados (não precisa de migração).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Acrescentar testes em tests/testes.js (a página de Especificações já está nos
+  testes de páginas) e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (P05 concluído).
+=== fim P05
+
+------------------------------------------------------------------------------------------
+=== P16 - Usar a dificuldade técnica (prioridade MÉDIA) [útil]
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), os requisitos de
+projeto já têm o campo dificuldadeTecnica (1 a 5), cadastrado em
+js/requisitos-projeto.js, mas ele não aparece na Matriz QFD, nas
+Especificações nem no relatório. Na Casa da Qualidade, a dificuldade técnica
+fica abaixo da importância de cada requisito de projeto e ajuda a decidir
+prioridades e riscos.
+
+O que fazer:
+- Matriz QFD: linha "Dificuldade técnica" abaixo da pontuação/percentual de
+  cada requisito de projeto.
+- Especificações: coluna com a dificuldade e destaque para requisitos de
+  importância alta (terço superior) com dificuldade 4-5 ("atenção: importante
+  e difícil").
+- Relatório: incluir a dificuldade na tabela de requisitos de projeto, na
+  matriz e uma lista "Requisitos críticos" (terço superior + dificuldade >= 4).
+- Não mudar o cálculo dos pesos; é informação complementar.
+
+Critérios de aceite:
+- Um requisito do terço superior com dificuldade 5 aparece como crítico nas
+  Especificações e no relatório.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Não muda a estrutura dos dados (não precisa de migração).
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Acrescentar testes em tests/testes.js e rodar:
+  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P16).
+=== fim P16
+
+------------------------------------------------------------------------------------------
+=== P13 - Estado da técnica e referências (prioridade BAIXA) [útil]
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie o registro do
+estado da técnica conforme Pahl & Beitz, Engineering Design, Seção 3.1.4
+("Determinar o estado da técnica": produtos da empresa, tecnologias, conceitos
+e produtos na literatura e em patentes, produtos dos concorrentes, normas,
+diretrizes e regulamentos) e Seção 5.2.3.
+
+O que fazer:
+- Nova página pages/referencias.html (+ js): referências com tipo ("patente",
+  "norma", "regulamento", "artigo/livro", "produto", "site", "outro"), título,
+  identificação (nº da patente/norma), link, data de consulta e resumo.
+- Ligar referências a requisitos (muitos-para-muitos). No requisito, mostrar as
+  referências ligadas; se P03 existir, uma referência do tipo norma/regulamento
+  pode ser escolhida como origem do requisito.
+- Relatório: seção "Estado da técnica e referências", com a lista e os
+  requisitos que cada uma originou.
+- Links mostrados como texto + link (sem buscar nada na internet).
+
+Critérios de aceite:
+- Uma norma ligada a dois requisitos aparece nos dois e no relatório.
 
 Regras do projeto:
 - Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
 - Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
   SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Nova página: carregar database.js, utils.js e o script da página, nessa
+  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
 - Textos do usuário sempre com escapeHtml / escapeAttr.
 - Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
-- Acrescentar testes em tests/testes.js e rodar:
-  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
-- Atualizar README.md, o guia de uso e o todo.md (marcar P01).
-=== fim P01
+- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
+  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P13).
+=== fim P13
 
 ------------------------------------------------------------------------------------------
-=== P02 - Metas com valor e tolerância (prioridade ALTA) [útil] [FEITO]
+=== P15 - Fechamento: abstração e função global (prioridade BAIXA) [útil]
 
-No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), melhore as metas da
-página de Especificações conforme Pahl & Beitz, Engineering Design, Seções 2.1.2
-e 5.2.1: nenhum requisito está completo sem os aspectos quantitativos e
-qualitativos. Exemplos do livro: "80 bar ± 5 bar", "P > 20 kW", "L < 400 mm".
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie o assistente de
+fechamento do projeto informacional, que prepara a entrada do projeto
+conceitual conforme Pahl & Beitz, Engineering Design:
+- Seção 6.2.3: abstrair a lista de requisitos em 5 passos: (1) eliminar
+  preferências pessoais; (2) omitir requisitos sem relação direta com a função
+  e as restrições essenciais; (3) transformar dados quantitativos em
+  qualitativos e reduzir a declarações essenciais; (4) generalizar; (5)
+  formular o problema de forma neutra em relação à solução (exemplo do livro,
+  Tabela 6.1: medidor de combustível).
+- Seção 6.2.2: ampliar a formulação do problema passo a passo (exemplo de
+  Krick, Figs. 6.2 e 6.3).
+- Seção 6.3.1 e Fig. 2.2: função global como caixa-preta, com entradas e
+  saídas de energia, material e sinais.
 
 O que fazer:
-- Hoje cada especificação tem "unidade" e "valor" (texto livre). Substituir por:
-  tipoMeta: "=" | ">=" | "<=" | "faixa"
-  valor (número), valorMax (só para faixa), tolerancia (± número, opcional),
-  unidade (texto).
-- Sugerir o tipoMeta pelo sentido de melhoria do requisito de projeto
-  (↑ sugere ">=", ↓ sugere "<=", * sugere "=" com tolerância), sem impor.
-- Mostrar a meta formatada: "≥ 20 kW", "80 ± 5 bar", "10 a 12 mm".
-- Validar: valor numérico (aceitar vírgula decimal), valorMax > valor na faixa.
-- Migração: tentar converter o texto antigo de valorUnitario em número; se não
-  der, manter o texto original num campo observacao/metaTexto e marcar a linha
-  como "revisar meta".
-- "Completude" das especificações passa a exigir meta válida + unidade.
+- Nova página pages/fechamento.html (+ js), última etapa antes do Relatório.
+- Passo a passo: mostra as exigências (P01, se existir) e pede ao usuário,
+  para cada passo, que marque/reescreva; guarda o resultado de cada passo.
+- Formulações progressivamente mais amplas do problema (lista ordenada), com a
+  escolhida marcada.
+- Editor da função global: nome da função (verbo + substantivo) e listas de
+  entradas/saídas por tipo (energia, material, sinal); desenho da caixa-preta
+  em SVG (setas contínuas para energia, duplas para material, tracejadas para
+  sinal, como na Fig. 2.4).
+- Relatório: seção "Formulação do problema e função global".
 
 Critérios de aceite:
-- Especificação antiga "1,2" vira tipo "=", valor 1.2; texto "aprox. 3" fica
-  marcado para revisar, sem perder o texto.
-- Relatório e export JSON mostram a meta formatada.
+- O relatório mostra a caixa-preta com as entradas e saídas cadastradas e a
+  formulação final do problema.
 
 Regras do projeto:
 - Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
 - Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
   SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Nova página: carregar database.js, utils.js e o script da página, nessa
+  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
 - Textos do usuário sempre com escapeHtml / escapeAttr.
 - Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
-- Acrescentar testes em tests/testes.js e rodar:
-  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
-- Atualizar README.md, o guia de uso e o todo.md (marcar P02).
-=== fim P02
+- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
+  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P15).
+=== fim P15
+
+------------------------------------------------------------------------------------------
+=== P14 - Módulo de planejamento do produto (prioridade BAIXA) [útil para o futuro]
+
+No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um módulo
+opcional de planejamento do produto conforme Pahl & Beitz, Engineering Design,
+Seção 3.1 e Fig. 3.2 (analisar a situação -> formular estratégias de busca ->
+encontrar ideias de produto -> selecionar -> definir o produto). Ferramentas
+do livro a implementar, cada uma como uma aba da página:
+- Fase do ciclo de vida do produto atual (Fig. 3.1): planejamento,
+  desenvolvimento, introdução, crescimento/maturidade, saturação, declínio.
+- Matriz produto-mercado (Fig. 3.3): produtos existentes/novos x mercados
+  existentes/novos, com os quadrantes I a IV (IV = maior risco).
+- Matriz de portfólio 3x3 (Fig. 3.5): dois fatores escolhidos pelo usuário
+  (ex.: atratividade do mercado x posição tecnológica), zonas de oportunidade,
+  alerta e perigo.
+- Matriz necessidade-competência (Fig. 3.6): necessidades dos clientes x
+  competências da empresa, marcando os campos de busca preferidos.
+- Seleção de ideias de produto com os critérios da Tabela 3.1 (metas da
+  empresa >= 50%, competências da empresa >= 30%, mercado e outros >= 20%),
+  primeiro com sim/não e depois com notas e pesos.
+- A ideia escolhida pode ser enviada para a "Definição do projeto" (P06), se
+  existir.
+
+Critérios de aceite:
+- Os pesos da Tabela 3.1 são validados (somam 100% e respeitam os mínimos) e a
+  ideia com maior nota aparece em destaque.
+
+Regras do projeto:
+- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
+- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
+  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
+- Nova página: carregar database.js, utils.js e o script da página, nessa
+  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
+- Gráficos em SVG simples, sem biblioteca externa.
+- Textos do usuário sempre com escapeHtml / escapeAttr.
+- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
+- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
+  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+- Atualizar README.md, o guia de uso e o todo.md (marcar P14).
+=== fim P14
 
 ------------------------------------------------------------------------------------------
 === P03 - Origem, responsável e revisões da lista (prioridade ALTA) [rejeitar por hora]
@@ -343,38 +487,6 @@ Regras do projeto:
   powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 - Atualizar README.md, o guia de uso e o todo.md (marcar P04).
 === fim P04
-
-------------------------------------------------------------------------------------------
-=== P05 - Análise da concorrência (QUASE PRONTO: falta a ligação com as Especificações) [útil]
-
-A página pages/avaliacao-competitiva.html (js/avaliacao-competitiva.js) já faz
-a avaliação competitiva completa (notas dos clientes, valores técnicos, gráfico,
-inconsistências, seção no relatório). Os cálculos estão em
-qfdDB.getAnaliseCompetitiva() (js/database.js); cada item de "tecnicos" traz
-"melhor" = { valor, produtos } do melhor concorrente, pelo sentido de melhoria.
-
-Falta, no sistema QFD desta pasta (HTML/CSS/JS puro, sem build):
-- Na página de Especificações (js/especificacoes.js), mostrar abaixo do campo
-  "Valor unitário" o melhor valor dos concorrentes (ex.: "Melhor concorrente:
-  0,9 kg — Marca B"), só quando houver, usando getAnaliseCompetitiva().
-- Botão "Usar como meta" ao lado, que copia esse valor (formatado com vírgula
-  decimal) para o valor unitário e salva.
-- Indicar na linha se a meta atual está abaixo do melhor concorrente (mesma
-  situação "Atrás" da página de avaliação competitiva).
-
-Critérios de aceite:
-- Com 2 concorrentes avaliados, as Especificações mostram o melhor valor
-  correto para requisitos ↑ e ↓, e nada para requisitos nominais (*).
-
-Regras do projeto:
-- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
-- Não muda a estrutura dos dados (não precisa de migração).
-- Textos do usuário sempre com escapeHtml / escapeAttr.
-- Acrescentar testes em tests/testes.js (a página de Especificações já está nos
-  testes de páginas) e rodar:
-  powershell -ExecutionPolicy Bypass -File testsodar-testes.ps1
-- Atualizar README.md, o guia de uso e o todo.md (P05 concluído).
-=== fim P05
 
 ------------------------------------------------------------------------------------------
 === P06 - Definição do projeto (prioridade ALTA) [rejeitado por hora]
@@ -531,44 +643,6 @@ Regras do projeto:
 === fim P09
 
 ------------------------------------------------------------------------------------------
-=== P10 - Caderno de ideias de solução (prioridade MÉDIA) [útil]
-
-No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um caderno de
-ideias conforme Pahl & Beitz, Engineering Design, Seção 5.4: durante o
-levantamento dos requisitos surgem funções e ideias de solução; elas devem ser
-registradas para uso posterior na busca sistemática de soluções, mas NÃO devem
-entrar na lista de requisitos (para não enviesá-la). A análise de falhas de
-produtos existentes também é fonte de requisitos, que devem ser formulados de
-forma neutra.
-
-O que fazer:
-- Nova página pages/ideias.html (+ js): ideias com título, descrição, autor,
-  data, requisitos relacionados (cliente e/ou projeto) e status ("nova",
-  "promissora", "descartada").
-- Botão "Registrar ideia" acessível nas páginas de requisitos (abre um cadastro
-  rápido já ligado ao requisito em edição).
-- Registro de falhas conhecidas (de produtos anteriores/concorrentes): falha,
-  causa, e botão "Criar requisito neutro a partir desta falha".
-- Relatório: anexo "Ideias de solução registradas" e "Falhas analisadas".
-
-Critérios de aceite:
-- Uma ideia ligada a um requisito aparece no requisito (contador) e no anexo do
-  relatório; não aparece em nenhuma tabela de requisitos.
-
-Regras do projeto:
-- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
-- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
-  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
-- Nova página: carregar database.js, utils.js e o script da página, nessa
-  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
-- Textos do usuário sempre com escapeHtml / escapeAttr.
-- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
-- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
-  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
-- Atualizar README.md, o guia de uso e o todo.md (marcar P10).
-=== fim P10
-
-------------------------------------------------------------------------------------------
 === P11 - Requisitos de restrição (prioridade BAIXA) [rejeitado por hora]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente
@@ -603,199 +677,4 @@ Regras do projeto:
 - Atualizar README.md, o guia de uso e o todo.md (marcar P11).
 === fim P11
 
-------------------------------------------------------------------------------------------
-=== P12 - Listas parciais por departamento (prioridade BAIXA) [rejeitado]
-
-No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente listas
-parciais de requisitos conforme Pahl & Beitz, Engineering Design, Seção 5.3.2
-e Fig. 5.6: cada área (cliente/vendas, produção, distribuição, desenvolvimento,
-projeto) prepara sua lista parcial, e a lista do produto é a compilação delas;
-cabe à gerência do projeto garantir que as listas parciais cubram tudo e sejam
-compatíveis entre si.
-
-O que fazer:
-- Requisitos (cliente e projeto) ganham departamento (lista editável de
-  departamentos do projeto).
-- Filtro por departamento em todas as listas e nas Especificações.
-- Exportar/importar a lista parcial de um departamento (JSON ou CSV), para que
-  cada área preencha a sua e depois se junte ao projeto; na importação,
-  detectar duplicados e possíveis conflitos (mesmo requisito com metas
-  diferentes) e mostrar para decisão.
-- Relatório: opção de agrupar por departamento e resumo de quantos requisitos
-  cada área contribuiu.
-
-Critérios de aceite:
-- Importar a lista parcial de "Produção" com um requisito já existente mostra
-  o conflito em vez de duplicar.
-
-Regras do projeto:
-- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js
-  (parseCSV já existe lá).
-- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
-  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
-- Textos do usuário sempre com escapeHtml / escapeAttr.
-- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
-- Acrescentar testes em tests/testes.js e rodar:
-  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
-- Atualizar README.md, o guia de uso e o todo.md (marcar P12).
-=== fim P12
-
-------------------------------------------------------------------------------------------
-=== P13 - Estado da técnica e referências (prioridade BAIXA) [útil]
-
-No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie o registro do
-estado da técnica conforme Pahl & Beitz, Engineering Design, Seção 3.1.4
-("Determinar o estado da técnica": produtos da empresa, tecnologias, conceitos
-e produtos na literatura e em patentes, produtos dos concorrentes, normas,
-diretrizes e regulamentos) e Seção 5.2.3.
-
-O que fazer:
-- Nova página pages/referencias.html (+ js): referências com tipo ("patente",
-  "norma", "regulamento", "artigo/livro", "produto", "site", "outro"), título,
-  identificação (nº da patente/norma), link, data de consulta e resumo.
-- Ligar referências a requisitos (muitos-para-muitos). No requisito, mostrar as
-  referências ligadas; se P03 existir, uma referência do tipo norma/regulamento
-  pode ser escolhida como origem do requisito.
-- Relatório: seção "Estado da técnica e referências", com a lista e os
-  requisitos que cada uma originou.
-- Links mostrados como texto + link (sem buscar nada na internet).
-
-Critérios de aceite:
-- Uma norma ligada a dois requisitos aparece nos dois e no relatório.
-
-Regras do projeto:
-- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
-- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
-  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
-- Nova página: carregar database.js, utils.js e o script da página, nessa
-  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
-- Textos do usuário sempre com escapeHtml / escapeAttr.
-- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
-- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
-  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
-- Atualizar README.md, o guia de uso e o todo.md (marcar P13).
-=== fim P13
-
-------------------------------------------------------------------------------------------
-=== P14 - Módulo de planejamento do produto (prioridade BAIXA) [útil para o futuro]
-
-No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um módulo
-opcional de planejamento do produto conforme Pahl & Beitz, Engineering Design,
-Seção 3.1 e Fig. 3.2 (analisar a situação -> formular estratégias de busca ->
-encontrar ideias de produto -> selecionar -> definir o produto). Ferramentas
-do livro a implementar, cada uma como uma aba da página:
-- Fase do ciclo de vida do produto atual (Fig. 3.1): planejamento,
-  desenvolvimento, introdução, crescimento/maturidade, saturação, declínio.
-- Matriz produto-mercado (Fig. 3.3): produtos existentes/novos x mercados
-  existentes/novos, com os quadrantes I a IV (IV = maior risco).
-- Matriz de portfólio 3x3 (Fig. 3.5): dois fatores escolhidos pelo usuário
-  (ex.: atratividade do mercado x posição tecnológica), zonas de oportunidade,
-  alerta e perigo.
-- Matriz necessidade-competência (Fig. 3.6): necessidades dos clientes x
-  competências da empresa, marcando os campos de busca preferidos.
-- Seleção de ideias de produto com os critérios da Tabela 3.1 (metas da
-  empresa >= 50%, competências da empresa >= 30%, mercado e outros >= 20%),
-  primeiro com sim/não e depois com notas e pesos.
-- A ideia escolhida pode ser enviada para a "Definição do projeto" (P06), se
-  existir.
-
-Critérios de aceite:
-- Os pesos da Tabela 3.1 são validados (somam 100% e respeitam os mínimos) e a
-  ideia com maior nota aparece em destaque.
-
-Regras do projeto:
-- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
-- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
-  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
-- Nova página: carregar database.js, utils.js e o script da página, nessa
-  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
-- Gráficos em SVG simples, sem biblioteca externa.
-- Textos do usuário sempre com escapeHtml / escapeAttr.
-- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
-- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
-  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
-- Atualizar README.md, o guia de uso e o todo.md (marcar P14).
-=== fim P14
-
-------------------------------------------------------------------------------------------
-=== P15 - Fechamento: abstração e função global (prioridade BAIXA) [útil]
-
-No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie o assistente de
-fechamento do projeto informacional, que prepara a entrada do projeto
-conceitual conforme Pahl & Beitz, Engineering Design:
-- Seção 6.2.3: abstrair a lista de requisitos em 5 passos: (1) eliminar
-  preferências pessoais; (2) omitir requisitos sem relação direta com a função
-  e as restrições essenciais; (3) transformar dados quantitativos em
-  qualitativos e reduzir a declarações essenciais; (4) generalizar; (5)
-  formular o problema de forma neutra em relação à solução (exemplo do livro,
-  Tabela 6.1: medidor de combustível).
-- Seção 6.2.2: ampliar a formulação do problema passo a passo (exemplo de
-  Krick, Figs. 6.2 e 6.3).
-- Seção 6.3.1 e Fig. 2.2: função global como caixa-preta, com entradas e
-  saídas de energia, material e sinais.
-
-O que fazer:
-- Nova página pages/fechamento.html (+ js), última etapa antes do Relatório.
-- Passo a passo: mostra as exigências (P01, se existir) e pede ao usuário,
-  para cada passo, que marque/reescreva; guarda o resultado de cada passo.
-- Formulações progressivamente mais amplas do problema (lista ordenada), com a
-  escolhida marcada.
-- Editor da função global: nome da função (verbo + substantivo) e listas de
-  entradas/saídas por tipo (energia, material, sinal); desenho da caixa-preta
-  em SVG (setas contínuas para energia, duplas para material, tracejadas para
-  sinal, como na Fig. 2.4).
-- Relatório: seção "Formulação do problema e função global".
-
-Critérios de aceite:
-- O relatório mostra a caixa-preta com as entradas e saídas cadastradas e a
-  formulação final do problema.
-
-Regras do projeto:
-- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
-- Mudou a estrutura dos dados: incremente SCHEMA_VERSION e crie a migração em
-  SCHEMA_MIGRATIONS (dados e backups antigos devem continuar funcionando).
-- Nova página: carregar database.js, utils.js e o script da página, nessa
-  ordem; usar o mesmo menu das outras páginas; incluir no Dashboard.
-- Textos do usuário sempre com escapeHtml / escapeAttr.
-- Incluir o novo dado no export/import JSON e no relatório (js/relatorio.js).
-- Acrescentar a página aos testes de páginas e novos testes em tests/testes.js;
-  rodar: powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
-- Atualizar README.md, o guia de uso e o todo.md (marcar P15).
-=== fim P15
-
-------------------------------------------------------------------------------------------
-=== P16 - Usar a dificuldade técnica (prioridade MÉDIA) [útil]
-
-No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), os requisitos de
-projeto já têm o campo dificuldadeTecnica (1 a 5), cadastrado em
-js/requisitos-projeto.js, mas ele não aparece na Matriz QFD, nas
-Especificações nem no relatório. Na Casa da Qualidade, a dificuldade técnica
-fica abaixo da importância de cada requisito de projeto e ajuda a decidir
-prioridades e riscos.
-
-O que fazer:
-- Matriz QFD: linha "Dificuldade técnica" abaixo da pontuação/percentual de
-  cada requisito de projeto.
-- Especificações: coluna com a dificuldade e destaque para requisitos de
-  importância alta (terço superior) com dificuldade 4-5 ("atenção: importante
-  e difícil").
-- Relatório: incluir a dificuldade na tabela de requisitos de projeto, na
-  matriz e uma lista "Requisitos críticos" (terço superior + dificuldade >= 4).
-- Não mudar o cálculo dos pesos; é informação complementar.
-
-Critérios de aceite:
-- Um requisito do terço superior com dificuldade 5 aparece como crítico nas
-  Especificações e no relatório.
-
-Regras do projeto:
-- Dados só via qfdDB (js/database.js); funções compartilhadas em js/utils.js.
-- Não muda a estrutura dos dados (não precisa de migração).
-- Textos do usuário sempre com escapeHtml / escapeAttr.
-- Acrescentar testes em tests/testes.js e rodar:
-  powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
-- Atualizar README.md, o guia de uso e o todo.md (marcar P16).
-=== fim P16
-
 ==========================================================================================
-ver depois
-

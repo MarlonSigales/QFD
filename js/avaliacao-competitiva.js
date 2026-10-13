@@ -15,6 +15,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('form-concorrente').addEventListener('submit', handleAddConcorrente);
+    document.getElementById('form-indice').addEventListener('submit', handleAddIndice);
     loadPage();
 });
 
@@ -31,6 +32,7 @@ function loadPage() {
         renderProdutos(analise);
         renderClientes(analise);
         renderTecnicos(analise);
+        renderIndices(analise);
         updateComputed(analise);
     } catch (err) {
         console.error('Erro ao carregar a avaliação competitiva:', err);
@@ -280,6 +282,119 @@ function renderTecnicos(analise) {
 }
 
 // ============================================================================
+// ÍNDICES
+// ============================================================================
+
+const SENTIDOS_INDICE = [['up', '↑'], ['down', '↓'], ['none', '*']];
+
+function handleAddIndice(event) {
+    event.preventDefault();
+    const campo = id => document.getElementById(id);
+    try {
+        qfdDB.addIndice({
+            nome: campo('indice-nome').value, formula: campo('indice-formula').value,
+            unidade: campo('indice-unidade').value, sentido: campo('indice-sentido').value
+        });
+        ['indice-nome', 'indice-formula', 'indice-unidade'].forEach(id => { campo(id).value = ''; });
+        const analise = qfdDB.getAnaliseCompetitiva();
+        renderIndices(analise);
+        updateComputed(analise);
+    } catch (err) {
+        showToast(err.message, 'warning');
+    }
+}
+
+function renderIndices(analise) {
+    const tbody = document.getElementById('indices-tbody');
+    const thead = document.getElementById('indices-thead');
+    tbody.innerHTML = '';
+    if (!analise.indices.length) {
+        thead.innerHTML = '';
+        tbody.innerHTML = '<tr><td class="competitiva-hint">Nenhum índice. Crie um abaixo.</td></tr>';
+        return;
+    }
+    montarCabecalho('indices-thead', ['Índice', 'Fórmula', 'Unidade', 'Sentido'], analise.produtos,
+        ['Melhor concorrente', 'Nosso × melhor', '']);
+
+    analise.indices.forEach(x => {
+        const tr = document.createElement('tr');
+        tr.dataset.indiceId = x.indice.id;
+        const salvar = (campo, input) => {
+            try {
+                qfdDB.updateIndice(x.indice.id, { [campo]: input.value });
+                input.classList.remove('spec-input-erro');
+                updateComputed();
+            } catch (err) {
+                input.classList.add('spec-input-erro');
+                showToast(err.message, 'warning');
+            }
+        };
+        const texto = (campo, valor, classe) => {
+            const td = document.createElement('td');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = `form-control ${classe}`;
+            input.value = valor;
+            input.addEventListener('change', () => salvar(campo, input));
+            td.appendChild(input);
+            return td;
+        };
+        tr.appendChild(texto('nome', x.indice.nome, 'indice-nome-input'));
+        const tdFormula = texto('formula', x.formula, 'indice-formula-input');
+        if (x.formula.includes('RP?')) tdFormula.title = 'Um requisito usado na fórmula foi excluído ou saiu do QFD';
+        tr.appendChild(tdFormula);
+        tr.appendChild(texto('unidade', x.indice.unidade, 'indice-unidade-input'));
+
+        const tdSentido = document.createElement('td');
+        const select = document.createElement('select');
+        select.className = 'form-control nota-select';
+        SENTIDOS_INDICE.forEach(([v, t]) => {
+            const opt = document.createElement('option');
+            opt.value = v; opt.textContent = t;
+            select.appendChild(opt);
+        });
+        select.value = x.indice.sentido;
+        select.addEventListener('change', () => salvar('sentido', select));
+        tdSentido.appendChild(select);
+        tr.appendChild(tdSentido);
+
+        analise.produtos.forEach(p => {
+            const td = document.createElement('td');
+            td.className = 'i-valor';
+            td.dataset.produtoId = p.id;
+            tr.appendChild(td);
+        });
+        ['i-melhor', 'i-situacao'].forEach(cls => {
+            const td = document.createElement('td');
+            td.className = cls;
+            tr.appendChild(td);
+        });
+
+        const tdRemover = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-icon btn-delete';
+        btn.title = 'Remover índice';
+        btn.innerHTML = '<i class="fas fa-trash"></i>';
+        btn.addEventListener('click', () => {
+            if (!confirm(`Remover o índice "${x.indice.nome}"?`)) return;
+            qfdDB.removeIndice(x.indice.id);
+            const analiseNova = qfdDB.getAnaliseCompetitiva();
+            renderIndices(analiseNova);
+            updateComputed(analiseNova);
+        });
+        tdRemover.appendChild(btn);
+        tr.appendChild(tdRemover);
+        tbody.appendChild(tr);
+    });
+}
+
+/** Valor de índice formatado (até 3 casas) ou "—" */
+function formatarIndice(valor) {
+    return valor === null || valor === undefined ? '—' : formatarNumero(Math.round(valor * 1000) / 1000);
+}
+
+// ============================================================================
 // COLUNAS CALCULADAS, GRÁFICO E RESULTADO
 // ============================================================================
 
@@ -316,6 +431,23 @@ function updateComputed(analise) {
             melhor.textContent = t.requisito.sentidoMelhoria === 'none' ? 'nominal' : '—';
         }
         tr.querySelector('.t-situacao').innerHTML = situacaoHtml(t.situacao);
+    });
+
+    analise.indices.forEach(x => {
+        const tr = document.querySelector(`#indices-tbody tr[data-indice-id="${CSS.escape(x.indice.id)}"]`);
+        if (!tr) return;
+        tr.querySelectorAll('.i-valor').forEach(td => { td.textContent = formatarIndice(x.valores[td.dataset.produtoId]); });
+        const melhor = tr.querySelector('.i-melhor');
+        if (x.melhor) {
+            melhor.textContent = formatarIndice(x.melhor.valor);
+            const quem = document.createElement('small');
+            quem.className = 'competitiva-quem';
+            quem.textContent = x.melhor.produtos.join(', ');
+            melhor.appendChild(quem);
+        } else {
+            melhor.textContent = x.indice.sentido === 'none' ? 'só comparar' : '—';
+        }
+        tr.querySelector('.i-situacao').innerHTML = situacaoHtml(x.situacao);
     });
 
     document.getElementById('grafico-clientes').innerHTML = buildGraficoCompetitivo(analise) ||
@@ -359,6 +491,17 @@ function exportAvaliacaoCSV() {
             getSituacaoCompetitiva(t.situacao).texto
         ].join(',') + '\n';
     });
+    if (analise.indices.length) {
+        csv += `\nÍndices\nÍndice,Fórmula,Unidade,Sentido,${nomes},Melhor concorrente,Nosso × melhor\n`;
+        analise.indices.forEach(x => {
+            csv += [
+                csvCell(x.indice.nome), csvCell(x.formula), csvCell(x.indice.unidade), getSentidoLabel(x.indice.sentido),
+                ...analise.produtos.map(p => x.valores[p.id] === null ? '' : csvCell(formatarIndice(x.valores[p.id]))),
+                x.melhor ? csvCell(`${formatarIndice(x.melhor.valor)} (${x.melhor.produtos.join(', ')})`) : '',
+                getSituacaoCompetitiva(x.situacao).texto
+            ].join(',') + '\n';
+        });
+    }
     downloadFile('﻿' + csv, 'avaliacao-competitiva.csv', 'text/csv;charset=utf-8');
 }
 

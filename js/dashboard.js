@@ -24,6 +24,7 @@
  * Configura atualização automática e menu dropdown
  */
 document.addEventListener('DOMContentLoaded', function() {
+    setupProjeto();
     updateDashboard();
     
     // Atualiza dashboard a cada 5 segundos se a página estiver ativa
@@ -75,6 +76,12 @@ function updateDashboard() {
 
     // Atendimento: % ponderado dos requisitos de cliente com metas medidas
     const atendimento = qfdDB.getAnaliseAtendimento(false).atendimentoGeral;
+    const nIdeias = qfdDB.getIdeias().length, nFalhas = qfdDB.getFalhas().length;
+    const countIdeias = document.getElementById('count-ideias');
+    if (countIdeias) {
+        countIdeias.textContent = `${nIdeias} ideia${nIdeias === 1 ? '' : 's'} · ${nFalhas} falha${nFalhas === 1 ? '' : 's'}`;
+        document.getElementById('status-ideias').textContent = nIdeias + nFalhas ? 'Em uso' : 'Nenhum registro';
+    }
     updateProgressCard('atendimento', atendimento === null ? 0 : Math.round(atendimento * 100), '% atendido');
     
     // Atualiza status do relatório
@@ -401,3 +408,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ========================================================================
+// DADOS DO PROJETO (nome e e-mails dos envolvidos)
+// ========================================================================
+
+function setupProjeto() {
+    const nome = document.getElementById('projeto-nome');
+    const emails = document.getElementById('projeto-emails');
+    const aviso = document.getElementById('projeto-emails-aviso');
+    if (!nome || !emails) return;
+
+    const projeto = qfdDB.getProjeto();
+    nome.value = projeto.nome;
+    emails.value = projeto.emails.join(', ');
+    const textoAviso = aviso.textContent;
+
+    nome.addEventListener('change', () => {
+        qfdDB.setProjeto({ nome: nome.value });
+        const topo = document.getElementById('topbar-projeto-nome');
+        if (topo) topo.textContent = qfdDB.getProjeto().nome || 'Projeto sem nome';
+    });
+    emails.addEventListener('change', () => {
+        try {
+            const salvo = qfdDB.setProjeto({ emails: emails.value });
+            emails.value = salvo.emails.join(', ');
+            emails.classList.remove('spec-input-erro');
+            aviso.textContent = textoAviso;
+            aviso.classList.remove('projeto-aviso-erro');
+        } catch (err) {
+            emails.classList.add('spec-input-erro');
+            aviso.textContent = err.message;
+            aviso.classList.add('projeto-aviso-erro');
+        }
+    });
+
+    const btnCompartilhar = document.getElementById('btn-compartilhar');
+    if (btnCompartilhar && podeCompartilharArquivo()) btnCompartilhar.style.display = '';
+}

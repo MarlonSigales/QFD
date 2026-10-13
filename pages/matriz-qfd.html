@@ -9,62 +9,67 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <h1><i class="fas fa-table"></i> Matriz QFD</h1>
-            <p>Casa da Qualidade - Relacione requisitos de cliente com requisitos de projeto</p>
-        </div>
-    </header>
 
-    <nav class="navbar">
-        <div class="container">
-            <ul class="nav-menu">
-                <li><a href="../index.html"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li class="nav-dropdown">
-                    <a href="#" class="dropdown-toggle"><i class="fas fa-list"></i> Menu <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
-                    <div class="dropdown-menu">
-                        <a href="requisitos-cliente.html"><i class="fas fa-users"></i> Requisitos Cliente</a>
-                        <a href="comparacao-cliente.html"><i class="fas fa-balance-scale"></i> Comparação Cliente</a>
-                        <a href="requisitos-projeto.html"><i class="fas fa-project-diagram"></i> Requisitos Projeto</a>
-                        <a href="correlacao-projeto.html"><i class="fas fa-network-wired"></i> Correlação Projeto</a>
-                        <a href="matriz-qfd.html"><i class="fas fa-table"></i> Matriz QFD</a>
-                        <a href="especificacoes.html"><i class="fas fa-clipboard-list"></i> Especificações</a>
-                        <a href="avaliacao-competitiva.html"><i class="fas fa-chart-line"></i> Avaliação Competitiva</a>
-                        <a href="atendimento-requisitos.html"><i class="fas fa-check-double"></i> Atendimento aos Requisitos</a>
-                        <a href="relatorio.html"><i class="fas fa-file-pdf"></i> Relatório PDF</a>
-                    </div>
-                </li>
-                <li class="nav-dropdown">
-                    <a href="#" class="dropdown-toggle"><i class="fas fa-database"></i> Backup & Export <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
-                    <div class="dropdown-menu">
-                        <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
-                        <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
-                        <hr>
-                        <a href="#" onclick="document.getElementById('import-csv-cliente').click()"><i class="fas fa-file-csv"></i> Importar Req. Cliente (CSV)</a>
-                        <a href="#" onclick="document.getElementById('import-csv-projeto').click()"><i class="fas fa-file-csv"></i> Importar Req. Projeto (CSV)</a>
-                        <hr>
-                        <a href="#" onclick="exportPageData('cliente')"><i class="fas fa-file-export"></i> Exportar Req. Cliente</a>
-                        <a href="#" onclick="exportPageData('projeto')"><i class="fas fa-file-export"></i> Exportar Req. Projeto</a>
-                        <a href="#" onclick="exportPageData('matriz')"><i class="fas fa-file-export"></i> Exportar Matriz QFD</a>
-                    </div>
-                </li>
-                <li class="nav-spacer"></li>
-                <li>
-                    <div class="nav-page-actions">
-                        <a href="correlacao-projeto.html" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Correlação
-                        </a>
-                        <a href="especificacoes.html" class="btn btn-primary" id="btn-proximo">
-                            Especificações <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                </li>
-            </ul>
-            <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
-            <input type="file" id="import-csv-cliente" style="display: none;" onchange="importCSV(event, 'cliente')" accept=".csv">
-            <input type="file" id="import-csv-projeto" style="display: none;" onchange="importCSV(event, 'projeto')" accept=".csv">
+    <header class="topbar">
+        <button type="button" class="sidebar-toggle" aria-label="Abrir o menu" aria-controls="sidebar" aria-expanded="false"><i class="fas fa-bars"></i></button>
+        <a href="../index.html" class="topbar-marca" title="Dashboard">
+            <img src="../img/logo-inovaagro.png" alt="EMBRAPII - Inova Agro" height="34">
+            <span>Sistema QFD</span>
+        </a>
+        <span class="topbar-projeto" title="Nome do projeto (editar no Dashboard)"><i class="fas fa-folder-open"></i> <span id="topbar-projeto-nome">Projeto</span></span>
+        <span class="topbar-selo" title="Os dados ficam salvos neste navegador; exporte o backup para levar a outro computador"><i class="fas fa-globe"></i> guardado no navegador</span>
+        <div class="topbar-acoes">
+            <div class="nav-page-actions">
+                <a href="correlacao-projeto.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Correlação
+                </a>
+                <a href="especificacoes.html" class="btn btn-primary" id="btn-proximo">
+                    Especificações <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="nav-dropdown topbar-backup">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-database"></i> <span class="topbar-rotulo">Backup &amp; Export</span> <i class="fas fa-chevron-down topbar-seta"></i></a>
+                <div class="dropdown-menu">
+                    <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
+                    <a href="#" onclick="exportarEEnviarEmail()"><i class="fas fa-envelope"></i> Exportar e enviar por e-mail</a>
+                    <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
+                    <hr>
+                    <a href="#" onclick="document.getElementById('import-csv-cliente').click()"><i class="fas fa-file-csv"></i> Importar Req. Cliente (CSV)</a>
+                    <a href="#" onclick="document.getElementById('import-csv-projeto').click()"><i class="fas fa-file-csv"></i> Importar Req. Projeto (CSV)</a>
+                    <hr>
+                    <a href="#" onclick="exportPageData('cliente')"><i class="fas fa-file-export"></i> Exportar Req. Cliente</a>
+                    <a href="#" onclick="exportPageData('projeto')"><i class="fas fa-file-export"></i> Exportar Req. Projeto</a>
+                    <a href="#" onclick="exportPageData('matriz')"><i class="fas fa-file-export"></i> Exportar Matriz QFD</a>
+                </div>
+            </div>
         </div>
-    </nav>
+        <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
+        <input type="file" id="import-csv-cliente" style="display: none;" onchange="importCSV(event, 'cliente')" accept=".csv">
+        <input type="file" id="import-csv-projeto" style="display: none;" onchange="importCSV(event, 'projeto')" accept=".csv">
+    </header>
+    <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <nav aria-label="Etapas do QFD">
+            <a href="../index.html" class="sidebar-link" title="Dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <div class="sidebar-grupo">Etapas do QFD</div>
+            <a href="requisitos-cliente.html" class="sidebar-link" title="Requisitos de Cliente"><span class="sidebar-num">1</span><span>Requisitos de Cliente</span></a>
+            <a href="comparacao-cliente.html" class="sidebar-link" title="Comparação (Mudge)"><span class="sidebar-num">2</span><span>Comparação (Mudge)</span></a>
+            <a href="requisitos-projeto.html" class="sidebar-link" title="Requisitos de Projeto"><span class="sidebar-num">3</span><span>Requisitos de Projeto</span></a>
+            <a href="correlacao-projeto.html" class="sidebar-link" title="Correlação (telhado)"><span class="sidebar-num">4</span><span>Correlação (telhado)</span></a>
+            <a href="matriz-qfd.html" class="sidebar-link ativo" aria-current="page" title="Matriz QFD"><span class="sidebar-num">5</span><span>Matriz QFD</span></a>
+            <a href="especificacoes.html" class="sidebar-link" title="Especificações"><span class="sidebar-num">6</span><span>Especificações</span></a>
+            <a href="avaliacao-competitiva.html" class="sidebar-link" title="Avaliação Competitiva"><span class="sidebar-num">7</span><span>Avaliação Competitiva</span></a>
+            <a href="atendimento-requisitos.html" class="sidebar-link" title="Atendimento"><span class="sidebar-num">8</span><span>Atendimento</span></a>
+            <a href="relatorio.html" class="sidebar-link" title="Relatório"><span class="sidebar-num">9</span><span>Relatório</span></a>
+            <div class="sidebar-grupo">Apoio</div>
+            <a href="ideias.html" class="sidebar-link" title="Caderno de Ideias"><i class="fas fa-lightbulb"></i><span>Caderno de Ideias</span></a>
+        </nav>
+    </aside>
+        <div class="app-conteudo">
+            <div class="page-titulo">
+                <h1><i class="fas fa-table"></i> Matriz QFD</h1>
+                <p>Casa da Qualidade - Relacione requisitos de cliente com requisitos de projeto</p>
+            </div>
 
     <main class="main-content">
         <div class="container">
@@ -172,7 +177,6 @@
                     </div>
                 </div>
             </div>
-
 
             <!-- Modal de Preenchimento Instantâneo -->
             <div id="influence-modal" class="modal">
@@ -289,6 +293,11 @@
 
     <footer class="footer">
         <div class="container">
+            <div class="footer-logos">
+                <img src="../img/logo-inovaagro.png" alt="EMBRAPII - Inova Agro - UFPel" height="64">
+                <img src="../img/logo-nimeq.png" alt="NIMEq" height="64">
+                <img src="../img/logo-instagri.png" alt="Laboratório de Instrumentação Agrícola - UFPel" height="64">
+            </div>
             <p>&copy; 2026 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
             <p class="footer-credits">
                 <strong>Desenvolvedor:</strong> Marlon Soares Sigales<br>
@@ -301,6 +310,8 @@
             </p>
         </div>
     </footer>
+        </div>
+    </div>
 
     <script src="../js/database.js"></script>
     <script src="../js/utils.js"></script>

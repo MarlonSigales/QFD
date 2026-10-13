@@ -31,6 +31,13 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
 | 7 | Avaliação Competitiva | Depois do QFD: notas dos clientes (1 a 5) para o nosso produto e os concorrentes, meta, índice de melhoria e prioridade; valores técnicos medidos de cada produto comparados com as metas das especificações; gráfico, pontos fortes, pontos a melhorar e inconsistências |
 | 8 | Atendimento aos Requisitos | Quanto os requisitos de projeto atendem a cada requisito de cliente: cobertura na matriz, metas atingidas (valor medido × meta) e diagnóstico |
 | 9 | Relatório PDF | Relatório configurável com as seções escolhidas, prévia e geração de PDF |
+| — | Caderno de Ideias | Ideias de solução (ligadas a requisitos, com status) e falhas analisadas de produtos existentes, que geram requisitos neutros; fora da lista de requisitos (Pahl & Beitz, 5.4). Botão 💡 em cada requisito para registro rápido; anexo no relatório |
+
+**Aparência:** mesma identidade visual do Gestão de Projetos (Inova Agro): barra superior branca com logo, nome do projeto e menu Backup & Export; barra lateral teal com as etapas numeradas; cores em variáveis CSS (`--qfd-teal`, `--qfd-verde`, `--qfd-limao`...) no início de `css/style.css`. Em telas estreitas a barra lateral abre pelo botão ☰.
+
+**Projeto e envio por e-mail:** no Dashboard ficam o nome do projeto e os e-mails dos envolvidos. "Exportar e enviar por e-mail" (também no menu Backup & Export) baixa o backup JSON e abre o programa de e-mail com os envolvidos e o assunto `qfd - <nome do projeto>`; o arquivo precisa ser anexado à mão, porque links de e-mail não levam anexo. Onde o navegador permite compartilhar arquivos, o botão "Compartilhar" já envia o JSON anexado. O nome do projeto também preenche o título do relatório.
+
+**Requisitos fora do QFD:** no cadastro (cliente ou projeto), o "Tipo de requisito" pode ser *formador de função* ou *boa prática de projeto (intenção)*, com justificativa obrigatória. O requisito continua cadastrado, mas sai da comparação, do telhado, da matriz, das especificações, da avaliação competitiva e do atendimento, e aparece na seção "Requisitos fora do QFD" do relatório. As comparações e relações já feitas ficam guardadas e voltam a valer se a marcação for retirada. A numeração RC/RP das matrizes conta só os requisitos que estão no QFD.
 
 **Textos explicativos:** o texto cadastrado em cada requisito aparece num balão ao passar o mouse sobre ele na comparação, na correlação, na matriz e no relatório. O texto das especificações aparece no relatório.
 
@@ -44,6 +51,7 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
   - *Índice de melhoria* = meta ÷ nossa nota; *prioridade* = peso × índice de melhoria (1 se não houver meta), normalizada para somar 100%.
   - *Melhor concorrente técnico*: maior valor se o sentido é ↑, menor se é ↓; requisitos nominais (\*) não são comparados. A meta da especificação é comparada com esse valor (num intervalo, o limite menos exigente: o mínimo para ↑, o máximo para ↓).
 - **Meta atingida** (atendimento): `≥` medido ≥ meta; `≤` medido ≤ meta; intervalo: dentro dele; `=`: dentro da tolerância ± informada (sem tolerância, ±5% da meta).
+  - *Índices*: fórmulas entre requisitos de projeto (`RP2 / RP1`, `(RP3 - RP4) * 100`; + − * / e parênteses), calculadas para cada produto a partir dos valores técnicos. A fórmula é guardada com o ID dos requisitos, então continua certa se a numeração mudar. Com sentido ↑/↓, o melhor concorrente e a situação do nosso produto são indicados.
   - *Inconsistência* (avaliação competitiva): os clientes dão nota maior a um produto, mas todos os requisitos de projeto com relação forte (9) com aquele requisito têm valores técnicos melhores no outro produto. Indica erro de medição, de nota ou um requisito de projeto faltando.
 
 - **Atendimento aos requisitos:**
@@ -79,6 +87,7 @@ QFD/
 │   ├── especificacoes.js
 │   ├── avaliacao-competitiva.js
 │   ├── atendimento-requisitos.js
+│   ├── ideias.js               # Caderno de ideias e falhas analisadas
 │   └── relatorio.js            # Relatório e PDF (jsPDF + html2canvas)
 ├── pages/                      # Uma página HTML por etapa
 └── tests/
@@ -95,8 +104,10 @@ Tudo fica numa única chave do LocalStorage, `qfd_data`:
 
 ```javascript
 {
-  requisitosCliente: [{ id, descricao, observacao, importancia, peso, created }],
-  requisitosProjeto: [{ id, descricao, observacao,
+  requisitosCliente: [{ id, descricao, observacao, importancia, peso, created,
+                        classificacao,              // '' (no QFD) | 'funcao' | 'boa-pratica'
+                        justificativaClassificacao }],
+  requisitosProjeto: [{ id, descricao, observacao, classificacao, justificativaClassificacao,
                         sentidoMelhoria,        // 'up' | 'down' | 'none'
                         dificuldadeTecnica,     // 1 a 5
                         importanciaAbsoluta, importanciaRelativa, pesoRelativo, created }],
@@ -113,7 +124,14 @@ Tudo fica numa única chave do LocalStorage, `qfd_data`:
     produtos:        [{ id, nome, tipo }],          // tipo 'nosso' (id 'nosso') ou 'concorrente'; até 6 concorrentes
     notasCliente:    [{ requisitoClienteId, produtoId, nota }],   // 1 a 5
     metasCliente:    [{ requisitoClienteId, meta }],              // 1 a 5
-    valoresTecnicos: [{ requisitoProjetoId, produtoId, valor }]   // texto, ex.: "1,5 kg"
+    valoresTecnicos: [{ requisitoProjetoId, produtoId, valor }],  // texto, ex.: "1,5 kg"
+    indices:         [{ id, nome, formula, unidade, sentido }]  // formula com {rp:ID}, ex.: "{rp:...} / {rp:...}"
+  },
+  projeto: { nome, emails: [] },   // nome do projeto e e-mails de quem recebe o backup
+  cadernoIdeias: {
+    ideias: [{ id, titulo, descricao, autor, data, status,       // 'nova' | 'promissora' | 'descartada'
+               requisitos: [{ tipo, id }] }],                    // tipo 'cliente' | 'projeto'
+    falhas: [{ id, falha, causa, produto, data, requisitoGerado }] // { tipo, id } ou null
   },
   metadata: { created, lastModified, schemaVersion }
 }
@@ -123,7 +141,7 @@ Outras chaves: `qfd_backup` (backup automático) e `qfd_data_corrompido` (cópia
 
 ### Versão da estrutura (migrações)
 
-`metadata.schemaVersion` guarda a versão da estrutura (atual: **4**; a versão 3 acrescentou `avaliacaoCompetitiva`; a 4 trocou o `valorUnitario` em texto das especificações pela meta tipada). Ao abrir qualquer página ou importar um backup, dados de versões anteriores são atualizados pelas funções de `SCHEMA_MIGRATIONS` em `database.js`.
+`metadata.schemaVersion` guarda a versão da estrutura (atual: **5**; a versão 3 acrescentou `avaliacaoCompetitiva`; a 4 trocou o `valorUnitario` em texto das especificações pela meta tipada; a 5 acrescentou `classificacao` e `justificativaClassificacao` aos requisitos; a 6, o bloco `projeto`; a 7, o `cadernoIdeias`). Ao abrir qualquer página ou importar um backup, dados de versões anteriores são atualizados pelas funções de `SCHEMA_MIGRATIONS` em `database.js`.
 
 **Migração da versão 4:** o valor antigo que for só um número vira meta do tipo sugerido pelo sentido de melhoria (↑ `≥`, ↓ `≤`, \* `=`), como o sistema já avaliava antes; textos como `≥ 20`, `80 ± 5` e `10 a 12` viram o tipo correspondente. O que não puder ser convertido (ex.: "aprox. 3") fica guardado em `metaTexto` e a linha aparece com o aviso "Revisar meta" nas Especificações.
 

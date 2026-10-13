@@ -10,6 +10,27 @@
  */
 
 document.addEventListener('DOMContentLoaded', setupDropdownMenu);
+document.addEventListener('DOMContentLoaded', setupLayout);
+
+/** Nome do projeto na barra superior e botão ☰ da barra lateral (telas pequenas) */
+function setupLayout() {
+    const nome = document.getElementById('topbar-projeto-nome');
+    if (nome && typeof qfdDB !== 'undefined') nome.textContent = qfdDB.getProjeto().nome || 'Projeto sem nome';
+
+    const botao = document.querySelector('.sidebar-toggle');
+    if (!botao) return;
+    botao.addEventListener('click', e => {
+        e.stopPropagation();
+        const aberta = document.body.classList.toggle('sidebar-aberta');
+        botao.setAttribute('aria-expanded', String(aberta));
+    });
+    document.addEventListener('click', e => {
+        if (document.body.classList.contains('sidebar-aberta') && !e.target.closest('.sidebar')) {
+            document.body.classList.remove('sidebar-aberta');
+            botao.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
 
 // ============================================================================
 // MENU DE NAVEGAÇÃO
@@ -187,7 +208,7 @@ function getSentidoLabel(sentido) {
 // ============================================================================
 
 /** Cores dos produtos na avaliação competitiva (a primeira é a do nosso produto) */
-const CORES_PRODUTOS = ['#4f46e5', '#dc2626', '#16a34a', '#ea580c', '#0891b2', '#9333ea', '#ca8a04'];
+const CORES_PRODUTOS = ['#085357', '#dc2626', '#16a34a', '#ea580c', '#0891b2', '#9333ea', '#ca8a04'];
 
 /** Texto e classe CSS da situação de um requisito frente ao melhor concorrente */
 function getSituacaoCompetitiva(situacao) {
@@ -519,4 +540,119 @@ function downloadFile(content, filename, mimeType) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+// ============================================================================
+// CLASSIFICAÇÃO DO REQUISITO (formador de função / boa prática → fora do QFD)
+// ============================================================================
+
+/** Campo "Tipo de requisito" + justificativa (obrigatória se fora do QFD) */
+function htmlCampoClassificacao(idTipo, idJust, req = {}) {
+    const atual = CLASSIFICACOES_REQUISITO[req.classificacao] ? req.classificacao : '';
+    const opcoes = Object.entries(CLASSIFICACOES_REQUISITO)
+        .map(([valor, texto]) => `<option value="${valor}" ${atual === valor ? 'selected' : ''}>${texto} (fora do QFD)</option>`)
+        .join('');
+    return `
+        <div class="form-group classificacao-requisito">
+            <label for="${idTipo}"><i class="fas fa-tag"></i> Tipo de requisito</label>
+            <select class="form-control" id="${idTipo}" onchange="toggleJustificativaClassificacao('${idTipo}', '${idJust}')">
+                <option value="">Normal (entra no QFD)</option>
+                ${opcoes}
+            </select>
+            <div class="justificativa-classificacao" id="${idJust}-box" style="${atual ? '' : 'display: none;'}">
+                <label for="${idJust}">Justificativa (obrigatória)</label>
+                <textarea class="form-control" id="${idJust}" rows="2" maxlength="1000"
+                    placeholder="Por que este requisito forma uma função ou é uma boa prática de projeto?">${escapeHtml(req.justificativaClassificacao || '')}</textarea>
+            </div>
+            <small class="form-text">Requisitos formadores de função ou de boa prática ficam fora da comparação, do telhado, da matriz e das especificações, e aparecem numa seção própria do relatório.</small>
+        </div>`;
+}
+
+function toggleJustificativaClassificacao(idTipo, idJust) {
+    const tipo = document.getElementById(idTipo);
+    const box = document.getElementById(`${idJust}-box`);
+    if (tipo && box) box.style.display = tipo.value ? '' : 'none';
+}
+
+/**
+ * Lê o campo de classificação
+ * @returns {{classificacao: string, justificativaClassificacao: string, erro?: string}}
+ */
+function lerClassificacao(idTipo, idJust) {
+    const classificacao = document.getElementById(idTipo)?.value || '';
+    const justificativa = (document.getElementById(idJust)?.value || '').trim();
+    if (classificacao && !justificativa) {
+        return { classificacao, justificativaClassificacao: '', erro: 'Informe a justificativa para deixar o requisito fora do QFD.' };
+    }
+    return { classificacao, justificativaClassificacao: classificacao ? justificativa : '' };
+}
+
+/** Selo e justificativa de um requisito fora do QFD ('' se está no QFD) */
+function htmlSeloClassificacao(req) {
+    if (estaNoQFD(req)) return '';
+    return `<div class="classificacao-selo classificacao-${req.classificacao}">
+        <i class="fas fa-tag"></i> <strong>${CLASSIFICACOES_REQUISITO[req.classificacao]}</strong> — fora do QFD
+        <div class="classificacao-justificativa">${escapeHtml(req.justificativaClassificacao || '')}</div>
+    </div>`;
+}
+
+/** Número do requisito no QFD (RC/RPn) ou null se está fora; mesma numeração das matrizes */
+function numerosNoQFD(lista) {
+    let n = 0;
+    return lista.map(r => (estaNoQFD(r) ? ++n : null));
+}
+
+// ============================================================================
+// REGISTRO RÁPIDO DE IDEIA (páginas de requisitos)
+// ============================================================================
+
+/** Botão 💡 com o número de ideias ligadas ao requisito */
+function htmlBotaoIdeia(tipo, id) {
+    const n = qfdDB.contarIdeias(tipo, id);
+    return `<button class="btn-icon btn-ideia" onclick="abrirRegistroIdeia('${tipo}', '${escapeAttr(id)}')" title="Registrar ideia de solução ligada a este requisito (fica fora da lista de requisitos)">
+        <i class="fas fa-lightbulb"></i>${n ? `<span class="ideia-contador">${n}</span>` : ''}
+    </button>`;
+}
+
+/** Janela de cadastro rápido de ideia já ligada ao requisito; ao salvar, chama loadRequisitos() se existir */
+function abrirRegistroIdeia(tipo, id) {
+    const req = (tipo === 'cliente' ? qfdDB.getRequisitosCliente({ todos: true }) : qfdDB.getRequisitosProjeto({ todos: true }))
+        .find(r => r.id === id);
+    if (!req) return;
+    document.querySelector('.ideia-rapida-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'ideia-rapida-overlay';
+    overlay.innerHTML = `
+        <div class="ideia-rapida">
+            <h3><i class="fas fa-lightbulb"></i> Registrar ideia de solução</h3>
+            <p class="ideia-rapida-req"></p>
+            <input type="text" class="form-control" id="ideia-rapida-titulo" maxlength="120" placeholder="Título da ideia">
+            <textarea class="form-control" id="ideia-rapida-descricao" rows="3" maxlength="2000" placeholder="Descrição"></textarea>
+            <input type="text" class="form-control" id="ideia-rapida-autor" maxlength="60" placeholder="Autor (opcional)">
+            <small class="form-text">A ideia vai para o Caderno de Ideias, ligada a este requisito. Ela não entra na lista de requisitos.</small>
+            <div class="ideia-rapida-acoes">
+                <button type="button" class="btn btn-secondary" data-acao="cancelar">Cancelar</button>
+                <button type="button" class="btn btn-primary" data-acao="salvar"><i class="fas fa-save"></i> Registrar</button>
+            </div>
+        </div>`;
+    overlay.querySelector('.ideia-rapida-req').textContent = `Requisito: ${req.descricao}`;
+    const fechar = () => overlay.remove();
+    overlay.addEventListener('click', e => { if (e.target === overlay || e.target.dataset.acao === 'cancelar') fechar(); });
+    overlay.querySelector('[data-acao="salvar"]').addEventListener('click', () => {
+        try {
+            qfdDB.addIdeia({
+                titulo: overlay.querySelector('#ideia-rapida-titulo').value,
+                descricao: overlay.querySelector('#ideia-rapida-descricao').value,
+                autor: overlay.querySelector('#ideia-rapida-autor').value,
+                requisitos: [{ tipo, id }]
+            });
+            fechar();
+            showAlert('Ideia registrada no Caderno de Ideias.', 'success');
+            if (typeof loadRequisitos === 'function') loadRequisitos();
+        } catch (err) {
+            showAlert(escapeHtml(err.message), 'warning');
+        }
+    });
+    document.body.appendChild(overlay);
+    overlay.querySelector('#ideia-rapida-titulo').focus();
 }

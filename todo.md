@@ -100,7 +100,7 @@ dos dados (P01–P04) devem ser feitos um de cada vez, cada um com sua migraçã
 - [ ] P07 — Assistente de cenários do ciclo de vida do produto — Seção 5.2.4 e Fig. 1.2
 - [ ] P08 — Tipos de requisito do cliente: básico, desempenho técnico, atratividade — Seção 5.2.3
 - [ ] P09 — Árvore de requisitos do cliente (declaração → desenvolvimento → refinamento) — Seções 5.2.4 e 3.3.2
-- [ ] P10 — Caderno de ideias de solução, separado da lista de requisitos — Seção 5.4
+- [x] P10 — Caderno de ideias de solução, separado da lista de requisitos — Seção 5.4
 - [ ] P16 — Mostrar a dificuldade técnica nas Especificações, na Matriz e no relatório
 
 **Prioridade baixa**

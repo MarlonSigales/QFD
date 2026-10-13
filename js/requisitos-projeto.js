@@ -27,6 +27,8 @@
  * Inicializa a página quando o DOM está pronto
  */
 document.addEventListener('DOMContentLoaded', function() {
+    const campoClassificacao = document.getElementById('classificacao-novo');
+    if (campoClassificacao) campoClassificacao.innerHTML = htmlCampoClassificacao('classificacao-requisito', 'justificativa-requisito');
     loadRequisitos();
     setupEventListeners();
     updateNavigationState();
@@ -89,9 +91,19 @@ function handleSubmitRequisito(event) {
         showAlert('Por favor, selecione a dificuldade técnica.', 'warning');
         return;
     }
+
+    const classificacao = lerClassificacao('classificacao-requisito', 'justificativa-requisito');
+    if (classificacao.erro) {
+        showAlert(classificacao.erro, 'warning');
+        return;
+    }
     
     try {
         const novoRequisito = qfdDB.addRequisitoProjeto(descricao, sentidoMelhoria, dificuldadeTecnica, observacao);
+        if (novoRequisito && classificacao.classificacao) {
+            delete classificacao.erro;
+            qfdDB.updateRequisitoProjeto(novoRequisito.id, classificacao);
+        }
         
         if (novoRequisito) {
             showAlert('Requisito de projeto adicionado com sucesso!', 'success');
@@ -108,7 +120,8 @@ function handleSubmitRequisito(event) {
 }
 
 function loadRequisitos() {
-    const requisitos = qfdDB.getRequisitosProjeto();
+    const requisitos = qfdDB.getRequisitosProjeto({ todos: true });
+    const numeros = numerosNoQFD(requisitos);
     const listaContainer = document.getElementById('lista-requisitos');
     const emptyState = document.getElementById('empty-state');
     const countBadge = document.getElementById('count-requisitos');
@@ -134,14 +147,15 @@ function loadRequisitos() {
     const requisitosHTML = requisitos.map((requisito, index) => `
         <div class="requisito-item" data-id="${requisito.id}">
             <div class="requisito-header">
-                <div class="requisito-number">
-                    <span class="number">${index + 1}</span>
+                <div class="requisito-number${numeros[index] ? '' : ' fora-qfd'}" title="${numeros[index] ? `RP${numeros[index]} no QFD` : 'Fora do QFD'}">
+                    <span class="number">${numeros[index] || '<i class="fas fa-tag"></i>'}</span>
                 </div>
                 <div class="requisito-content">
                     <div class="requisito-description" id="desc-${requisito.id}">
                         ${escapeHtml(requisito.descricao)}
                     </div>
                     ${requisito.observacao ? `<div class="requisito-observacao-preview"><i class="fas fa-comment-dots"></i> ${escapeHtml(requisito.observacao)}</div>` : ''}
+                    ${htmlSeloClassificacao(requisito)}
                     <div class="requisito-attributes">
                         <div class="attribute-item">
                             <span class="attribute-label">Sentido:</span>
@@ -167,6 +181,7 @@ function loadRequisitos() {
                     </div>
                 </div>
                 <div class="requisito-actions">
+                    ${htmlBotaoIdeia('projeto', requisito.id)}
                     <button class="btn-icon btn-edit" onclick="editRequisito('${requisito.id}')" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -185,6 +200,7 @@ function loadRequisitos() {
                         <label><i class="fas fa-comment-dots"></i> Texto explicativo (aparece como balão ao passar o mouse nas correlações e matriz):</label>
                         <textarea class="form-control" id="edit-obs-${requisito.id}" rows="2" maxlength="1000" placeholder="Ex.: Mede a resistência térmica do material em °C por hora...">${escapeHtml(requisito.observacao || '')}</textarea>
                     </div>
+                    ${htmlCampoClassificacao(`edit-class-${requisito.id}`, `edit-just-${requisito.id}`, requisito)}
                     <div class="form-row">
                         <div class="form-group">
                             <label>Sentido da Melhoria:</label>
@@ -276,13 +292,20 @@ function saveEdit(id) {
         showAlert(`Já existe um requisito com esta descrição: "${escapeHtml(duplicado.descricao)}".`, 'warning');
         return;
     }
+
+    const { erro, ...classificacao } = lerClassificacao(`edit-class-${id}`, `edit-just-${id}`);
+    if (erro) {
+        showAlert(erro, 'warning');
+        return;
+    }
     
     try {
         const updated = qfdDB.updateRequisitoProjeto(id, {
             descricao: novaDescricao,
             observacao: novaObservacao,
             sentidoMelhoria: novoSentido,
-            dificuldadeTecnica: novaDificuldade
+            dificuldadeTecnica: novaDificuldade,
+            ...classificacao
         });
         
         if (updated) {
@@ -308,7 +331,7 @@ function cancelEdit(id) {
 }
 
 function deleteRequisito(id) {
-    const requisitos = qfdDB.getRequisitosProjeto();
+    const requisitos = qfdDB.getRequisitosProjeto({ todos: true });
     const requisito = requisitos.find(r => r.id === id);
     
     if (!requisito) return;
@@ -337,6 +360,7 @@ function clearForm() {
         if (textarea) {
             textarea.style.height = 'auto';
         }
+        toggleJustificativaClassificacao('classificacao-requisito', 'justificativa-requisito');
     }
 }
 
