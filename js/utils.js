@@ -656,3 +656,83 @@ function abrirRegistroIdeia(tipo, id) {
     document.body.appendChild(overlay);
     overlay.querySelector('#ideia-rapida-titulo').focus();
 }
+
+// ============================================================================
+// ROTEIROS DE PREENCHIMENTO (Spagnolo, 2011 — tese, seção 4.1.5 e Apêndice B)
+// ============================================================================
+
+const FONTE_ROTEIRO = 'Spagnolo (2011)';
+
+/** Nome curto de um requisito para as perguntas: 'RP2 "Custo de produção"' */
+function rotuloRequisito(sigla, req) {
+    return `${sigla} "${truncateText(req ? req.descricao : '', 40)}"`;
+}
+
+/**
+ * Perguntas para a relação Rc x Rp da Matriz QFD: "Pode esse Rp influenciar
+ * esse Rc? Esse Rc afeta esse Rp?" — se sim, a relação é fraca, média ou forte.
+ * @returns {string[]} linhas de texto
+ */
+function roteiroRelacaoQFD(rotuloRc, rotuloRp) {
+    return [
+        `Pode ${rotuloRp} influenciar ${rotuloRc}?`,
+        `${rotuloRc} afeta ${rotuloRp}?`,
+        'Se sim para alguma: a relação é fraca (1), moderada (3) ou forte (9)? Se não: deixe em branco.'
+    ];
+}
+
+/**
+ * Perguntas do telhado (Rp x Rp) conforme a seta de cada requisito
+ * (Apêndice B). As duas primeiras, se "sim", indicam correlação positiva
+ * (+ ou ++); as duas últimas, negativa (- ou --). Todas "não": sem correlação.
+ *
+ * @param {string} sentidoA - 'up' | 'down' | 'none' do requisito da linha (Rpn)
+ * @param {string} sentidoB - idem do requisito da coluna (Rpn+1)
+ * @returns {{ texto: string, sinal: '+'|'-' }[]}
+ */
+function roteiroTelhado(sentidoA, sentidoB, a, b) {
+    const sub = { up: 'O aumento', down: 'A diminuição', none: 'A manutenção' };
+    const ver = { up: 'aumenta', down: 'diminui', none: 'mantém' };
+    const oposto = { up: 'diminui', down: 'aumenta', none: 'aumenta ou diminui' };
+    const sA = sentidoA in sub ? sentidoA : 'none';
+    const sB = sentidoB in sub ? sentidoB : 'none';
+    // Perguntas 1 a 3 seguem uma regra única nas 9 combinações da tabela:
+    // 1) A no sentido desejado leva B ao sentido desejado? (+)
+    // 2) B no sentido desejado leva A ao sentido desejado? (+)
+    // 3) A no sentido desejado leva B ao sentido contrário? (-)
+    // A 4ª (-) varia na tabela; o texto vem dela, combinação a combinação.
+    const quarta = {
+        'down|up': ['O aumento', 'aumenta'], 'down|down': ['O aumento', 'diminui'],
+        'down|none': ['O aumento ou diminuição', 'aumenta'], 'none|down': ['O aumento', 'aumenta ou diminui'],
+        'none|none': ['O aumento ou diminuição', 'mantém'], 'up|down': ['A diminuição', 'diminui'],
+        'up|up': ['A diminuição', 'aumenta'], 'up|none': ['O aumento ou diminuição', 'diminui'],
+        'none|up': ['A diminuição', 'aumenta ou diminui']
+    }[`${sA}|${sB}`];
+    return [
+        { texto: `${sub[sA]} de ${a} ${ver[sB]} ${b}?`, sinal: '+' },
+        { texto: `${sub[sB]} de ${b} ${ver[sA]} ${a}?`, sinal: '+' },
+        { texto: `${sub[sA]} de ${a} ${oposto[sB]} ${b}?`, sinal: '-' },
+        { texto: `${quarta[0]} de ${b} ${quarta[1]} ${a}?`, sinal: '-' }
+    ];
+}
+
+/** Roteiro do telhado em texto (balão) */
+function textoRoteiroTelhado(sentidoA, sentidoB, a, b) {
+    const linhas = roteiroTelhado(sentidoA, sentidoB, a, b).map((p, k) =>
+        `${k + 1}. ${p.texto} Sim → ${p.sinal === '+' ? 'positiva (+ ou ++)' : 'negativa (- ou --)'}`);
+    return `Como avaliar (${FONTE_ROTEIRO}):\n${linhas.join('\n')}\nTodas "não": sem correlação (0).`;
+}
+
+/** Roteiro do telhado em HTML (janela de preenchimento) */
+function htmlRoteiroTelhado(sentidoA, sentidoB, a, b) {
+    const itens = roteiroTelhado(sentidoA, sentidoB, a, b).map(p =>
+        `<li><span></span> <em class="roteiro-sinal ${p.sinal === '+' ? 'positivo' : 'negativo'}">sim → ${p.sinal === '+' ? '+ ou ++' : '- ou --'}</em></li>`);
+    const box = document.createElement('div');
+    box.className = 'roteiro-box';
+    box.innerHTML = `<strong><i class="fas fa-question-circle"></i> Como avaliar</strong> <small>(${FONTE_ROTEIRO}, Apêndice B)</small>
+        <ol>${itens.join('')}</ol><small>Se todas forem "não", não há correlação (0).</small>`;
+    roteiroTelhado(sentidoA, sentidoB, a, b).forEach((p, k) => {
+        box.querySelectorAll('li > span')[k].textContent = p.texto;
+    });
+    return box.outerHTML;
+}

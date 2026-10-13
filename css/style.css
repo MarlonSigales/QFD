@@ -2602,7 +2602,7 @@ body {
     display: none;
     position: fixed;
     z-index: 10000;
-    max-width: 340px;
+    max-width: 420px;
     padding: 0.6rem 0.85rem;
     background: rgba(33, 37, 41, 0.95);
     color: #fff;
@@ -4482,4 +4482,37 @@ cursor: pointer;
     .app-shell {
         display: block;
     }
+}
+
+/* Roteiro de preenchimento (Spagnolo, 2011) nas janelas da matriz e do telhado */
+.roteiro-box {
+    margin: 0.75rem 0;
+    padding: 0.6rem 0.8rem;
+    background: var(--qfd-verde-claro);
+    border-left: 3px solid var(--qfd-verde);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    text-align: left;
+}
+
+.roteiro-box ol {
+    margin: 0.4rem 0 0.3rem 1.2rem;
+}
+
+.roteiro-box li {
+    margin-bottom: 0.2rem;
+}
+
+.roteiro-sinal {
+    font-style: normal;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.roteiro-sinal.positivo {
+    color: #1a7f37;
+}
+
+.roteiro-sinal.negativo {
+    color: var(--qfd-perigo);
 }

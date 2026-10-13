@@ -112,8 +112,10 @@ function generateRoofMatrix() {
             
             const cellObs1 = req1.observacao ? `\n${truncateText(req1.observacao, 80)}` : '';
             const cellObs2 = req2.observacao ? `\n${truncateText(req2.observacao, 80)}` : '';
-            const tooltipText = `Correlação entre:\nReq ${i + 1}: ${truncateText(req1.descricao, 50)}${cellObs1}\n`
-                + `Req ${j + 1}: ${truncateText(req2.descricao, 50)}${cellObs2}\nClique para definir correlação`;
+            const tooltipText = `Correlação entre:\nReq ${i + 1}: ${truncateText(req1.descricao, 50)} ${getSentidoSymbol(req1.sentidoMelhoria)}${cellObs1}\n`
+                + `Req ${j + 1}: ${truncateText(req2.descricao, 50)} ${getSentidoSymbol(req2.sentidoMelhoria)}${cellObs2}\n\n`
+                + textoRoteiroTelhado(req1.sentidoMelhoria, req2.sentidoMelhoria, `RP${i + 1}`, `RP${j + 1}`)
+                + '\n\nClique para definir correlação';
             
             roofHTML += `<div class="roof-cell ${isCompleted ? 'completed' : ''}" 
                 data-req1="${requisitos[i].id}" 
@@ -239,6 +241,7 @@ function openCorrelationPopup(cell) {
                     </button>
                 </div>
                 
+                ${htmlRoteiroTelhado(req1.sentidoMelhoria, req2.sentidoMelhoria, rotuloRequisito(`RP${i + 1}`, req1), rotuloRequisito(`RP${j + 1}`, req2))}
                 <div class="correlation-description" id="correlation-description">
                     ${getCorrelationDescription(currentCorrelation)}
                 </div>
@@ -740,56 +743,11 @@ function generateAnalysisCSV(correlacoes) {
 }
 
 
-
-
-
 // ============================================
 // NOVAS FUNCIONALIDADES - MODAL E FILTROS
 // ============================================
 
-let currentModalReq1 = null;
-let currentModalReq2 = null;
 let currentFilterType = 'all';
-
-// Funcao para abrir modal de correlacao instantanea
-function openCorrelationModal(req1, req2, i, j) {
-    currentModalReq1 = { ...req1, index: i };
-    currentModalReq2 = { ...req2, index: j };
-    
-    const modal = document.getElementById('correlation-modal');
-    const modalRequisitos = document.getElementById('modal-requisitos');
-    
-    const html = `
-        <div class="req-info">Requisito ${i + 1}: ${escapeHtml(req1.descricao.substring(0, 60))}${req1.descricao.length > 60 ? '...' : ''}</div>
-        <div class="req-desc">Sentido: ${getSentidoLabel(req1.sentidoMelhoria)} ${getSentidoSymbol(req1.sentidoMelhoria)}</div>
-        <hr style="margin: 0.75rem 0; border: none; border-top: 1px solid #ddd;">
-        <div class="req-info">Requisito ${j + 1}: ${escapeHtml(req2.descricao.substring(0, 60))}${req2.descricao.length > 60 ? '...' : ''}</div>
-        <div class="req-desc">Sentido: ${getSentidoLabel(req2.sentidoMelhoria)} ${getSentidoSymbol(req2.sentidoMelhoria)}</div>
-    `;
-    
-    modalRequisitos.innerHTML = html;
-    modal.style.display = 'flex';
-}
-
-// Funcao para fechar modal
-function closeCorrelationModal() {
-    const modal = document.getElementById('correlation-modal');
-    modal.style.display = 'none';
-    currentModalReq1 = null;
-    currentModalReq2 = null;
-}
-
-// Funcao para definir correlacao via modal (legado HTML)
-function setCorrelation(value) {
-    if (!currentModalReq1 || !currentModalReq2) return;
-
-    qfdDB.setCorrelacaoProjeto(currentModalReq1.id, currentModalReq2.id, value);
-    closeCorrelationModal();
-    loadRequisitos();
-    updateRoofCell(currentModalReq1.id, currentModalReq2.id, value);
-    updateStatus();
-    showAnalysis();
-}
 
 // Funcao para filtrar analise por tipo de correlacao
 function filterAnalysis(type) {
@@ -922,52 +880,3 @@ function getCorrelationExportLabel(value) {
     return descriptions[value] || 'Nao definida';
 }
 
-// Fechar modal ao clicar fora
-document.addEventListener('click', function(e) {
-    const modal = document.getElementById('correlation-modal');
-    if (modal && e.target === modal) {
-        closeCorrelationModal();
-    }
-});
-
-// Fechar modal ao pressionar ESC
-// Fechar modal ao pressionar ESC e atalhos de teclado
-document.addEventListener('keydown', function(e) {
-    const modal = document.getElementById('correlation-modal');
-    const isModalOpen = modal && modal.style.display === 'flex';
-    
-    // ESC para fechar modal
-    if (e.key === 'Escape' && isModalOpen) {
-        closeCorrelationModal();
-        return;
-    }
-    
-    // Atalhos de teclado para definir correlacoes
-    if (isModalOpen && currentModalReq1 && currentModalReq2) {
-        let correlationValue = null;
-        
-        // Verificar qual tecla foi pressionada
-        if (e.key === '*' || (e.shiftKey && e.key === '8')) {
-            correlationValue = '++';
-        } else if (e.key === '+' || (e.shiftKey && e.key === '=')) {
-            correlationValue = '+';
-        } else if (e.key === '0') {
-            correlationValue = '0';
-        } else if (e.key === '-') {
-            correlationValue = '-';
-        } else if (e.key === '/' || e.key === '?') {
-            correlationValue = '--';
-        }
-        
-        if (correlationValue) {
-            e.preventDefault();
-            setCorrelation(correlationValue);
-            return;
-        }
-
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            closeCorrelationModal();
-        }
-    }
-});

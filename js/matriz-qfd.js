@@ -98,8 +98,9 @@ function generateQFDMatrix() {
         html += `<tr><td class="row-header" data-tooltip="${escapeAttr(rcTip)}">${i + 1}. ${truncateText(rc.descricao, 30)}</td>`;
         requisitosProjeto.forEach((rp, j) => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
-            const cellTip = `RC${i + 1} × RP${j + 1}: influência ${val || 'não definida'}`;
-            html += `<td class="influence-cell" data-cliente="${rc.id}" data-projeto="${rp.id}" data-i="${i}" data-j="${j}" title="${escapeHtml(cellTip)}" onclick="openInfluenceModal(this)">${val || ''}</td>`;
+            const roteiro = roteiroRelacaoQFD(rotuloRequisito(`RC${i + 1}`, rc), rotuloRequisito(`RP${j + 1}`, rp));
+            const cellTip = `RC${i + 1} × RP${j + 1}: influência ${val || 'não definida'}\n\nComo avaliar (${FONTE_ROTEIRO}):\n${roteiro.join('\n')}`;
+            html += `<td class="influence-cell" data-cliente="${rc.id}" data-projeto="${rp.id}" data-i="${i}" data-j="${j}" data-tooltip="${escapeAttr(cellTip)}" onclick="openInfluenceModal(this)">${val || ''}</td>`;
         });
         html += `<td class="importance-value-cell">${(rc.importancia || 0).toFixed(1)}</td>`;
         html += `<td class="importance-percent-cell">${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
@@ -139,6 +140,11 @@ function openInfluenceModal(cell) {
         <strong>RC${currentInfluenceI + 1}:</strong> ${escapeHtml(rc?.descricao || '')}${rcObsHtml}
         <strong>RP${currentInfluenceJ + 1}:</strong> ${escapeHtml(rp?.descricao || '')}${rpObsHtml}
         <small>Valor atual: <strong>${currentVal}</strong> (pressione <kbd>Enter</kbd> para salvar e ir para a próxima célula, <kbd>Shift</kbd>+<kbd>Enter</kbd> para voltar)</small>
+        <div class="roteiro-box">
+            <strong><i class="fas fa-question-circle"></i> Como avaliar</strong> <small>(${FONTE_ROTEIRO})</small>
+            <ol>${roteiroRelacaoQFD(rotuloRequisito(`RC${currentInfluenceI + 1}`, rc), rotuloRequisito(`RP${currentInfluenceJ + 1}`, rp))
+                .map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ol>
+        </div>
     `;
 
     const prevBtn = document.getElementById('prev-influence');

@@ -69,6 +69,19 @@ function criarProjetoExemplo() {
 // ============================================================================
 
 suite('Utilitários', () => {
+    test('roteiro do telhado segue o Apêndice B (Spagnolo, 2011)', () => {
+        const q = (a, b) => roteiroTelhado(a, b, 'Rpn', 'Rpn+1').map(p => p.texto);
+        assertEqual(q('down', 'up'), [
+            'A diminuição de Rpn aumenta Rpn+1?', 'O aumento de Rpn+1 diminui Rpn?',
+            'A diminuição de Rpn diminui Rpn+1?', 'O aumento de Rpn+1 aumenta Rpn?']);
+        assertEqual(q('none', 'none'), [
+            'A manutenção de Rpn mantém Rpn+1?', 'A manutenção de Rpn+1 mantém Rpn?',
+            'A manutenção de Rpn aumenta ou diminui Rpn+1?', 'O aumento ou diminuição de Rpn+1 mantém Rpn?']);
+        assertEqual(q('up', 'none'), [
+            'O aumento de Rpn mantém Rpn+1?', 'A manutenção de Rpn+1 aumenta Rpn?',
+            'O aumento de Rpn aumenta ou diminui Rpn+1?', 'O aumento ou diminuição de Rpn+1 diminui Rpn?']);
+        assertEqual(roteiroTelhado('up', 'up', 'a', 'b').map(p => p.sinal), ['+', '+', '-', '-']);
+    });
     test('célula anterior: matriz triangular e grade (ordem inversa do Enter)', () => {
         // triangular n=4: (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
         assertEqual(getPrevTriangularCell(1, 2, 4), { i: 0, j: 3 });
@@ -938,6 +951,31 @@ suite('Páginas', () => {
             assert(win.__semReload, 'a página recarregou ao remover');
             assertEqual(qfdDB.getComparacoesCliente().length, 1, 'comparações após remover');
             assertEqual(qfdDB.getRequisitosCliente()[0].importancia, 0, 'importância do RC1 não recalculada');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Matriz QFD e telhado: balões e janelas com o roteiro de preenchimento', async () => {
+        criarProjetoExemplo();
+        let iframe = await carregarPagina('../pages/matriz-qfd.html');
+        try {
+            const doc = iframe.contentDocument;
+            const celula = doc.querySelector('.influence-cell[data-i="0"][data-j="1"]');
+            assert(/Pode RP2 "Custo de produção" influenciar RC1/.test(celula.getAttribute('data-tooltip')), 'balão da matriz sem o roteiro');
+            celula.click();
+            assert(doc.querySelector('#modal-comparison-info .roteiro-box li'), 'janela da matriz sem o roteiro');
+        } finally {
+            iframe.remove();
+        }
+        iframe = await carregarPagina('../pages/correlacao-projeto.html');
+        try {
+            const doc = iframe.contentDocument;
+            const celula = doc.querySelector('.roof-cell[data-i="0"][data-j="1"]'); // RP1 ↓ x RP2 ↓
+            assert(celula.getAttribute('data-tooltip').includes('A diminuição de RP1 diminui RP2?'), 'balão do telhado sem o roteiro');
+            celula.click();
+            const itens = doc.querySelectorAll('.correlation-popup .roteiro-box li');
+            assertEqual(itens.length, 4, 'perguntas na janela do telhado');
+            assert(itens[0].textContent.includes('Peso total'), 'perguntas sem o nome do requisito');
         } finally {
             iframe.remove();
         }

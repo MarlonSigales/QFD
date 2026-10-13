@@ -1,6 +1,6 @@
 QFD - QA
 Site: https://marlonsigales.github.io/QFD/index.html
-Atualizado em 13/10/2026 — dados na versão 7 — 75 testes automáticos
+Atualizado em 13/10/2026 — dados na versão 7 — 77 testes automáticos
 
 Legenda: [fazer] pendente · [aguardando] depende de material externo ·
          [RESOLVIDO] feito e testado · [rejeitado] não será feito
@@ -8,16 +8,12 @@ Legenda: [fazer] pendente · [aguardando] depende de material externo ·
 ==========================================================================================
 RESUMO
 
-  Por fazer ............ 7   (1 aguardando material)
-  Resolvidos ........... 26
+  Por fazer ............ 7   (e 15 ideias novas na seção 1b, para avaliar)
+  Resolvidos ........... 29
   Rejeitados ........... 11  (9 "por hora", podem voltar)
 
 ==========================================================================================
 1. POR FAZER (em ordem de prioridade)
-
-[aguardando] Matriz QFD: ao passar o mouse sobre uma relação, mostrar as relações
-            que o Roger traz no documento.
-            Falta: o documento do Roger (colocar na pasta do projeto).
 
 [fazer] linhas abaixo do qfd, onde se analise o somatório das linhas, verificando a pontuação de cada requisito de projeto, verificando tanto somatório quanto percentual normalizado.
 
@@ -37,6 +33,80 @@ RESUMO
 [fazer sem prioridade] Uso das matrizes em celular.
 
 [futuro] P14 - Módulo de planejamento do produto. (prompt abaixo)
+
+==========================================================================================
+1b. IDEIAS PARA AVALIAR (tiradas da tese do Roger: Spagnolo, 2011, e do
+    "QFD preenchimento") — marque [fazer] ou [rejeitado] em cada uma
+
+--- Projeto informacional e QFD (da mais simples para a mais complexa) --------------------
+
+[ideia] Coluna "Forma de avaliação" nas Especificações (teste de campo, bancada,
+            cálculo, contagem...). O Quadro 8 do Roger tem meta, forma de avaliação e
+            aspectos indesejados; o sistema ainda não tem a forma de avaliação.
+
+[ideia] Aviso de redação no requisito de cliente: deve ser "ser/ter/estar +
+            substantivo" (Fonseca, 2000). Com outro verbo ("eliminar plantas") o
+            requisito provavelmente é uma função: o sistema sugere marcá-lo como
+            "formador de função".
+
+[ideia] Diagrama de Mudge com letras como no Roger (A = pouco, B = médio,
+            C = muito mais importante) e a coluna S/% do diagrama (Fig. 35).
+            Obs.: no texto da tese a ordem das letras está invertida em relação
+            à tabela da Fig. 35; a tabela é a que vale.
+
+[ideia] Requisitos de cliente por fase do ciclo de vida (projeto, produção,
+            comercialização, uso: regulagem/operação/manutenção) e tipo de cliente
+            (interno, intermediário, externo) — Quadros 2 e 4. Lista e relatório
+            agrupados por fase; aviso de fase sem nenhum requisito.
+
+[ideia] Valor do requisito de cliente em classes de 1 a 10 (campo 2 da casa da
+            qualidade), convertido do % do Mudge, como usado pelo Roger/Reis
+            (2003), em vez da pontuação bruta. Opção por projeto.
+
+[ideia] Escala das relações da matriz configurável: o Roger usa fraco 1 /
+            médio 3 / forte 5; o sistema usa 1 / 3 / 9. Opção por projeto (muda os
+            pesos; precisa avisar e recalcular).
+
+[ideia] Hierarquização "com telhado" (campo 8 da Fig. 10): telhado com pesos
+            ++ = +5, + = +1, - = -1, -- = -5 e uma segunda lista de importância.
+            Comparar as duas listas por terços (Fonseca, 2000; Quadros 5 a 7) e
+            destacar os requisitos que mudam de terço. Precisa confirmar com o
+            Roger a fórmula exata (Reis, 2003) para reproduzir os valores da Fig. 36.
+
+[ideia] Verificação da lista de requisitos de projeto (Roozenburg & Eekels,
+            1995): validade, completude, operacionalidade, não redundância,
+            concisão e praticabilidade — checklist antes de ir para a matriz,
+            registrando os requisitos descartados e o motivo (30 → 26 no Roger).
+
+[ideia] Classificar cada requisito de projeto pelos atributos de Fonseca (2000):
+            funcionamento, econômico, segurança, ciclo de vida, geométricos,
+            energéticos, controle (Fig. 9 e 34). É uma alternativa às 17 categorias
+            de Pahl & Beitz da P04 (rejeitada por hora); mostra áreas sem requisito.
+
+[ideia] Registro da coleta de necessidades: clientes entrevistados, questionário
+            (perguntas), respostas resumidas e cálculo do tamanho da amostra
+            (Gil, 1999, eq. 1). Cada necessidade fica ligada aos requisitos que gerou.
+
+[ideia] Abstração orientada em 5 passos e função global com entradas e saídas de
+            energia, material e sinal (Fig. 37, Quadro 9 e Fig. 38) — o exemplo do
+            Roger mostra o formato pronto para a P15.
+
+--- Relatório final ----------------------------------------------------------------------
+
+[ideia] Quadro de especificações no formato do Roger (Quadro 8): nº, requisito,
+            meta, forma de avaliação e aspectos indesejados, na ordem do QFD.
+
+[ideia] Diagrama de Mudge completo no relatório (a matriz com letras, a soma e
+            o %), como a Fig. 35, além da lista de pesos.
+
+[ideia] Hierarquização em terços em quadros separados (superior, médio,
+            inferior), com a posição sem e com telhado lado a lado (Quadros 5 a 7)
+            e a justificativa da lista escolhida.
+
+[ideia] Estrutura de documento acadêmico: capa (título, equipe, instituição,
+            data), sumário, listas de figuras e quadros numeradas, legenda com fonte
+            em cada figura/quadro e referências no fim — para colar direto em tese,
+            dissertação ou relatório técnico.
 
 ==========================================================================================
 2. RESOLVIDOS
@@ -61,6 +131,14 @@ RESUMO
             de uma falha; anexo no relatório.
 
 --- Comparação, telhado e Matriz QFD -----------------------------------------------------
+
+[RESOLVIDO] Matriz QFD: ao passar o mouse, mostrar as relações que o Roger traz no
+            documento. Balão de cada célula e janela de preenchimento com o roteiro
+            dele: na matriz, "Pode este RP influenciar este RC? Este RC afeta este
+            RP? → fraca, moderada ou forte"; no telhado, as 4 perguntas do
+            Apêndice B para a combinação de setas dos dois requisitos (ex.: ↓ e ↑),
+            com os nomes dos requisitos e se o "sim" indica correlação positiva ou
+            negativa.
 
 [RESOLVIDO] Diagrama de Mudge recarregava a página a cada comparação salva.
             Agora atualiza só a matriz e mantém a rolagem; "Remover" passou a
@@ -142,6 +220,13 @@ RESUMO
 
 [RESOLVIDO] QA reorganizado em "por fazer", "resolvidos" e "rejeitados".
 
+[RESOLVIDO] Código legado: removida a janela antiga do telhado (não era mais
+            usada) e o link do rodapé passou a apontar para
+            github.com/MarlonSigales/QFD.
+
+[RESOLVIDO] Ideias para o relatório final e para o projeto informacional: ver a
+            seção 1b (tiradas dos documentos do Roger).
+
 ==========================================================================================
 3. REJEITADOS
 
@@ -194,7 +279,7 @@ Dica: antes de começar, exporte um backup (Backup & Export -> Exportar Backup).
 [ ] 14. Importar um backup antigo (antes de out/2026) -> metas convertidas e nada
        perdido.
 
-Testes automáticos (75): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+Testes automáticos (77): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 
 ==========================================================================================
 5. PRÓXIMOS PASSOS
