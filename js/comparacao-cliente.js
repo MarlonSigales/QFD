@@ -95,8 +95,8 @@ function generateComparisonMatrix() {
     matrixHTML += '<div class="matrix-cell matrix-corner">Req.</div>';
     
     for (let i = 0; i < requisitos.length; i++) {
-        const obsText = requisitos[i].observacao ? `<br><em class='tooltip-obs'>${escapeHtml(requisitos[i].observacao)}</em>` : '';
-        const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}${obsText}`;
+        const obsText = requisitos[i].observacao ? `\n${requisitos[i].observacao}` : '';
+        const tooltipText = `Requisito ${i + 1}: ${requisitos[i].descricao}${obsText}`;
         matrixHTML += `<div class="matrix-cell matrix-header-cell" data-tooltip="${escapeAttr(tooltipText)}">
             <div class="header-content">
                 <span class="req-number">${i + 1}</span>
@@ -113,8 +113,8 @@ function generateComparisonMatrix() {
     // Linhas
     for (let i = 0; i < requisitos.length; i++) {
         matrixHTML += '<div class="matrix-row">';
-        const rowObsText = requisitos[i].observacao ? `<br><em class='tooltip-obs'>${escapeHtml(requisitos[i].observacao)}</em>` : '';
-        const tooltipText = `Requisito ${i + 1}: ${escapeHtml(requisitos[i].descricao)}${rowObsText}`;
+        const rowObsText = requisitos[i].observacao ? `\n${requisitos[i].observacao}` : '';
+        const tooltipText = `Requisito ${i + 1}: ${requisitos[i].descricao}${rowObsText}`;
         matrixHTML += `<div class="matrix-cell matrix-row-header" data-tooltip="${escapeAttr(tooltipText)}">
             <div class="row-header-content">
                 <span class="req-number">${i + 1}</span>
@@ -125,9 +125,9 @@ function generateComparisonMatrix() {
         for (let j = 0; j < requisitos.length; j++) {
             const req1 = requisitos[i];
             const req2 = requisitos[j];
-            const obs1 = req1.observacao ? `<br><em class='tooltip-obs'>${escapeHtml(truncateText(req1.observacao, 80))}</em>` : '';
-            const obs2 = req2.observacao ? `<br><em class='tooltip-obs'>${escapeHtml(truncateText(req2.observacao, 80))}</em>` : '';
-            const cellTooltip = `Comparação entre:<br><strong>Req ${i + 1}:</strong> ${escapeHtml(truncateText(req1.descricao, 50))}${obs1}<br><strong>Req ${j + 1}:</strong> ${escapeHtml(truncateText(req2.descricao, 50))}${obs2}`;
+            const obs1 = req1.observacao ? `\n${truncateText(req1.observacao, 80)}` : '';
+            const obs2 = req2.observacao ? `\n${truncateText(req2.observacao, 80)}` : '';
+            const cellTooltip = `Comparação entre:\nReq ${i + 1}: ${truncateText(req1.descricao, 50)}${obs1}\nReq ${j + 1}: ${truncateText(req2.descricao, 50)}${obs2}`;
 
             if (i === j) {
                 matrixHTML += `<div class="matrix-cell matrix-diagonal" data-tooltip="${escapeAttr(cellTooltip)}">-</div>`;
@@ -142,7 +142,7 @@ function generateComparisonMatrix() {
                 
                 matrixHTML += `<div class="matrix-cell matrix-comparison ${isCompleted ? 'completed' : ''}" 
                     data-req1="${req1Id}" data-req2="${req2Id}" data-i="${i}" data-j="${j}"
-                    data-tooltip="${escapeAttr(cellTooltip + '<br><em>Clique para comparar</em>')}">
+                    data-tooltip="${escapeAttr(cellTooltip + '\nClique para comparar')}">
                     ${isCompleted ? getComparisonDisplay(storedComparison, i, j) : '<span class="comparison-placeholder">?</span>'}
                 </div>`;
             } else {
@@ -232,31 +232,25 @@ function getComparisonDisplay(storedComparison, i, j) {
 }
 
 function addMatrixEventListeners() {
-    const cells = document.querySelectorAll('[data-tooltip]');
-    cells.forEach(cell => {
-        cell.addEventListener('mouseenter', showTooltip);
-        cell.addEventListener('mouseleave', hideTooltip);
-        if (cell.classList.contains('matrix-comparison')) {
-            cell.addEventListener('click', () => openComparisonModal(cell));
-        }
+    document.querySelectorAll('#comparison-matrix .matrix-comparison').forEach(cell => {
+        cell.addEventListener('click', () => openComparisonModal(cell));
     });
-    
-    // Após carregar a matriz, verifica se deve abrir alguma célula (fluxo "salvar e ir para próxima")
-    const openNext = sessionStorage.getItem('comparacaoOpenNext');
-    if (openNext) {
-        try {
-            const { i: nextI, j: nextJ } = JSON.parse(openNext);
-            sessionStorage.removeItem('comparacaoOpenNext');
-            const nextCell = document.querySelector(
-                `.matrix-comparison[data-i="${nextI}"][data-j="${nextJ}"]`
-            );
-            if (nextCell) {
-                setTimeout(() => openComparisonModal(nextCell), 100);
-            }
-        } catch (e) {
-            sessionStorage.removeItem('comparacaoOpenNext');
-        }
-    }
+}
+
+/**
+ * Redesenha matriz, status e resultados após salvar/remover, sem recarregar
+ * a página (mantém a rolagem). Se `next` for informado, abre essa célula.
+ * @param {{ i: number, j: number } | null} [next]
+ */
+function refreshComparison(next) {
+    hideAppTooltip();
+    loadRequisitos();
+    setupComparison();
+    if (!next) return;
+    const nextCell = document.querySelector(
+        `.matrix-comparison[data-i="${next.i}"][data-j="${next.j}"]`
+    );
+    if (nextCell) openComparisonModal(nextCell);
 }
 
 /**
@@ -273,36 +267,6 @@ function getNextComparisonCell(i, j) {
     if (j < n - 1) return { i, j: j + 1 };
     if (i < n - 2) return { i: i + 1, j: i + 2 };
     return null;
-}
-
-function showTooltip(e) {
-    const text = e.currentTarget.getAttribute('data-tooltip');
-    if (!text) return;
-    
-    hideTooltip();
-    const tooltip = document.createElement('div');
-    tooltip.className = 'custom-tooltip';
-    tooltip.innerHTML = text;
-    document.body.appendChild(tooltip);
-    
-    const rect = e.currentTarget.getBoundingClientRect();
-    const tooltipRect = tooltip.getBoundingClientRect();
-    
-    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-    let top = rect.top - tooltipRect.height - 10;
-    
-    if (left < 10) left = 10;
-    if (left + tooltipRect.width > window.innerWidth - 10) left = window.innerWidth - tooltipRect.width - 10;
-    if (top < 10) top = rect.bottom + 10;
-    
-    tooltip.style.left = left + 'px';
-    tooltip.style.top = top + 'px';
-    tooltip.style.opacity = '1';
-}
-
-function hideTooltip() {
-    const tooltip = document.querySelector('.custom-tooltip');
-    if (tooltip) tooltip.remove();
 }
 
 function openComparisonModal(cell) {
@@ -370,7 +334,10 @@ function openComparisonModal(cell) {
                 </div>
             </div>
             <div class="modal-footer">
-                <small class="modal-footer-hint" style="margin-right: auto; align-self: center; color: #6c757d;"><kbd>Enter</kbd> salva e abre a próxima</small>
+                <small class="modal-footer-hint" style="margin-right: auto; align-self: center; color: #6c757d;"><kbd>Enter</kbd> salva e abre a próxima · <kbd>Shift</kbd>+<kbd>Enter</kbd> volta</small>
+                <button class="btn btn-secondary" id="prev-comparison" onclick="goToPrevComparison()" ${getPrevTriangularCell(i, j, requisitos.length) ? '' : 'disabled'} title="Voltar para a comparação anterior (Shift+Enter), sem salvar esta">
+                    <i class="fas fa-arrow-left"></i> Anterior
+                </button>
                 <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
                 <button class="btn btn-primary" id="save-comparison" ${storedComparison ? '' : 'disabled'} onclick="saveComparison(false)">Salvar</button>
                 ${storedComparison ? `<button class="btn btn-danger" onclick="removeComparison('${req1Id}', '${req2Id}')">Remover</button>` : ''}
@@ -431,28 +398,36 @@ function setupModalLogic(req1Id, req2Id, cellI, cellJ) {
     });
 
     /**
-     * Salva a comparação e, se desejado, abre a próxima célula após recarregar.
-     * @param {boolean} openNextCell - Se true, após reload abre a próxima célula na ordem (usado pelo Enter)
+     * Salva a comparação e, se desejado, abre a próxima célula.
+     * @param {boolean} openNextCell - Se true, abre a próxima célula na ordem (usado pelo Enter)
      */
     window.saveComparison = (openNextCell) => {
         if (selectedReq && selectedValue) {
             const otherReq = selectedReq === req1Id ? req2Id : req1Id;
             qfdDB.setComparacaoCliente(selectedReq, otherReq, parseInt(selectedValue));
-            if (openNextCell) {
-                const next = getNextComparisonCell(cellI, cellJ);
-                if (next) {
-                    sessionStorage.setItem('comparacaoOpenNext', JSON.stringify(next));
-                }
-            }
+            const next = openNextCell ? getNextComparisonCell(cellI, cellJ) : null;
             closeModal();
-            location.reload();
+            refreshComparison(next);
         }
     };
     
-    // Enter no modal: salva e abre a próxima célula
+    /** Volta para a comparação anterior na ordem do Enter, sem salvar a atual */
+    window.goToPrevComparison = () => {
+        const prev = getPrevTriangularCell(cellI, cellJ, requisitos.length);
+        if (!prev) return;
+        const prevCell = document.querySelector(`.matrix-comparison[data-i="${prev.i}"][data-j="${prev.j}"]`);
+        if (prevCell) openComparisonModal(prevCell);
+    };
+
+    // Enter no modal: salva e abre a próxima célula; Shift+Enter volta
     const modalContent = document.querySelector('.comparison-modal');
     if (modalContent) {
         modalContent.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.shiftKey) {
+                e.preventDefault();
+                goToPrevComparison();
+                return;
+            }
             if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.altKey) {
                 e.preventDefault();
                 const saveBtn = document.getElementById('save-comparison');
@@ -464,14 +439,10 @@ function setupModalLogic(req1Id, req2Id, cellI, cellJ) {
     }
 
     window.removeComparison = (r1, r2) => {
-        const comps = qfdDB.getComparacoesCliente().filter(c => 
-            !((c.requisito1 === r1 && c.requisito2 === r2) || (c.requisito1 === r2 && c.requisito2 === r1))
-        );
-        const data = qfdDB.loadData();
-        data.comparacaoCliente = comps;
-        qfdDB.saveData(data);
+        // valor 0 remove o par e recalcula a importância dos requisitos
+        qfdDB.setComparacaoCliente(r1, r2, 0);
         closeModal();
-        location.reload();
+        refreshComparison(null);
     };
 }
 

@@ -11,8 +11,20 @@ let reportConfig = {
     company: '',
     author: '',
     date: new Date().toISOString().split('T')[0],
-    description: ''
+    description: '',
+    // 'equipe': completo; 'apresentacao': sem comentários internos
+    versao: 'equipe'
 };
+
+/** Versão para apresentação: sem textos explicativos, inconsistências, diagnóstico e análises */
+function isApresentacao() {
+    return reportConfig.versao === 'apresentacao';
+}
+
+/** Texto explicativo (comentário interno); vazio na versão de apresentação */
+function obsInterna(texto) {
+    return isApresentacao() ? '' : (texto || '');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
@@ -90,6 +102,7 @@ function setupEventListeners() {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', updateConfig);
     });
+    document.querySelectorAll('input[name="report-version"]').forEach(r => r.addEventListener('change', updateConfig));
 
     document.querySelectorAll('.section-checkbox input').forEach(cb => {
         cb.addEventListener('change', () => {
@@ -105,6 +118,7 @@ function updateConfig() {
     reportConfig.author = document.getElementById('author-name')?.value || '';
     reportConfig.date = document.getElementById('report-date')?.value || reportConfig.date;
     reportConfig.description = document.getElementById('project-description')?.value || '';
+    reportConfig.versao = document.querySelector('input[name="report-version"]:checked')?.value || 'equipe';
     generatePreview();
 }
 
@@ -130,6 +144,7 @@ function generatePreview() {
                 <h1>${escapeHtml(reportConfig.title)}</h1>
                 ${reportConfig.company ? `<h2>${escapeHtml(reportConfig.company)}</h2>` : ''}
                 <p><strong>Data:</strong> ${escapeHtml(reportConfig.date)} | <strong>Autor:</strong> ${escapeHtml(reportConfig.author)}</p>
+                <p class="report-versao">${isApresentacao() ? 'Versão para apresentação' : 'Versão da equipe de projeto (contém comentários internos)'}</p>
             </div>`;
 
         if (isSectionChecked('section-dictionary')) html += safeSection('Dicionário', generateDictionary);
@@ -143,12 +158,11 @@ function generatePreview() {
         if (isSectionChecked('section-competitiva')) html += safeSection('Avaliação Competitiva', generateAvaliacaoCompetitiva);
         if (isSectionChecked('section-atendimento')) html += safeSection('Atendimento aos Requisitos', generateAtendimento);
         if (isSectionChecked('section-ranking')) html += safeSection('Ranking', generateRankingSection);
-        if (isSectionChecked('section-analysis')) html += safeSection('Análises', generateAnalysisSection);
+        if (isSectionChecked('section-analysis') && !isApresentacao()) html += safeSection('Análises', generateAnalysisSection);
         if (isSectionChecked('section-comparisons')) html += safeSection('Comparações', generateComparisonsSection);
 
         html += '</div>';
         content.innerHTML = html;
-        initReportTooltips();
     } catch (err) {
         console.error('Erro ao gerar preview:', err);
         content.innerHTML = `<div class="report-section"><p class="alert alert-danger">Erro ao gerar relatório: ${escapeHtml(err.message)}</p></div>`;
@@ -169,12 +183,12 @@ function generateDictionary() {
     html += '<p class="report-hint"><em>Passe o mouse sobre RC, RP e células no preview para ver descrições completas.</em></p>';
     html += '<h4>Requisitos de Cliente (RC)</h4><ul class="report-dict-list">';
     requisitosCliente.forEach((r, i) => {
-        const obs = r.observacao ? ` <em class="report-obs">— ${escapeHtml(r.observacao)}</em>` : '';
+        const obs = obsInterna(r.observacao) ? ` <em class="report-obs">— ${escapeHtml(r.observacao)}</em>` : '';
         html += `<li><strong>RC${i + 1}</strong> — ${escapeHtml(r.descricao)}${obs}</li>`;
     });
     html += '</ul><h4>Requisitos de Projeto (RP)</h4><ul class="report-dict-list">';
     requisitosProjeto.forEach((r, i) => {
-        const obs = r.observacao ? ` <em class="report-obs">— ${escapeHtml(r.observacao)}</em>` : '';
+        const obs = obsInterna(r.observacao) ? ` <em class="report-obs">— ${escapeHtml(r.observacao)}</em>` : '';
         html += `<li><strong>RP${i + 1}</strong> ${getSentidoSymbol(r.sentidoMelhoria)} — ${escapeHtml(r.descricao)}${obs}</li>`;
     });
     return html + '</ul></div>';
@@ -187,7 +201,7 @@ function generateSummary() {
 function generateClientReqs() {
     let html = '<div class="report-section"><h3>Requisitos do Cliente</h3><table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Peso</th></tr></thead><tbody>';
     requisitosCliente.forEach((r, i) => {
-        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RC${i + 1}`, r))}">
+        html += `<tr class="report-has-tip" data-tooltip="${escapeAttr(reqTip(`RC${i + 1}`, r))}">
             <td>RC${i + 1}</td>
             <td>${escapeHtml(r.descricao)}</td>
             <td>${((r.peso || 0) * 100).toFixed(1)}%</td>
@@ -198,7 +212,7 @@ function generateClientReqs() {
 
 /** Texto do balão de um requisito: "RC1: descrição" + texto explicativo na linha seguinte */
 function reqTip(label, req) {
-    const obs = req && req.observacao ? `\n${req.observacao}` : '';
+    const obs = req && obsInterna(req.observacao) ? `\n${req.observacao}` : '';
     return `${label}: ${req ? req.descricao : ''}${obs}`;
 }
 
@@ -226,7 +240,7 @@ function generateProjectReqs() {
         const rpNum = requisitosProjeto.findIndex(x => x.id === r.id) + 1;
         const impRel = r.pesoRelativo != null ? (r.pesoRelativo * 100).toFixed(1) + '%' : '-';
 
-        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${rpNum}`, r))}">
+        html += `<tr class="${tercioClass} report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${rpNum}`, r))}">
             <td>RP${rpNum}</td>
             <td>${escapeHtml(r.descricao)}</td>
             <td>${getSentidoSymbol(r.sentidoMelhoria)}</td>
@@ -241,12 +255,12 @@ function generateRoof() {
     const correlacoes = qfdDB.getCorrelacoesProjeto();
     let html = '<div class="report-section"><h3>Telhado de Correlações</h3><table class="report-table roof-table"><thead><tr><th></th>';
     requisitosProjeto.forEach((rp, i) => {
-        html += `<th class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${i + 1}`, rp))}">RP${i + 1} ${getSentidoSymbol(rp.sentidoMelhoria)}</th>`;
+        html += `<th class="report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${i + 1}`, rp))}">RP${i + 1} ${getSentidoSymbol(rp.sentidoMelhoria)}</th>`;
     });
     html += '</tr></thead><tbody>';
 
     for (let i = 0; i < requisitosProjeto.length; i++) {
-        html += `<tr><th class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${i + 1}`, requisitosProjeto[i]))}">${i + 1}</th>`;
+        html += `<tr><th class="report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${i + 1}`, requisitosProjeto[i]))}">${i + 1}</th>`;
         for (let j = 0; j < requisitosProjeto.length; j++) {
             if (i === j) {
                 html += '<td class="diagonal">—</td>';
@@ -258,7 +272,7 @@ function generateRoof() {
                     (c.requisito1 === requisitosProjeto[j].id && c.requisito2 === requisitosProjeto[i].id)
                 );
                 const val = corr ? corr.correlacao : '';
-                html += `<td class="corr-cell report-has-tip" data-report-tip="${escapeAttr(`RP${i + 1} ↔ RP${j + 1}: ${val || 'sem correlação'}`)}">${val}</td>`;
+                html += `<td class="corr-cell report-has-tip" data-tooltip="${escapeAttr(`RP${i + 1} ↔ RP${j + 1}: ${val || 'sem correlação'}`)}">${val}</td>`;
             }
         }
         html += '</tr>';
@@ -273,38 +287,33 @@ function generateCorrelationsAnalysis() {
 
     let html = '<div class="report-section"><h3>Análise de Correlações</h3>';
     html += `<p><strong>++</strong> ${counts['++']} | <strong>+</strong> ${counts['+']} | <strong>-</strong> ${counts['-']} | <strong>--</strong> ${counts['--']}</p>`;
-
-    const fortes = correlacoes.filter(c => c.correlacao === '--' || c.correlacao === '++');
-    if (fortes.length) {
-        html += '<ul class="report-dict-list">';
-        fortes.forEach(c => {
-            const i1 = requisitosProjeto.findIndex(r => r.id === c.requisito1) + 1;
-            const i2 = requisitosProjeto.findIndex(r => r.id === c.requisito2) + 1;
-            html += `<li>RP${i1} ↔ RP${i2}: <strong>${c.correlacao}</strong></li>`;
-        });
-        html += '</ul>';
-    } else {
-        html += '<p>Nenhuma correlação forte registrada.</p>';
-    }
+    // Os pares individuais estão no telhado (seção Telhado) e na Matriz QFD
     return html + '</div>';
 }
 
 function generateMatrix() {
     let html = '<div class="report-section"><h3>Matriz QFD</h3><div class="qfd-matrix-report-wrapper"><table class="report-table qfd-matrix-report"><thead><tr><th class="qfd-corner-cell">RC \\ RP</th>';
     requisitosProjeto.forEach((rp, i) => {
-        html += `<th class="qfd-rp-header report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${i + 1}`, rp))}"><span>RP${i + 1}</span></th>`;
+        html += `<th class="qfd-rp-header report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${i + 1}`, rp))}"><span>RP${i + 1}</span></th>`;
     });
     html += '<th>Peso</th></tr></thead><tbody>';
 
     requisitosCliente.forEach((rc, idx) => {
-        html += `<tr><td class="qfd-rc-label report-has-tip" data-report-tip="${escapeAttr(reqTip(`RC${idx + 1}`, rc))}">RC${idx + 1}</td>`;
+        html += `<tr><td class="qfd-rc-label report-has-tip" data-tooltip="${escapeAttr(reqTip(`RC${idx + 1}`, rc))}">RC${idx + 1}</td>`;
         requisitosProjeto.forEach((rp, j) => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
-            html += `<td class="qfd-cell report-has-tip" data-report-tip="${escapeAttr(`RC${idx + 1} × RP${j + 1}: influência ${val || 'não definida'}`)}">${val || ''}</td>`;
+            html += `<td class="qfd-cell report-has-tip" data-tooltip="${escapeAttr(`RC${idx + 1} × RP${j + 1}: influência ${val || 'não definida'}`)}">${val || ''}</td>`;
         });
         html += `<td>${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
     });
-    return html + '</tbody></table></div></div>';
+    html += '</tbody><tfoot>';
+    html += '<tr class="qfd-sum-row qfd-sum-total"><th>Soma</th>'
+        + requisitosProjeto.map(rp => `<td>${(rp.importanciaAbsoluta || 0).toFixed(1)}</td>`).join('') + '<td></td></tr>';
+    html += '<tr class="qfd-sum-row qfd-sum-percent"><th>%</th>'
+        + requisitosProjeto.map(rp => `<td>${((rp.pesoRelativo || 0) * 100).toFixed(1)}%</td>`).join('') + '<td></td></tr>';
+    html += '<tr class="qfd-sum-row qfd-sum-rank"><th>Ranking</th>'
+        + requisitosProjeto.map(rp => `<td>${rp.importanciaAbsoluta > 0 ? `${rp.importanciaRelativa}º` : '-'}</td>`).join('') + '<td></td></tr>';
+    return html + '</tfoot></table></div></div>';
 }
 
 function generateEspecificacoes() {
@@ -326,7 +335,7 @@ function generateEspecificacoes() {
     let html = '<div class="report-section"><h3>Especificações dos Requisitos de Projeto</h3>';
     html += '<p class="report-hint">Ordenados pela hierarquia do QFD.</p>';
     html += '<table class="report-table especificacoes-report-table"><thead><tr>';
-    html += '<th>#</th><th>Requisito</th><th>Unidade</th><th>Valor unit.</th><th>Aspectos indesejáveis</th></tr></thead><tbody>';
+    html += '<th>#</th><th>Requisito</th><th>Unidade</th><th>Meta</th><th>Aspectos indesejáveis</th></tr></thead><tbody>';
 
     lista.forEach((row, index) => {
         let tercioClass = 'tercio-inferior';
@@ -335,14 +344,14 @@ function generateEspecificacoes() {
 
         const aspectos = row.aspectosIndesejaveis || '—';
         let tip = reqTip(`RP${row.numeroOriginal}`, row.requisito);
-        if (row.observacao) tip += `\nEspecificação: ${row.observacao}`;
-        const specObs = row.observacao ? `<br><em class="report-obs">${escapeHtml(row.observacao)}</em>` : '';
+        if (obsInterna(row.observacao)) tip += `\nEspecificação: ${row.observacao}`;
+        const specObs = obsInterna(row.observacao) ? `<br><em class="report-obs">${escapeHtml(row.observacao)}</em>` : '';
 
-        html += `<tr class="${tercioClass} report-has-tip" data-report-tip="${escapeAttr(tip)}">
+        html += `<tr class="${tercioClass} report-has-tip" data-tooltip="${escapeAttr(tip)}">
             <td>${row.rank}</td>
             <td><strong>RP${row.numeroOriginal}</strong> — ${escapeHtml(row.requisito.descricao)}${specObs}</td>
             <td>${escapeHtml(row.unidadeMedida || '—')}</td>
-            <td>${escapeHtml(row.valorUnitario || '—')}</td>
+            <td>${row.metaFormatada ? escapeHtml(row.metaFormatada) : (row.revisarMeta ? `<em>revisar: ${escapeHtml(row.metaTexto)}</em>` : '—')}</td>
             <td class="spec-aspectos-cell">${escapeHtml(aspectos).replace(/\n/g, '<br>')}</td>
         </tr>`;
     });
@@ -358,22 +367,30 @@ function generateAvaliacaoCompetitiva() {
     }
 
     const corDe = i => CORES_PRODUTOS[i % CORES_PRODUTOS.length];
+    // Códigos curtos nas colunas (Nosso, C1…Cn) para a tabela caber na página;
+    // os nomes completos ficam no quadro "Produtos comparados"
+    let nConc = 0;
+    const codigos = analise.produtos.map(p => p.tipo === 'nosso' ? 'Nosso' : `C${++nConc}`);
+    const codigoPorNome = nome => codigos[analise.produtos.findIndex(p => p.nome === nome)] || nome;
     const cabecalhoProdutos = analise.produtos
-        .map((p, i) => `<th><span class="produto-cor" style="background:${corDe(i)}"></span> ${escapeHtml(p.nome)}</th>`).join('');
+        .map((p, i) => `<th class="produto-col" title="${escapeAttr(p.nome)}"><span class="produto-cor" style="background:${corDe(i)}"></span> ${codigos[i]}</th>`).join('');
+    const glossario = '<table class="report-table competitiva-glossario"><thead><tr><th>Código</th><th>Produto</th></tr></thead><tbody>'
+        + analise.produtos.map((p, i) => `<tr><td><span class="produto-cor" style="background:${corDe(i)}"></span> <strong>${codigos[i]}</strong></td><td>${escapeHtml(p.nome)}</td></tr>`).join('')
+        + '</tbody></table>';
     const situacao = s => {
         const info = getSituacaoCompetitiva(s);
         return `<span class="sit-badge ${info.classe}">${info.texto}</span>`;
     };
 
-    html += `<p class="report-hint">Comparação do produto com ${analise.concorrentes.length} concorrente(s): `
-        + `${analise.produtos.map(p => `<strong>${escapeHtml(p.nome)}</strong>`).join(', ')}. `
+    html += `<p class="report-hint">Comparação do produto com ${analise.concorrentes.length} concorrente(s). `
         + `Notas dos clientes preenchidas: ${analise.stats.notasPreenchidas} de ${analise.stats.notasTotal} (${analise.stats.percent}%).</p>`;
+    html += '<h4>Produtos comparados</h4>' + glossario;
 
     html += '<h4>Avaliação dos clientes (1 = pior, 5 = melhor)</h4>';
     html += '<p class="report-hint">Índice de melhoria = meta ÷ nossa nota. Prioridade = peso × índice de melhoria, normalizada.</p>';
     html += `<table class="report-table competitiva-table"><thead><tr><th>RC</th><th>Requisito de cliente</th><th>Peso</th>${cabecalhoProdutos}<th>Meta</th><th>Índice de melhoria</th><th>Prioridade</th><th>Situação</th></tr></thead><tbody>`;
     [...analise.clientes].sort((a, b) => (b.peso - a.peso) || (a.numero - b.numero)).forEach(c => {
-        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RC${c.numero}`, c.requisito))}">
+        html += `<tr class="report-has-tip" data-tooltip="${escapeAttr(reqTip(`RC${c.numero}`, c.requisito))}">
             <td><strong>RC${c.numero}</strong></td>
             <td class="competitiva-desc">${escapeHtml(c.requisito.descricao)}</td>
             <td>${(c.peso * 100).toFixed(1)}%</td>
@@ -393,9 +410,9 @@ function generateAvaliacaoCompetitiva() {
         html += `<table class="report-table competitiva-table"><thead><tr><th>#</th><th>Requisito de projeto</th><th>Sentido</th><th>Meta</th>${cabecalhoProdutos}<th>Melhor concorrente</th><th>Meta × melhor concorrente</th></tr></thead><tbody>`;
         analise.tecnicos.forEach(t => {
             const melhor = t.melhor
-                ? `${escapeHtml(`${formatarNumero(t.melhor.valor)} ${t.unidade}`.trim())}<small class="competitiva-quem">${escapeHtml(t.melhor.produtos.join(', '))}</small>`
+                ? `${escapeHtml(`${formatarNumero(t.melhor.valor)} ${t.unidade}`.trim())}<small class="competitiva-quem">${escapeHtml(t.melhor.produtos.map(codigoPorNome).join(', '))}</small>`
                 : (t.requisito.sentidoMelhoria === 'none' ? 'nominal' : '—');
-            html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${t.numero}`, t.requisito))}">
+            html += `<tr class="report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${t.numero}`, t.requisito))}">
                 <td>${t.rank}</td>
                 <td class="competitiva-desc"><strong>RP${t.numero}</strong> — ${escapeHtml(t.requisito.descricao)}</td>
                 <td>${getSentidoSymbol(t.requisito.sentidoMelhoria)}</td>
@@ -409,7 +426,7 @@ function generateAvaliacaoCompetitiva() {
     }
 
     html += '<h4>Resultado da comparação</h4>';
-    html += `<div class="competitiva-resultado">${buildResultadoHtml(analise)}</div>`;
+    html += `<div class="competitiva-resultado">${buildResultadoHtml(analise, { inconsistencias: !isApresentacao() })}</div>`;
     return html + '</div>';
 }
 
@@ -431,7 +448,7 @@ function generateAtendimento() {
     html += '<h4>Metas de projeto × valor medido</h4>';
     html += '<table class="report-table atendimento-table"><thead><tr><th>#</th><th>Requisito de projeto</th><th>Sentido</th><th>Meta</th><th>Medido</th><th>Meta</th><th>Relações</th></tr></thead><tbody>';
     analise.projetos.forEach(p => {
-        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(reqTip(`RP${p.numero}`, p.requisito))}">
+        html += `<tr class="report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${p.numero}`, p.requisito))}">
             <td>${p.rank}</td>
             <td class="competitiva-desc"><strong>RP${p.numero}</strong> — ${escapeHtml(p.requisito.descricao)}</td>
             <td>${getSentidoSymbol(p.requisito.sentidoMelhoria)}</td>
@@ -445,10 +462,12 @@ function generateAtendimento() {
 
     html += '<h4>Atendimento por requisito de cliente</h4>';
     html += buildTabelaAtendimentoClientes(analise,
-        (req, rotulo) => ` class="report-has-tip" data-report-tip="${escapeAttr(reqTip(rotulo, req))}"`);
+        (req, rotulo) => ` class="report-has-tip" data-tooltip="${escapeAttr(reqTip(rotulo, req))}"`);
 
-    html += '<h4>Diagnóstico</h4>';
-    html += `<div class="competitiva-resultado">${buildDiagnosticoAtendimentoHtml(analise)}</div>`;
+    if (!isApresentacao()) {
+        html += '<h4>Diagnóstico</h4>';
+        html += `<div class="competitiva-resultado">${buildDiagnosticoAtendimentoHtml(analise)}</div>`;
+    }
     return html + '</div>';
 }
 
@@ -462,13 +481,15 @@ function generateRankingSection() {
         const i = requisitosCliente.findIndex(x => x.id === r.id) + 1;
         html += `<li>RC${i}: ${escapeHtml(r.descricao)} — ${r.importancia || 0} pts</li>`;
     });
-    html += '</ol><h4>Requisitos de Projeto (QFD)</h4><ol>';
+    // Posição explícita (não <ol>) para que empates apareçam na mesma posição
+    html += '</ol><h4>Requisitos de Projeto (QFD)</h4><ul class="report-rank-list">';
     projetos.forEach(r => {
         const i = requisitosProjeto.findIndex(x => x.id === r.id) + 1;
         const pct = r.pesoRelativo != null ? (r.pesoRelativo * 100).toFixed(1) + '%' : '-';
-        html += `<li>RP${i}: ${escapeHtml(r.descricao)} — ${pct}</li>`;
+        const pos = r.importanciaAbsoluta > 0 ? `${r.importanciaRelativa}º` : '-';
+        html += `<li><strong>${pos}</strong> RP${i}: ${escapeHtml(r.descricao)} — ${(r.importanciaAbsoluta || 0).toFixed(1)} (${pct})</li>`;
     });
-    return html + '</ol></div>';
+    return html + '</ul></div>';
 }
 
 function generateAnalysisSection() {
@@ -498,7 +519,7 @@ function generateComparisonsSection() {
         const i1 = requisitosCliente.indexOf(req1) + 1;
         const i2 = requisitosCliente.indexOf(req2) + 1;
 
-        html += `<tr class="report-has-tip" data-report-tip="${escapeAttr(`RC${i1} vs RC${i2}: importância ${c.valor}`)}">
+        html += `<tr class="report-has-tip" data-tooltip="${escapeAttr(`RC${i1} vs RC${i2}: importância ${c.valor}`)}">
             <td>RC${i1} vs RC${i2}</td>
             <td>RC${i1}</td>
             <td>${c.valor}</td>
@@ -507,36 +528,6 @@ function generateComparisonsSection() {
     });
 
     return html + '</tbody></table></div>';
-}
-
-function initReportTooltips() {
-    let tipEl = document.getElementById('report-tooltip-float');
-    if (!tipEl) {
-        tipEl = document.createElement('div');
-        tipEl.id = 'report-tooltip-float';
-        tipEl.className = 'report-tooltip-float';
-        document.body.appendChild(tipEl);
-    }
-
-    document.querySelectorAll('#report-content .report-has-tip').forEach(el => {
-        el.addEventListener('mouseenter', (e) => {
-            const text = el.getAttribute('data-report-tip');
-            if (!text) return;
-            tipEl.textContent = text;
-            tipEl.style.display = 'block';
-            moveReportTooltip(e, tipEl);
-        });
-        el.addEventListener('mousemove', (e) => moveReportTooltip(e, tipEl));
-        el.addEventListener('mouseleave', () => { tipEl.style.display = 'none'; });
-    });
-}
-
-function moveReportTooltip(e, tipEl) {
-    const pad = 12;
-    let left = e.clientX + pad;
-    let top = e.clientY + pad;
-    tipEl.style.left = left + 'px';
-    tipEl.style.top = top + 'px';
 }
 
 function printReport() {
@@ -570,30 +561,32 @@ async function generatePDF() {
             backgroundColor: '#ffffff'
         });
 
-        const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
-        const margin = 8;
+        const margin = 20; // 2 cm em todos os lados
         const usableWidth = pageWidth - margin * 2;
         const usableHeight = pageHeight - margin * 2;
-        const imgWidth = usableWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        let heightLeft = imgHeight;
-        let position = margin;
+        // Recorta o canvas em fatias da altura útil da página, para que o
+        // conteúdo não invada as margens superior e inferior das páginas seguintes
+        const sliceHeightPx = Math.floor(usableHeight * canvas.width / usableWidth);
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width;
+        const ctx = slice.getContext('2d');
 
-        pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-        heightLeft -= usableHeight;
-
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight + margin;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
-            heightLeft -= usableHeight;
+        for (let y = 0; y < canvas.height; y += sliceHeightPx) {
+            const h = Math.min(sliceHeightPx, canvas.height - y);
+            slice.height = h;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, slice.width, h);
+            ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+            if (y > 0) pdf.addPage();
+            pdf.addImage(slice.toDataURL('image/png'), 'PNG', margin, margin, usableWidth, (h * usableWidth) / canvas.width);
         }
 
-        const safeTitle = (reportConfig.title || 'relatorio-qfd').replace(/[^\w\-]+/g, '_');
+        const safeTitle = (reportConfig.title || 'relatorio-qfd').replace(/[^\w\-]+/g, '_')
+            + (isApresentacao() ? '-apresentacao' : '');
         pdf.save(`${safeTitle}.pdf`);
     } catch (error) {
         console.error('Erro ao gerar PDF:', error);

@@ -73,7 +73,7 @@ function renderTable(lista) {
         else if (index < t2) tercioClass = 'tercio-medio';
 
         const impPct = req.pesoRelativo != null ? (req.pesoRelativo * 100).toFixed(1) + '%' : '-';
-        const completo = String(row.unidadeMedida || '').trim() && String(row.valorUnitario || '').trim();
+        const completo = String(row.unidadeMedida || '').trim() && metaDefinida(row);
 
         const tr = document.createElement('tr');
         tr.className = `${tercioClass}${completo ? ' spec-row-complete' : ''}`;
@@ -104,16 +104,7 @@ function renderTable(lista) {
         tdUnidade.appendChild(inputUnidade);
 
         const tdValor = document.createElement('td');
-        const inputValor = document.createElement('input');
-        inputValor.type = 'text';
-        inputValor.maxLength = 50;
-        inputValor.className = 'form-control spec-input';
-        inputValor.dataset.field = 'valorUnitario';
-        inputValor.placeholder = 'Ex.: 10,5';
-        inputValor.value = row.valorUnitario || '';
-        inputValor.addEventListener('change', () => saveField(req.id, 'valorUnitario', inputValor.value));
-        inputValor.addEventListener('blur', () => saveField(req.id, 'valorUnitario', inputValor.value));
-        tdValor.appendChild(inputValor);
+        tdValor.appendChild(criarEditorMeta(req, row));
 
         const tdObs = document.createElement('td');
         const textareaObs = document.createElement('textarea');
@@ -149,16 +140,128 @@ function renderTable(lista) {
     });
 }
 
+const ROTULOS_TIPO_META = {
+    '>=': '≥ mínimo',
+    '<=': '≤ máximo',
+    '=': '= nominal',
+    'faixa': 'intervalo'
+};
+
+/**
+ * Editor da meta: tipo (≥, ≤, =, intervalo), valor e, conforme o tipo, o
+ * valor máximo do intervalo ou a tolerância (±). O tipo vem sugerido pelo
+ * sentido de melhoria do requisito, mas pode ser trocado.
+ */
+function criarEditorMeta(req, row) {
+    const sugerido = sugerirTipoMeta(req.sentidoMelhoria);
+    const box = document.createElement('div');
+    box.className = 'spec-meta-editor';
+
+    const select = document.createElement('select');
+    select.className = 'form-control spec-input spec-meta-tipo';
+    select.dataset.field = 'tipoMeta';
+    Object.entries(ROTULOS_TIPO_META).forEach(([valor, rotulo]) => {
+        const opt = document.createElement('option');
+        opt.value = valor;
+        opt.textContent = rotulo + (valor === sugerido ? ' (sugerido)' : '');
+        select.appendChild(opt);
+    });
+    select.value = row.tipoMeta || sugerido;
+
+    const numero = (campo, placeholder, valor) => {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.inputMode = 'decimal';
+        input.maxLength = 20;
+        input.className = 'form-control spec-input spec-meta-num';
+        input.dataset.field = campo;
+        input.placeholder = placeholder;
+        input.value = Number.isFinite(valor) ? formatarNumero(valor) : '';
+        return input;
+    };
+    const inputValor = numero('valorMeta', 'Ex.: 10,5', row.valorMeta);
+    const inputMax = numero('valorMax', 'até', row.valorMax);
+    const inputTol = numero('tolerancia', '± (opcional)', row.tolerancia);
+    const sepMax = document.createElement('span');
+    sepMax.className = 'spec-meta-sep';
+    sepMax.textContent = 'a';
+
+    const linha = document.createElement('div');
+    linha.className = 'spec-meta-linha';
+    linha.append(inputValor, sepMax, inputMax, inputTol);
+
+    const aviso = document.createElement('small');
+    aviso.className = 'spec-meta-aviso';
+
+    box.append(select, linha, aviso);
+    if (row.revisarMeta && row.metaTexto) {
+        const revisar = document.createElement('small');
+        revisar.className = 'spec-meta-revisar';
+        revisar.textContent = `Revisar meta — valor antigo: "${row.metaTexto}"`;
+        box.appendChild(revisar);
+    }
+
+    const mostrarCampos = () => {
+        const faixa = select.value === 'faixa';
+        sepMax.style.display = inputMax.style.display = faixa ? '' : 'none';
+        inputTol.style.display = select.value === '=' ? '' : 'none';
+    };
+    mostrarCampos();
+
+    const salvar = () => {
+        mostrarCampos();
+        const ler = input => {
+            const t = input.value.trim();
+            const n = t === '' ? null : parseNumeroEstrito(t);
+            input.classList.toggle('spec-input-erro', t !== '' && n === null);
+            return { vazio: t === '', n };
+        };
+        const v = ler(inputValor);
+        const max = ler(inputMax);
+        const tol = ler(inputTol);
+
+        let erro = '';
+        if ([v, select.value === 'faixa' ? max : null, select.value === '=' ? tol : null]
+            .some(x => x && !x.vazio && x.n === null)) {
+            erro = 'Use só números (vírgula decimal).';
+        } else if (select.value === 'faixa' && v.n !== null && max.n !== null && max.n <= v.n) {
+            erro = 'O fim do intervalo deve ser maior que o início.';
+            inputMax.classList.add('spec-input-erro');
+        }
+        aviso.textContent = erro;
+        if (erro) return;
+
+        const campos = {
+            tipoMeta: v.n === null ? '' : select.value,
+            valorMeta: v.n,
+            valorMax: select.value === 'faixa' ? max.n : null,
+            tolerancia: select.value === '=' && tol.n !== null ? Math.abs(tol.n) : null
+        };
+        // meta válida informada: o texto antigo deixa de valer
+        if (v.n !== null) Object.assign(campos, { metaTexto: '', revisarMeta: false });
+        qfdDB.updateEspecificacao(req.id, campos);
+        if (v.n !== null) box.querySelector('.spec-meta-revisar')?.remove();
+        atualizarLinha(req.id);
+    };
+    select.addEventListener('change', salvar);
+    [inputValor, inputMax, inputTol].forEach(input => input.addEventListener('change', salvar));
+    return box;
+}
+
 function saveField(requisitoProjetoId, field, value) {
     qfdDB.updateEspecificacao(requisitoProjetoId, { [field]: value });
+    atualizarLinha(requisitoProjetoId);
+}
+
+/** Atualiza o status geral e o destaque de linha completa (unidade + meta válida) */
+function atualizarLinha(requisitoProjetoId) {
     const stats = qfdDB.getEspecificacoesStats();
     updateStatus(stats, stats.total);
 
     const row = document.querySelector(`tr[data-req-id="${requisitoProjetoId}"]`);
-    if (row) {
-        const unidade = row.querySelector('[data-field="unidadeMedida"]')?.value || '';
-        const valor = row.querySelector('[data-field="valorUnitario"]')?.value || '';
-        row.classList.toggle('spec-row-complete', unidade.trim() !== '' && valor.trim() !== '');
+    const esp = qfdDB.getEspecificacoesProjeto().find(e => e.requisitoProjetoId === requisitoProjetoId);
+    if (row && esp) {
+        row.classList.toggle('spec-row-complete', String(esp.unidadeMedida || '').trim() !== '' && metaDefinida(esp));
     }
 }
 

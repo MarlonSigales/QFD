@@ -25,7 +25,7 @@
  * Ao mudar a estrutura, incremente este número e adicione a migração
  * correspondente em SCHEMA_MIGRATIONS.
  */
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 /** ID fixo do nosso produto na avaliação competitiva */
 const PRODUTO_NOSSO_ID = 'nosso';
@@ -35,6 +35,134 @@ const MAX_CONCORRENTES = 6;
 
 /** Tolerância para considerar atingida a meta de um requisito nominal (*): ±5% */
 const TOLERANCIA_NOMINAL = 0.05;
+
+/**
+ * Lê o primeiro número de um texto, aceitando vírgula decimal e separador de
+ * milhar ("1,2" → 1.2; "1.234,5 kg" → 1234.5; "1.500" → 1500; "0.25" → 0.25;
+ * "≤ 20 kW" → 20).
+ *
+ * @param {string} text
+ * @returns {number|null} null se não houver número
+ */
+function parseNumero(text) {
+    const match = String(text == null ? '' : text).match(/-?\d[\d.,]*/);
+    if (!match) return null;
+    let s = match[0].replace(/[.,]$/, '');
+    const lastComma = s.lastIndexOf(','), lastDot = s.lastIndexOf('.');
+    if (lastComma !== -1 && lastDot !== -1) {
+        // o último separador é o decimal; o outro é de milhar
+        s = lastComma > lastDot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    } else if (lastComma !== -1) {
+        s = (s.match(/,/g).length > 1) ? s.replace(/,/g, '') : s.replace(',', '.');
+    } else if (lastDot !== -1 && (s.match(/\./g).length > 1 || /^-?[1-9]\d{0,2}\.\d{3}$/.test(s))) {
+        s = s.replace(/\./g, ''); // ponto de milhar, como se escreve em português
+    }
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : null;
+}
+
+// ========================================================================
+// METAS DAS ESPECIFICAÇÕES
+// ========================================================================
+// Cada especificação tem uma meta tipada (Pahl & Beitz, 5.2.1: "P > 20 kW",
+// "80 bar ± 5 bar", "L < 400 mm"):
+//   tipoMeta: '>=' (mínimo) | '<=' (máximo) | '=' (nominal, com tolerância
+//   opcional) | 'faixa' (de valorMeta a valorMax) | '' (não definida)
+//   valorMeta, valorMax, tolerancia: números ou null
+//   metaTexto/revisarMeta: texto antigo que não pôde ser convertido
+
+/** Tipo de meta sugerido pelo sentido de melhoria: ↑ ≥, ↓ ≤, * = */
+function sugerirTipoMeta(sentido) {
+    if (sentido === 'up') return '>=';
+    if (sentido === 'down') return '<=';
+    return '=';
+}
+
+/** Número de um texto que contém só o número (aceita vírgula decimal); senão null */
+function parseNumeroEstrito(texto) {
+    const t = String(texto == null ? '' : texto).trim();
+    return /^-?\d[\d.,]*$/.test(t) ? parseNumero(t) : null;
+}
+
+/**
+ * Converte um texto livre de meta ("1,2", "≥ 20 kW", "80 ± 5", "10 a 12 mm")
+ * em meta tipada. Número sozinho usa o tipo sugerido pelo sentido de melhoria
+ * (era assim que o sistema avaliava a meta antes). Texto que não dá para
+ * converter fica em metaTexto, marcado para revisão.
+ */
+function interpretarMetaTexto(texto, sentido) {
+    const meta = { tipoMeta: '', valorMeta: null, valorMax: null, tolerancia: null, metaTexto: '', revisarMeta: false };
+    const t = String(texto == null ? '' : texto).trim()
+        .replace(/>=/g, '≥').replace(/<=/g, '≤').replace(/\+\/-/g, '±');
+    if (!t) return meta;
+
+    const NUM = '(-?\\d[\\d.,]*)';
+    const UNID = '\\s*[^\\d\\s±≥≤<>=]*';
+    const casa = padrao => t.match(new RegExp('^' + padrao + UNID + '$', 'i'));
+    let m;
+    if ((m = casa(`${NUM}\\s*±\\s*${NUM}`))) {
+        return { ...meta, tipoMeta: '=', valorMeta: parseNumero(m[1]), tolerancia: Math.abs(parseNumero(m[2])) };
+    }
+    if ((m = casa(`${NUM}(?:\\s+(?:a|até)\\s+|\\s*[-–]\\s*)${NUM}`))) {
+        const a = parseNumero(m[1]), b = parseNumero(m[2]);
+        if (b > a) return { ...meta, tipoMeta: 'faixa', valorMeta: a, valorMax: b };
+    }
+    if ((m = casa(`[≥>]\\s*${NUM}`))) return { ...meta, tipoMeta: '>=', valorMeta: parseNumero(m[1]) };
+    if ((m = casa(`[≤<]\\s*${NUM}`))) return { ...meta, tipoMeta: '<=', valorMeta: parseNumero(m[1]) };
+    if ((m = casa(`=\\s*${NUM}`))) return { ...meta, tipoMeta: '=', valorMeta: parseNumero(m[1]) };
+    if ((m = casa(`\\s*${NUM}`))) return { ...meta, tipoMeta: sugerirTipoMeta(sentido), valorMeta: parseNumero(m[1]) };
+    return { ...meta, metaTexto: t, revisarMeta: true };
+}
+
+/** A meta está completa (tipo + valores válidos)? */
+function metaDefinida(esp) {
+    if (!esp || !['>=', '<=', '=', 'faixa'].includes(esp.tipoMeta) || !Number.isFinite(esp.valorMeta)) return false;
+    return esp.tipoMeta !== 'faixa' || (Number.isFinite(esp.valorMax) && esp.valorMax > esp.valorMeta);
+}
+
+/** O valor medido atinge a meta? '=' sem tolerância usa ±TOLERANCIA_NOMINAL */
+function atingeMeta(esp, medido) {
+    const v = esp.valorMeta;
+    if (esp.tipoMeta === '>=') return medido >= v;
+    if (esp.tipoMeta === '<=') return medido <= v;
+    if (esp.tipoMeta === 'faixa') return medido >= v && medido <= esp.valorMax;
+    if (Number.isFinite(esp.tolerancia)) return Math.abs(medido - v) <= esp.tolerancia + 1e-9;
+    return v === 0 ? medido === 0 : Math.abs(medido - v) <= Math.abs(v) * TOLERANCIA_NOMINAL;
+}
+
+/**
+ * Valor da meta para comparar com o melhor concorrente: o limite menos
+ * exigente aceito (numa faixa, o mínimo para ↑ e o máximo para ↓)
+ */
+function valorReferenciaMeta(esp, sentido) {
+    if (esp.tipoMeta === 'faixa') return sentido === 'down' ? esp.valorMax : esp.valorMeta;
+    return esp.valorMeta;
+}
+
+/** Meta formatada, sem unidade: "≥ 20", "≤ 1,2", "80 ± 5", "10 a 12" ('' se não definida) */
+function formatarMeta(esp) {
+    if (!metaDefinida(esp)) return '';
+    const f = n => (typeof formatarNumero === 'function' ? formatarNumero(n) : String(n));
+    if (esp.tipoMeta === '>=') return `≥ ${f(esp.valorMeta)}`;
+    if (esp.tipoMeta === '<=') return `≤ ${f(esp.valorMeta)}`;
+    if (esp.tipoMeta === 'faixa') return `${f(esp.valorMeta)} a ${f(esp.valorMax)}`;
+    return Number.isFinite(esp.tolerancia) && esp.tolerancia > 0
+        ? `${f(esp.valorMeta)} ± ${f(esp.tolerancia)}` : f(esp.valorMeta);
+}
+
+/** Só os campos de meta presentes em obj */
+function pickMeta(obj) {
+    const out = {};
+    ['tipoMeta', 'valorMeta', 'valorMax', 'tolerancia', 'metaTexto', 'revisarMeta'].forEach(k => {
+        if (obj && obj[k] !== undefined) out[k] = obj[k];
+    });
+    return out;
+}
+
+/** Campos de meta vazios (especificação nova) */
+function metaVazia() {
+    return { tipoMeta: '', valorMeta: null, valorMax: null, tolerancia: null, metaTexto: '', revisarMeta: false };
+}
 
 /** Estrutura inicial da avaliação competitiva: só o nosso produto, sem notas */
 function criarAvaliacaoCompetitivaVazia() {
@@ -85,6 +213,15 @@ const SCHEMA_MIGRATIONS = {
         if (!data.avaliacaoCompetitiva || typeof data.avaliacaoCompetitiva !== 'object') {
             data.avaliacaoCompetitiva = criarAvaliacaoCompetitivaVazia();
         }
+    },
+
+    // v4: "valor unitário" (texto livre) vira meta tipada (tipoMeta, valorMeta...)
+    4(data) {
+        (data.especificacoesProjeto || []).forEach(esp => {
+            const rp = (data.requisitosProjeto || []).find(r => r.id === esp.requisitoProjetoId);
+            Object.assign(esp, interpretarMetaTexto(esp.valorUnitario, rp && rp.sentidoMelhoria));
+            delete esp.valorUnitario;
+        });
     }
 };
 
@@ -744,19 +881,20 @@ class QFDDatabase {
             reqProj.importanciaAbsoluta = importanciaAbsoluta;
         });
         
-        // Calcula importância relativa (ranking)
+        // Calcula importância relativa (ranking); empates ficam na mesma posição (1, 1, 3)
         const sortedRequisitos = [...requisitosProjeto].sort((a, b) => b.importanciaAbsoluta - a.importanciaAbsoluta);
         sortedRequisitos.forEach((req, index) => {
-            req.importanciaRelativa = index + 1;
+            const anterior = sortedRequisitos[index - 1];
+            req.importanciaRelativa = anterior && Math.abs(anterior.importanciaAbsoluta - req.importanciaAbsoluta) < 1e-9
+                ? anterior.importanciaRelativa
+                : index + 1;
         });
-        
-        // Calcula peso relativo (normalizado)
+
+        // Calcula peso relativo (normalizado); sem relações, zera em vez de manter o valor antigo
         const totalImportancia = requisitosProjeto.reduce((sum, req) => sum + req.importanciaAbsoluta, 0);
-        if (totalImportancia > 0) {
-            requisitosProjeto.forEach(req => {
-                req.pesoRelativo = req.importanciaAbsoluta / totalImportancia;
-            });
-        }
+        requisitosProjeto.forEach(req => {
+            req.pesoRelativo = totalImportancia > 0 ? req.importanciaAbsoluta / totalImportancia : 0;
+        });
         
         this.saveData(data);
     }
@@ -823,7 +961,7 @@ class QFDDatabase {
                 esp = {
                     requisitoProjetoId: id,
                     unidadeMedida: '',
-                    valorUnitario: '',
+                    ...metaVazia(),
                     observacao: '',
                     aspectosIndesejaveis: this.buildAspectosIndesejaveisFromRoof(id),
                     aspectosAutoGerado: true,
@@ -865,7 +1003,9 @@ class QFDDatabase {
                 rank: rank + 1,
                 numeroOriginal: numOriginal,
                 unidadeMedida: esp.unidadeMedida || '',
-                valorUnitario: esp.valorUnitario || '',
+                ...metaVazia(),
+                ...pickMeta(esp),
+                metaFormatada: formatarMeta(esp),
                 observacao: esp.observacao || '',
                 aspectosIndesejaveis: esp.aspectosIndesejaveis || '',
                 aspectosAutoGerado: esp.aspectosAutoGerado !== false
@@ -882,6 +1022,12 @@ class QFDDatabase {
         if (index === -1) return null;
 
         const current = data.especificacoesProjeto[index];
+        if (fields.valorUnitario !== undefined) {
+            // formato antigo (texto livre): converte em meta tipada
+            const rp = (data.requisitosProjeto || []).find(r => r.id === requisitoProjetoId);
+            fields = { ...fields, ...interpretarMetaTexto(fields.valorUnitario, rp && rp.sentidoMelhoria) };
+            delete fields.valorUnitario;
+        }
         if (fields.aspectosIndesejaveis !== undefined &&
             fields.aspectosIndesejaveis !== current.aspectosIndesejaveis) {
             fields.aspectosAutoGerado = false;
@@ -917,8 +1063,7 @@ class QFDDatabase {
             return { total: 0, completed: 0, percent: 0 };
         }
         const completed = (data.especificacoesProjeto || []).filter(esp =>
-            String(esp.unidadeMedida || '').trim() !== '' &&
-            String(esp.valorUnitario || '').trim() !== ''
+            String(esp.unidadeMedida || '').trim() !== '' && metaDefinida(esp)
         ).length;
         return {
             total,
@@ -941,10 +1086,18 @@ class QFDDatabase {
                 if (!id) return;
                 const index = data.especificacoesProjeto.findIndex(e => e.requisitoProjetoId === id);
                 if (index === -1) return;
+                let meta = pickMeta(item);
+                if (item.tipoMeta === undefined && item.valorUnitario !== undefined) {
+                    // arquivo exportado antes da meta tipada
+                    const rp = (data.requisitosProjeto || []).find(r => r.id === id);
+                    meta = interpretarMetaTexto(item.valorUnitario, rp && rp.sentidoMelhoria);
+                }
+                const atual = { ...data.especificacoesProjeto[index] };
+                delete atual.valorUnitario;
                 data.especificacoesProjeto[index] = {
-                    ...data.especificacoesProjeto[index],
+                    ...atual,
+                    ...meta,
                     unidadeMedida: item.unidadeMedida ?? data.especificacoesProjeto[index].unidadeMedida,
-                    valorUnitario: item.valorUnitario ?? data.especificacoesProjeto[index].valorUnitario,
                     observacao: item.observacao ?? data.especificacoesProjeto[index].observacao ?? '',
                     aspectosIndesejaveis: item.aspectosIndesejaveis ?? data.especificacoesProjeto[index].aspectosIndesejaveis,
                     aspectosAutoGerado: item.aspectosAutoGerado ?? false,
@@ -1185,16 +1338,17 @@ class QFDDatabase {
                 });
             }
 
-            const meta = parseNumero(esp.valorUnitario);
             return {
                 requisito: req,
                 numero: rps.findIndex(r => r.id === req.id) + 1,
                 rank: rank + 1,
                 unidade: esp.unidadeMedida || '',
-                meta: esp.valorUnitario || '',
+                meta: formatarMeta(esp),
                 valores,
                 melhor,
-                situacao: melhor && meta !== null ? comparar(req.sentidoMelhoria, meta, melhor.valor) : 'sem-dados'
+                situacao: melhor && metaDefinida(esp)
+                    ? comparar(req.sentidoMelhoria, valorReferenciaMeta(esp, req.sentidoMelhoria), melhor.valor)
+                    : 'sem-dados'
             };
         });
 
@@ -1296,19 +1450,18 @@ class QFDDatabase {
             .sort((a, b) => (b.importanciaAbsoluta || 0) - (a.importanciaAbsoluta || 0))
             .map((req, rank) => {
                 const esp = especificacoes.find(e => e.requisitoProjetoId === req.id) || {};
-                const meta = parseNumero(esp.valorUnitario);
                 const medido = parseNumero(valorNosso(req.id));
                 let estado = 'sem-meta';
-                if (meta !== null) {
+                if (metaDefinida(esp)) {
                     estado = medido === null ? 'sem-medicao'
-                        : (this.metaAtingida(req.sentidoMelhoria, medido, meta) ? 'atingida' : 'nao-atingida');
+                        : (atingeMeta(esp, medido) ? 'atingida' : 'nao-atingida');
                 }
                 return {
                     requisito: req,
                     numero: rps.findIndex(r => r.id === req.id) + 1,
                     rank: rank + 1,
                     unidade: esp.unidadeMedida || '',
-                    meta: esp.valorUnitario || '',
+                    meta: formatarMeta(esp),
                     medido: valorNosso(req.id),
                     estado,
                     relacoes: matriz.filter(m => m.requisitoProjeto === req.id).length

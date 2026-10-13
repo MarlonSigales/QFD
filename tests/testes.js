@@ -69,6 +69,15 @@ function criarProjetoExemplo() {
 // ============================================================================
 
 suite('Utilitários', () => {
+    test('célula anterior: matriz triangular e grade (ordem inversa do Enter)', () => {
+        // triangular n=4: (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
+        assertEqual(getPrevTriangularCell(1, 2, 4), { i: 0, j: 3 });
+        assertEqual(getPrevTriangularCell(1, 3, 4), { i: 1, j: 2 });
+        assertEqual(getPrevTriangularCell(0, 1, 4), null);
+        assertEqual(getPrevGridCell(1, 0, 3), { i: 0, j: 2 });
+        assertEqual(getPrevGridCell(2, 2, 3), { i: 2, j: 1 });
+        assertEqual(getPrevGridCell(0, 0, 3), null);
+    });
     test('escapeHtml escapa < > & e aceita null', () => {
         assertEqual(escapeHtml('<b>"a" & b</b>'), '&lt;b&gt;"a" &amp; b&lt;/b&gt;');
         assertEqual(escapeHtml(null), '');
@@ -134,6 +143,31 @@ suite('Banco de dados', () => {
         qfdDB.calculateImportanciaProjeto();
         const soma = qfdDB.getRequisitosProjeto().reduce((s, r) => s + (r.pesoRelativo || 0), 0);
         assert(Math.abs(soma - 1) < 1e-9, `soma = ${soma}`);
+    });
+    test('soma de cada RP = Σ relação × importância do RC', () => {
+        const { rc, rp } = criarProjetoExemplo();
+        qfdDB.calculateImportanciaProjeto();
+        const clientes = qfdDB.getRequisitosCliente();
+        qfdDB.getRequisitosProjeto().forEach((p, j) => {
+            const esperado = rc.reduce((s, c) => {
+                const imp = clientes.find(x => x.id === c.id).importancia;
+                return s + qfdDB.getMatrizQFD(c.id, rp[j].id) * imp;
+            }, 0);
+            assert(Math.abs(p.importanciaAbsoluta - esperado) < 1e-9, `RP${j + 1}: ${p.importanciaAbsoluta} ≠ ${esperado}`);
+        });
+    });
+    test('ranking de RP: empates na mesma posição (1, 1, 3)', () => {
+        const { rc, rp } = criarProjetoExemplo();
+        rc.forEach(c => rp.forEach(p => qfdDB.setMatrizQFD(c.id, p.id, 0)));
+        qfdDB.setMatrizQFD(rc[0].id, rp[0].id, 9);
+        qfdDB.setMatrizQFD(rc[0].id, rp[1].id, 9);
+        qfdDB.setMatrizQFD(rc[0].id, rp[2].id, 3);
+        assertEqual(qfdDB.getRequisitosProjeto().map(p => p.importanciaRelativa), [1, 1, 3]);
+    });
+    test('sem relações na matriz, o percentual dos RP volta a zero', () => {
+        const { rc, rp } = criarProjetoExemplo();
+        rc.forEach(c => rp.forEach(p => qfdDB.setMatrizQFD(c.id, p.id, 0)));
+        assertEqual(qfdDB.getRequisitosProjeto().map(p => p.pesoRelativo), [0, 0, 0]);
     });
     test('especificações: ordem pelo QFD, texto explicativo e aspectos do telhado (--)', () => {
         const { rp } = criarProjetoExemplo();
@@ -201,6 +235,47 @@ suite('Versionamento dos dados', () => {
         assertEqual(r.metadata.schemaVersion, SCHEMA_VERSION);
         assertEqual(r.requisitosCliente[0].descricao, 'Leve');
         assertEqual([r.avaliacaoCompetitiva.produtos.length, r.avaliacaoCompetitiva.notasCliente.length], [1, 0]);
+    });
+    test('v3 → v4: "valor unitário" vira meta tipada; texto não numérico fica para revisar', () => {
+        const d = {
+            requisitosCliente: [],
+            requisitosProjeto: [
+                { id: 'p1', descricao: 'Peso', sentidoMelhoria: 'down' },
+                { id: 'p2', descricao: 'Potência', sentidoMelhoria: 'up' },
+                { id: 'p3', descricao: 'Pressão', sentidoMelhoria: 'none' },
+                { id: 'p4', descricao: 'Diâmetro', sentidoMelhoria: 'none' }
+            ],
+            comparacaoCliente: [], correlacaoProjeto: [], matrizQFD: [],
+            especificacoesProjeto: [
+                { requisitoProjetoId: 'p1', unidadeMedida: 'kg', valorUnitario: '1,2', observacao: '' },
+                { requisitoProjetoId: 'p2', unidadeMedida: 'kW', valorUnitario: 'aprox. 3', observacao: '' },
+                { requisitoProjetoId: 'p3', unidadeMedida: 'bar', valorUnitario: '80 ± 5', observacao: '' },
+                { requisitoProjetoId: 'p4', unidadeMedida: 'mm', valorUnitario: '10 a 12', observacao: '' }
+            ],
+            metadata: { created: '2026-01-01', schemaVersion: 3 }
+        };
+        assert(qfdDB.importData(d), qfdDB.lastImportError);
+        const esp = qfdDB.loadData().especificacoesProjeto;
+        const de = id => esp.find(e => e.requisitoProjetoId === id);
+        assertEqual([de('p1').tipoMeta, de('p1').valorMeta, de('p1').valorUnitario], ['<=', 1.2, undefined], 'p1');
+        assertEqual([de('p2').tipoMeta, de('p2').valorMeta, de('p2').revisarMeta, de('p2').metaTexto], ['', null, true, 'aprox. 3'], 'p2');
+        assertEqual([formatarMeta(de('p3')), formatarMeta(de('p4'))], ['80 ± 5', '10 a 12']);
+        const stats = qfdDB.getEspecificacoesStats();
+        assertEqual([stats.completed, stats.total], [3, 4], 'completude exige meta válida');
+    });
+    test('interpretarMetaTexto e atingeMeta: tipos, intervalo e tolerância', () => {
+        const tipo = t => { const m = interpretarMetaTexto(t, 'up'); return [m.tipoMeta, m.valorMeta, m.valorMax, m.tolerancia]; };
+        assertEqual(tipo('≥ 20 kW'), ['>=', 20, null, null]);
+        assertEqual(tipo('<= 5'), ['<=', 5, null, null]);
+        assertEqual(tipo('= 7,5'), ['=', 7.5, null, null]);
+        assertEqual(tipo('80 +/- 5'), ['=', 80, null, 5]);
+        assertEqual(tipo('10-12'), ['faixa', 10, 12, null]);
+        assertEqual(interpretarMetaTexto('12 a 10', 'up').revisarMeta, true, 'intervalo invertido');
+        const faixa = { tipoMeta: 'faixa', valorMeta: 10, valorMax: 12 };
+        const nominal = { tipoMeta: '=', valorMeta: 80, tolerancia: 5 };
+        assertEqual([atingeMeta(faixa, 11), atingeMeta(faixa, 12.5), atingeMeta(nominal, 85), atingeMeta(nominal, 85.1)],
+            [true, false, true, false]);
+        assertEqual(metaDefinida({ tipoMeta: 'faixa', valorMeta: 10, valorMax: 10 }), false, 'faixa vazia');
     });
     test('banco novo já nasce na versão atual', () => {
         qfdDB.clearAllData();
@@ -492,7 +567,10 @@ const PAGINAS = [
     { arquivo: '../pages/comparacao-cliente.html', funcao: 'generateComparisonMatrix', balao: 'Obs RC1' },
     { arquivo: '../pages/requisitos-projeto.html', funcao: 'loadRequisitos', texto: 'Peso total (kg)' },
     { arquivo: '../pages/correlacao-projeto.html', funcao: 'generateRoofMatrix', balao: 'Obs RP1' },
-    { arquivo: '../pages/matriz-qfd.html', funcao: 'setupMatrix', balao: 'Obs RP1' },
+    {
+        arquivo: '../pages/matriz-qfd.html', funcao: 'setupMatrix', balao: 'Especificação: Spec "pesagem"',
+        texto: 'Soma (Σ relação × importância)', seletores: ['.qfd-sum-total td[data-j="0"]', '.qfd-sum-rank td[data-j="2"]']
+    },
     { arquivo: '../pages/especificacoes.html', funcao: 'renderTable', texto: 'Custo de produção' },
     {
         arquivo: '../pages/avaliacao-competitiva.html', funcao: 'updateComputed', preparar: criarAvaliacaoExemplo,
@@ -506,7 +584,8 @@ const PAGINAS = [
         arquivo: '../pages/relatorio.html', funcao: 'generatePreview', preparar: criarAvaliacaoExemplo,
         texto: 'Resultado da comparação',
         seletores: ['#report-content .grafico-competitivo', '#report-content .resultado-atras li', '#report-content .resultado-metas li',
-            '#report-content .report-atendimento .atend-rel']
+            '#report-content .report-atendimento .atend-rel', '#report-content .qfd-matrix-report .qfd-sum-percent',
+            '#report-content .competitiva-glossario', '#report-content .competitiva-table th.produto-col[title]']
     }
 ];
 
@@ -551,8 +630,9 @@ function testarPagina(pagina) {
                 const alvo = [...doc.querySelectorAll('[data-tooltip]')]
                     .find(el => el.getAttribute('data-tooltip').includes(pagina.balao));
                 assert(alvo, `nenhum elemento com balão contendo "${pagina.balao}"`);
-                alvo.dispatchEvent(new win.MouseEvent('mouseenter', { clientX: 50, clientY: 50 }));
-                const balao = doc.querySelector('.custom-tooltip') || doc.getElementById('qfd-tooltip');
+                alvo.dispatchEvent(new win.MouseEvent('mouseover', { clientX: 50, clientY: 50, bubbles: true }));
+                const balao = doc.querySelector('.app-tooltip');
+                assert(balao && balao.style.display === 'block', 'balão não apareceu');
                 assert(balao && balao.textContent.includes(pagina.balao), 'balão não exibiu o texto explicativo');
                 assert(!/<em|<br|&quot;/.test(balao.textContent), 'balão mostra HTML cru: ' + balao.textContent);
             }
@@ -564,6 +644,116 @@ function testarPagina(pagina) {
 
 suite('Páginas', () => {
     PAGINAS.forEach(p => test(p.arquivo.replace('../', ''), testarPagina(p)));
+    test('Especificações: editor da meta sugere o tipo, valida intervalo e salva', async () => {
+        const { rp } = criarProjetoExemplo();
+        const iframe = await carregarPagina('../pages/especificacoes.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            const linha = doc.querySelector(`tr[data-req-id="${rp[1].id}"]`); // Custo de produção (↓)
+            const campo = f => linha.querySelector(`[data-field="${f}"]`);
+            assertEqual(campo('tipoMeta').value, '<=', 'tipo sugerido para ↓');
+            const mudar = (f, v) => { campo(f).value = v; campo(f).dispatchEvent(new win.Event('change')); };
+            mudar('tipoMeta', 'faixa');
+            mudar('valorMeta', '10');
+            mudar('valorMax', '8');
+            assert(/maior que o início/.test(linha.querySelector('.spec-meta-aviso').textContent), 'não avisou intervalo invertido');
+            const esp = () => qfdDB.getEspecificacoesProjeto().find(e => e.requisitoProjetoId === rp[1].id);
+            assert(!metaDefinida(esp()), 'salvou intervalo inválido');
+            mudar('valorMax', '12,5');
+            assertEqual([esp().tipoMeta, esp().valorMeta, esp().valorMax], ['faixa', 10, 12.5]);
+            mudar('valorMeta', 'abc');
+            assert(campo('valorMeta').classList.contains('spec-input-erro'), 'texto não numérico sem destaque de erro');
+            assertEqual(esp().valorMeta, 10, 'valor inválido não deve ser salvo');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Relatório: versão de apresentação sem comentários internos', async () => {
+        criarAvaliacaoExemplo();
+        const iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            const conteudo = () => doc.getElementById('report-content');
+            const tem = () => {
+                const html = conteudo().innerHTML;
+                return {
+                    obs: html.includes('Obs RC2') && html.includes('Spec'),
+                    inconsistencias: !!conteudo().querySelector('.resultado-inconsistencias'),
+                    analises: html.includes('Especificações preenchidas'),
+                    diagnostico: /<h4>Diagnóstico<\/h4>/.test(html)
+                };
+            };
+            assertEqual(tem(), { obs: true, inconsistencias: true, analises: true, diagnostico: true }, 'versão da equipe');
+
+            const radio = doc.querySelector('input[name="report-version"][value="apresentacao"]');
+            radio.checked = true;
+            radio.dispatchEvent(new win.Event('change'));
+            assertEqual(tem(), { obs: false, inconsistencias: false, analises: false, diagnostico: false }, 'versão de apresentação');
+            assert(conteudo().textContent.includes('Versão para apresentação'), 'cabeçalho não indica a versão');
+            assert(conteudo().querySelector('.qfd-matrix-report'), 'a matriz deve continuar na apresentação');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Mudge: salvar com Enter não recarrega e abre a próxima célula; remover recalcula', async () => {
+        const { rc } = criarProjetoExemplo();
+        qfdDB.setComparacaoCliente(rc[0].id, rc[1].id, 0);
+        qfdDB.setComparacaoCliente(rc[0].id, rc[2].id, 0);
+        const iframe = await carregarPagina('../pages/comparacao-cliente.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            win.__semReload = true; // some se a página recarregar
+            doc.querySelector('.matrix-comparison[data-i="0"][data-j="1"]').click();
+            doc.querySelector(`.requirement-option[data-req="${rc[0].id}"]`).click();
+            doc.querySelector('.level-btn[data-value="5"]').click();
+            doc.querySelector('.comparison-modal').dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            assert(win.__semReload, 'a página recarregou');
+            assert(doc.querySelector('.matrix-comparison[data-i="0"][data-j="1"]').classList.contains('completed'), 'célula salva não aparece preenchida');
+            assertEqual(doc.querySelectorAll('.modal-overlay .comparison-modal').length, 1, 'modais abertos');
+            assert(doc.querySelector('.requirement-option[data-index="2"]'), 'não abriu a próxima célula (1 × 3)');
+            assertEqual(doc.getElementById('comparacoes-feitas').textContent, '2 / 3', 'status');
+
+            // Shift+Enter volta para 1 × 2 sem salvar a 1 × 3
+            doc.querySelector('.comparison-modal').dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }));
+            assert(doc.querySelector('.requirement-option[data-index="1"]'), 'Shift+Enter não voltou para 1 × 2');
+            assert(doc.getElementById('prev-comparison').disabled, '"Anterior" deveria estar desabilitado na primeira célula');
+            assertEqual(qfdDB.getComparacoesCliente().length, 2, 'voltar não deve salvar');
+
+            win.closeModal();
+            doc.querySelector('.matrix-comparison[data-i="0"][data-j="1"]').click();
+            doc.querySelector('.modal-footer .btn-danger').click();
+            assert(win.__semReload, 'a página recarregou ao remover');
+            assertEqual(qfdDB.getComparacoesCliente().length, 1, 'comparações após remover');
+            assertEqual(qfdDB.getRequisitosCliente()[0].importancia, 0, 'importância do RC1 não recalculada');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Matriz QFD e telhado: botão Anterior e Shift+Enter voltam uma célula', async () => {
+        criarProjetoExemplo();
+        let iframe = await carregarPagina('../pages/matriz-qfd.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            doc.querySelector('.influence-cell[data-i="1"][data-j="0"]').click();
+            assert(!doc.getElementById('prev-influence').disabled, '"Anterior" desabilitado fora da primeira célula');
+            doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }));
+            assert(doc.querySelector('.influence-cell[data-i="0"][data-j="2"]').matches('.active-a, .active-b'), 'não voltou para RC1 × RP3');
+            doc.getElementById('prev-influence').click();
+            assert(doc.querySelector('.influence-cell[data-i="0"][data-j="1"]').matches('.active-a, .active-b'), 'botão não voltou para RC1 × RP2');
+        } finally {
+            iframe.remove();
+        }
+        iframe = await carregarPagina('../pages/correlacao-projeto.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            doc.querySelector('.roof-cell[data-i="1"][data-j="2"]').click();
+            doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }));
+            assert(/Req 1 ↔ Req 3/.test(doc.querySelector('.correlation-popup h4').textContent), 'telhado: Shift+Enter não voltou para 1 ↔ 3');
+            assertEqual(doc.querySelectorAll('.correlation-popup-overlay').length, 1, 'popups abertos');
+        } finally {
+            iframe.remove();
+        }
+    });
 });
 
 // ============================================================================

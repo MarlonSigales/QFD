@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function loadData() {
     requisitosCliente = qfdDB.getRequisitosCliente();
+    // Recalcula: a importância dos RC pode ter mudado na Comparação depois da matriz
+    qfdDB.calculateImportanciaProjeto();
     requisitosProjeto = qfdDB.getRequisitosProjeto();
     relacoesFeitas = qfdDB.getMatrizQFDCompleta().length;
 }
@@ -76,9 +78,12 @@ function generateQFDMatrix() {
 
     // Cabeçalho: RP vertical + sentido
     html += '<tr><th class="row-header">Requisitos</th>';
+    const especificacoes = qfdDB.getEspecificacoesProjeto();
     requisitosProjeto.forEach((rp, i) => {
         const rpObs = rp.observacao ? `\n${rp.observacao}` : '';
-        const tip = `RP${i + 1}: ${rp.descricao}${rpObs}`;
+        const esp = especificacoes.find(e => e.requisitoProjetoId === rp.id);
+        const espObs = esp && esp.observacao ? `\nEspecificação: ${esp.observacao}` : '';
+        const tip = `RP${i + 1}: ${rp.descricao}${rpObs}${espObs}`;
         html += `<th class="req-number-cell" data-tooltip="${escapeAttr(tip)}">
             <span class="rp-id">RP${i + 1}</span>
             <span class="rp-sentido">${getSentidoSymbol(rp.sentidoMelhoria)}</span>
@@ -100,28 +105,10 @@ function generateQFDMatrix() {
         html += `<td class="importance-percent-cell">${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
     });
 
-    html += '</tbody></table>';
+    html += '</tbody>';
+    html += buildTotaisProjetoHTML();
+    html += '</table>';
     matrixContainer.innerHTML = html;
-
-    matrixContainer.querySelectorAll('[data-tooltip]').forEach(el => {
-        el.addEventListener('mouseenter', showTooltip);
-        el.addEventListener('mouseleave', hideTooltip);
-    });
-}
-
-function showTooltip(e) {
-    const text = e.currentTarget.getAttribute('data-tooltip');
-    const tooltip = document.getElementById('qfd-tooltip');
-    if (!tooltip || !text) return;
-    tooltip.textContent = text;
-    tooltip.style.display = 'block';
-    tooltip.style.left = (e.clientX + 15) + 'px';
-    tooltip.style.top = (e.clientY + 15) + 'px';
-}
-
-function hideTooltip() {
-    const tooltip = document.getElementById('qfd-tooltip');
-    if (tooltip) tooltip.style.display = 'none';
 }
 
 function openInfluenceModal(cell) {
@@ -151,8 +138,11 @@ function openInfluenceModal(cell) {
     info.innerHTML = `
         <strong>RC${currentInfluenceI + 1}:</strong> ${escapeHtml(rc?.descricao || '')}${rcObsHtml}
         <strong>RP${currentInfluenceJ + 1}:</strong> ${escapeHtml(rp?.descricao || '')}${rpObsHtml}
-        <small>Valor atual: <strong>${currentVal}</strong> (pressione <kbd>Enter</kbd> para salvar e ir para a próxima célula)</small>
+        <small>Valor atual: <strong>${currentVal}</strong> (pressione <kbd>Enter</kbd> para salvar e ir para a próxima célula, <kbd>Shift</kbd>+<kbd>Enter</kbd> para voltar)</small>
     `;
+
+    const prevBtn = document.getElementById('prev-influence');
+    if (prevBtn) prevBtn.disabled = !getPrevGridCell(currentInfluenceI, currentInfluenceJ, requisitosProjeto.length);
 
     modal.style.display = 'flex';
 
@@ -163,6 +153,15 @@ function openInfluenceModal(cell) {
         }
     };
     document.addEventListener('keydown', escHandler);
+}
+
+/** Volta para a célula anterior na ordem do Enter, sem salvar a atual */
+function goToPrevInfluenceCell() {
+    if (currentInfluenceCell == null) return;
+    const prev = getPrevGridCell(currentInfluenceI, currentInfluenceJ, requisitosProjeto.length);
+    if (!prev) return;
+    const prevCell = document.querySelector(`.influence-cell[data-i="${prev.i}"][data-j="${prev.j}"]`);
+    if (prevCell) openInfluenceModal(prevCell);
 }
 
 function closeInfluenceModal() {
@@ -182,6 +181,45 @@ function getNextInfluenceCell(i, j) {
     return null;
 }
 
+/**
+ * Rodapé da matriz: soma (Σ relação × importância do RC), percentual
+ * normalizado e posição no ranking de cada requisito de projeto
+ */
+function buildTotaisProjetoHTML() {
+    const linhas = [
+        { classe: 'qfd-sum-total', rotulo: 'Soma (Σ relação × importância)', tip: 'Soma das relações da coluna multiplicadas pela importância de cada requisito de cliente' },
+        { classe: 'qfd-sum-percent', rotulo: 'Percentual (%)', tip: 'Soma da coluna dividida pela soma de todas as colunas' },
+        { classe: 'qfd-sum-rank', rotulo: 'Ranking', tip: 'Posição pela soma; empates ficam na mesma posição' }
+    ];
+    let html = '<tfoot>';
+    linhas.forEach(l => {
+        html += `<tr class="qfd-sum-row ${l.classe}"><th class="row-header" data-tooltip="${escapeAttr(l.tip)}">${l.rotulo}</th>`;
+        requisitosProjeto.forEach((rp, j) => {
+            html += `<td data-j="${j}">${formatTotalProjeto(l.classe, rp)}</td>`;
+        });
+        html += '<td></td><td></td></tr>';
+    });
+    return html + '</tfoot>';
+}
+
+function formatTotalProjeto(classe, rp) {
+    if (classe === 'qfd-sum-total') return (rp.importanciaAbsoluta || 0).toFixed(1);
+    if (classe === 'qfd-sum-percent') return ((rp.pesoRelativo || 0) * 100).toFixed(1) + '%';
+    return rp.importanciaAbsoluta > 0 ? `${rp.importanciaRelativa}º` : '-';
+}
+
+/** Atualiza o rodapé de somas sem redesenhar a matriz (mantém o modal aberto) */
+function updateTotaisProjeto() {
+    requisitosProjeto = qfdDB.getRequisitosProjeto();
+    document.querySelectorAll('.qfd-sum-row').forEach(tr => {
+        const classe = ['qfd-sum-total', 'qfd-sum-percent', 'qfd-sum-rank'].find(c => tr.classList.contains(c));
+        tr.querySelectorAll('td[data-j]').forEach(td => {
+            const rp = requisitosProjeto[parseInt(td.dataset.j, 10)];
+            if (rp) td.textContent = formatTotalProjeto(classe, rp);
+        });
+    });
+}
+
 function setInfluence(value) {
     if (!currentInfluenceCell) return;
     const clienteId = currentInfluenceCell.dataset.cliente;
@@ -192,6 +230,7 @@ function setInfluence(value) {
 
     relacoesFeitas = qfdDB.getMatrizQFDCompleta().length;
     updateStatus();
+    updateTotaisProjeto();
 
     const next = getNextInfluenceCell(currentInfluenceI, currentInfluenceJ);
     if (!next) {
@@ -248,6 +287,12 @@ function setupGlobalEvents() {
     document.addEventListener('keydown', (e) => {
         const modalOpen = influenceModal && influenceModal.style.display === 'flex';
         if (!modalOpen) return;
+
+        if (e.key === 'Enter' && e.shiftKey) {
+            e.preventDefault();
+            goToPrevInfluenceCell();
+            return;
+        }
 
         if (e.key === 'Enter') {
             e.preventDefault();

@@ -72,6 +72,76 @@ function truncateText(text, limit) {
     return text.length > limit ? text.substring(0, limit) + '...' : text;
 }
 
+// ========================================================================
+// BALÕES (tooltips) — um só para todas as páginas
+// ========================================================================
+// Qualquer elemento com data-tooltip="texto" mostra o balão ao passar o
+// mouse. O texto é puro (sem HTML); quebras de linha (\n) são mantidas.
+// Funciona também para elementos criados depois (delegação no document).
+
+let appTooltipEl = null;
+let appTooltipAlvo = null;
+
+function showAppTooltip(alvo, e) {
+    const text = alvo.getAttribute('data-tooltip');
+    if (!text) return;
+    if (!appTooltipEl) {
+        appTooltipEl = document.createElement('div');
+        appTooltipEl.className = 'app-tooltip';
+        appTooltipEl.setAttribute('role', 'tooltip');
+        document.body.appendChild(appTooltipEl);
+    }
+    appTooltipEl.textContent = text;
+    appTooltipEl.style.display = 'block';
+    appTooltipAlvo = alvo;
+    positionAppTooltip(e);
+}
+
+/** Posiciona perto do mouse, virando para o outro lado na borda da tela */
+function positionAppTooltip(e) {
+    if (!appTooltipEl || !appTooltipAlvo) return;
+    const pad = 14;
+    const w = appTooltipEl.offsetWidth;
+    const h = appTooltipEl.offsetHeight;
+    let left = e.clientX + pad;
+    let top = e.clientY + pad;
+    if (left + w > window.innerWidth - 8) left = Math.max(8, e.clientX - w - pad);
+    if (top + h > window.innerHeight - 8) top = Math.max(8, e.clientY - h - pad);
+    appTooltipEl.style.left = left + 'px';
+    appTooltipEl.style.top = top + 'px';
+}
+
+function hideAppTooltip() {
+    if (appTooltipEl) appTooltipEl.style.display = 'none';
+    appTooltipAlvo = null;
+}
+
+document.addEventListener('mouseover', e => {
+    const alvo = e.target.closest ? e.target.closest('[data-tooltip]') : null;
+    if (alvo === appTooltipAlvo) return;
+    if (alvo) showAppTooltip(alvo, e);
+    else hideAppTooltip();
+});
+document.addEventListener('mousemove', positionAppTooltip);
+document.addEventListener('mouseout', e => { if (!e.relatedTarget) hideAppTooltip(); });
+
+/**
+ * Célula anterior numa matriz triangular superior (Mudge, telhado), na ordem
+ * do Enter: (0,1), (0,2) ... (0,n-1), (1,2) ... Retorna null na primeira.
+ */
+function getPrevTriangularCell(i, j, n) {
+    if (j > i + 1) return { i, j: j - 1 };
+    if (i > 0) return { i: i - 1, j: n - 1 };
+    return null;
+}
+
+/** Célula anterior numa grade (Matriz QFD), linha a linha. Null na primeira. */
+function getPrevGridCell(i, j, cols) {
+    if (j > 0) return { i, j: j - 1 };
+    if (i > 0) return { i: i - 1, j: cols - 1 };
+    return null;
+}
+
 /** Formata uma data ISO como dd/mm/aaaa hh:mm */
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -84,30 +154,6 @@ function formatDate(dateString) {
     });
 }
 
-/**
- * Lê o primeiro número de um texto, aceitando vírgula decimal e separador de
- * milhar ("1,2" → 1.2; "1.234,5 kg" → 1234.5; "1.500" → 1500; "0.25" → 0.25;
- * "≤ 20 kW" → 20).
- *
- * @param {string} text
- * @returns {number|null} null se não houver número
- */
-function parseNumero(text) {
-    const match = String(text == null ? '' : text).match(/-?\d[\d.,]*/);
-    if (!match) return null;
-    let s = match[0].replace(/[.,]$/, '');
-    const lastComma = s.lastIndexOf(','), lastDot = s.lastIndexOf('.');
-    if (lastComma !== -1 && lastDot !== -1) {
-        // o último separador é o decimal; o outro é de milhar
-        s = lastComma > lastDot ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
-    } else if (lastComma !== -1) {
-        s = (s.match(/,/g).length > 1) ? s.replace(/,/g, '') : s.replace(',', '.');
-    } else if (lastDot !== -1 && (s.match(/\./g).length > 1 || /^-?[1-9]\d{0,2}\.\d{3}$/.test(s))) {
-        s = s.replace(/\./g, ''); // ponto de milhar, como se escreve em português
-    }
-    const n = parseFloat(s);
-    return Number.isFinite(n) ? n : null;
-}
 
 /** Ajusta a altura de um textarea ao conteúdo (usar como handler de 'input') */
 function autoResizeTextarea(event) {
@@ -214,8 +260,11 @@ function formatarNumero(n) {
     return Number.isInteger(n) ? String(n) : n.toLocaleString('pt-BR', { maximumFractionDigits: 3 });
 }
 
-/** Resumo em listas: pontos fortes, a melhorar, metas técnicas e inconsistências */
-function buildResultadoHtml(analise) {
+/**
+ * Resumo em listas: pontos fortes, a melhorar, metas técnicas e inconsistências
+ * @param {Object} [opcoes] - { inconsistencias: false } omite o bloco de inconsistências
+ */
+function buildResultadoHtml(analise, opcoes = {}) {
     const nosso = escapeHtml(analise.produtos[0].nome);
     const porPeso = lista => [...lista].sort((a, b) => b.peso - a.peso);
     const frente = porPeso(analise.clientes.filter(c => c.situacao === 'frente'));
@@ -245,6 +294,8 @@ function buildResultadoHtml(analise) {
             <p class="competitiva-hint">Reveja essas metas nas Especificações, ou justifique por que ficar abaixo do concorrente é aceitável.</p>`
         : '<p>Nenhuma meta abaixo do melhor concorrente (ou faltam valores para comparar).</p>';
     html += '</div>';
+
+    if (opcoes.inconsistencias === false) return html + '</div>';
 
     html += `<div class="resultado-bloco resultado-inconsistencias"><h4><i class="fas fa-exclamation-triangle"></i> Inconsistências (${analise.inconsistencias.length})</h4>`;
     html += analise.inconsistencias.length
@@ -375,7 +426,7 @@ function showAlert(message, type = 'info') {
     document.querySelectorAll('.alert').forEach(alert => alert.remove());
 
     const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
+    alert.className = `alert alert-${type} alert-dismissible`;
     alert.innerHTML = `
         <i class="fas fa-${getAlertIcon(type)}"></i>
         ${message}
@@ -384,33 +435,6 @@ function showAlert(message, type = 'info') {
         </button>
     `;
 
-    // Estilos do botão de fechar, injetados uma única vez
-    if (!document.getElementById('alert-close-styles')) {
-        const styles = document.createElement('style');
-        styles.id = 'alert-close-styles';
-        styles.textContent = `
-            .alert {
-                position: relative;
-                padding-right: 3rem;
-            }
-            .alert-close {
-                position: absolute;
-                top: 50%;
-                right: 1rem;
-                transform: translateY(-50%);
-                background: none;
-                border: none;
-                color: inherit;
-                cursor: pointer;
-                opacity: 0.7;
-                transition: opacity 0.3s ease;
-            }
-            .alert-close:hover {
-                opacity: 1;
-            }
-        `;
-        document.head.appendChild(styles);
-    }
 
     const mainContent = document.querySelector('.main-content .container');
     if (mainContent) {

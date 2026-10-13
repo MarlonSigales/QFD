@@ -52,10 +52,10 @@
                 <li>
                     <div class="nav-page-actions">
                         <a href="correlacao-projeto.html" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Voltar
+                            <i class="fas fa-arrow-left"></i> Correlação
                         </a>
                         <a href="especificacoes.html" class="btn btn-primary" id="btn-proximo">
-                            Avançar <i class="fas fa-arrow-right"></i>
+                            Especificações <i class="fas fa-arrow-right"></i>
                         </a>
                     </div>
                 </li>
@@ -173,8 +173,6 @@
                 </div>
             </div>
 
-            <!-- Tooltip Global -->
-            <div id="qfd-tooltip" class="qfd-tooltip" style="display: none;"></div>
 
             <!-- Modal de Preenchimento Instantâneo -->
             <div id="influence-modal" class="modal">
@@ -190,6 +188,11 @@
                             <button class="influence-opt level-1" onclick="setInfluence(1)">1 - Fraca</button>
                             <button class="influence-opt level-3" onclick="setInfluence(3)">3 - Moderada</button>
                             <button class="influence-opt level-9" onclick="setInfluence(9)">9 - Forte</button>
+                        </div>
+                        <div class="influence-nav">
+                            <button class="btn btn-sm btn-secondary" id="prev-influence" onclick="goToPrevInfluenceCell()" title="Voltar para a célula anterior (Shift+Enter), sem salvar esta">
+                                <i class="fas fa-arrow-left"></i> Anterior
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -231,49 +234,6 @@
                     <div class="qfd-matrix-wrapper">
                         <div id="qfd-matrix" class="qfd-matrix">
                             <!-- Telhado (somente leitura) + matriz em tabela unificada -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Resultados e análises -->
-            <div id="results-section" class="card" style="display: none;">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-chart-bar"></i> Resultados da Análise QFD
-                    </h3>
-                </div>
-                
-                <div class="results-tabs">
-                    <div class="tab-buttons">
-                        <button class="tab-btn active" onclick="showTab('ranking')">
-                            <i class="fas fa-trophy"></i> Ranking
-                        </button>
-                        <button class="tab-btn" onclick="showTab('metrics')">
-                            <i class="fas fa-calculator"></i> Métricas
-                        </button>
-                        <button class="tab-btn" onclick="showTab('analysis')">
-                            <i class="fas fa-chart-line"></i> Análise
-                        </button>
-                    </div>
-                    
-                    <div class="tab-content">
-                        <div id="tab-ranking" class="tab-panel active">
-                            <div id="ranking-content">
-                                <!-- Ranking será gerado dinamicamente -->
-                            </div>
-                        </div>
-                        
-                        <div id="tab-metrics" class="tab-panel">
-                            <div id="metrics-content">
-                                <!-- Métricas serão geradas dinamicamente -->
-                            </div>
-                        </div>
-                        
-                        <div id="tab-analysis" class="tab-panel">
-                            <div id="analysis-content">
-                                <!-- Análise será gerada dinamicamente -->
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -329,10 +289,14 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
-            <p style="font-size: 0.85rem; margin-top: 10px; opacity: 0.8;">
-                Este site foi gerado através da inteligência artificial <strong>Manus AI</strong>, com prompt gerado pelo <strong>Engenheiro Marlon Soares Sigales</strong>.
-                Os códigos estão abertos para quem quiser utilizar e ajustar no GitHub: <a href="https://github.com/Psykozis/QFD" target="_blank" style="color: #667eea;">https://github.com/Psykozis/QFD</a>.
+            <p>&copy; 2026 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+            <p class="footer-credits">
+                <strong>Desenvolvedor:</strong> Marlon Soares Sigales<br>
+                <strong>Equipe de projeto:</strong> Roger Toscan Spagnolo, Ângelo Vieira dos Reis, Ádamo de Sousa Araújo, Gizele Ingrid Gadotti, Eduardo Walker, Giuseppe Stefanello, Fabrício Ardais<br>
+                <strong>Equipe Inova Agro - UFPel - EMBRAPII</strong>
+            </p>
+            <p class="footer-credits">
+                Os códigos estão abertos para quem quiser utilizar e ajustar no GitHub: <a href="https://github.com/Psykozis/QFD" target="_blank" rel="noopener">https://github.com/Psykozis/QFD</a>.
                 Cópias são permitidas desde que devidamente citadas.
             </p>
         </div>

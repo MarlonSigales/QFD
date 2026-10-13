@@ -90,7 +90,7 @@ dos dados (P01–P04) devem ser feitos um de cada vez, cada um com sua migraçã
 
 **Prioridade alta**
 - [ ] P01 — Classificar requisitos como Exigência ou Desejo (desejos com importância alta/média/baixa) — Seção 5.2.1
-- [ ] P02 — Metas com tipo (=, ≥, ≤, faixa), valor e tolerância nas Especificações — Seções 2.1.2 e 5.2.1
+- [x] P02 — Metas com tipo (=, ≥, ≤, faixa), valor e tolerância nas Especificações — Seções 2.1.2 e 5.2.1
 - [ ] P03 — Origem, responsável, histórico de alterações e revisões numeradas da lista de requisitos — Fig. 5.2 e Seção 5.3.1
 - [ ] P04 — Categorias do checklist (17 títulos) e painel de cobertura — Fig. 5.3
 - [x] P05 — Análise da concorrência (benchmarking) por requisito de cliente e de projeto — Fig. 3.4 (feito como página "Avaliação Competitiva"; falta só o botão "usar como referência para a meta" nas Especificações)
@@ -111,12 +111,12 @@ dos dados (P01–P04) devem ser feitos um de cada vez, cada um com sua migraçã
 - [ ] P15 — Assistente de fechamento: abstração em 5 passos e função global (ponte para o projeto conceitual) — Seções 6.2 e 6.3.1
 
 ### Melhorias sugeridas
-- [ ] Diagrama de Mudge: parar de recarregar a página inteira a cada comparação salva
-- [ ] Unificar o código dos balões (`showTooltip`/`hideTooltip`, ainda diferente por página)
-- [ ] Mostrar também o texto explicativo da especificação no balão do requisito de projeto na Matriz QFD
-- [ ] Limpar CSS duplicado (`.nav-dropdown`, `.dropdown-menu`, `.qfd-tooltip`) e mover para o `style.css` os estilos injetados via JavaScript
-- [ ] Atualizar o ano do rodapé ("© 2024") em todas as páginas
-- [ ] Remover do repositório `qfd_system_updated.zip` (versão antiga, 220 KB)
+- [x] Diagrama de Mudge: parar de recarregar a página inteira a cada comparação salva
+- [x] Unificar o código dos balões (`showTooltip`/`hideTooltip`, ainda diferente por página)
+- [x] Mostrar também o texto explicativo da especificação no balão do requisito de projeto na Matriz QFD
+- [x] Limpar CSS duplicado (`.nav-dropdown`, `.dropdown-menu`, `.qfd-tooltip`) e mover para o `style.css` os estilos injetados via JavaScript
+- [x] Atualizar o ano do rodapé ("© 2024") em todas as páginas
+- [x] Remover do repositório `qfd_system_updated.zip` (versão antiga, 220 KB)
 - [ ] Melhorar o uso das matrizes em celular
 
 ### Baixa prioridade

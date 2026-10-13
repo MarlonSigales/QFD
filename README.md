@@ -27,7 +27,7 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
 | 3 | Requisitos de Projeto | Características técnicas, sentido de melhoria (↑ ↓ \*), dificuldade técnica (1–5) e texto explicativo |
 | 4 | Correlação Projeto | Telhado da casa: correlações `++`, `+`, `0`, `-` e `--` entre requisitos de projeto |
 | 5 | Matriz QFD | Relação cliente × projeto (0, 1, 3 ou 9); importância absoluta, relativa e peso |
-| 6 | Especificações | Requisitos de projeto na ordem do QFD, com unidade, valor, texto explicativo e aspectos indesejáveis (vindos das correlações `--`) |
+| 6 | Especificações | Requisitos de projeto na ordem do QFD, com unidade, meta (mínimo ≥, máximo ≤, nominal = com tolerância ± ou intervalo; o tipo vem sugerido pelo sentido de melhoria), texto explicativo e aspectos indesejáveis (vindos das correlações `--`) |
 | 7 | Avaliação Competitiva | Depois do QFD: notas dos clientes (1 a 5) para o nosso produto e os concorrentes, meta, índice de melhoria e prioridade; valores técnicos medidos de cada produto comparados com as metas das especificações; gráfico, pontos fortes, pontos a melhorar e inconsistências |
 | 8 | Atendimento aos Requisitos | Quanto os requisitos de projeto atendem a cada requisito de cliente: cobertura na matriz, metas atingidas (valor medido × meta) e diagnóstico |
 | 9 | Relatório PDF | Relatório configurável com as seções escolhidas, prévia e geração de PDF |
@@ -42,7 +42,8 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
 - **Avaliação competitiva:**
   - *Situação* de cada requisito de cliente: nossa nota comparada com a maior nota entre os concorrentes (à frente, empatado ou atrás).
   - *Índice de melhoria* = meta ÷ nossa nota; *prioridade* = peso × índice de melhoria (1 se não houver meta), normalizada para somar 100%.
-  - *Melhor concorrente técnico*: maior valor se o sentido é ↑, menor se é ↓; requisitos nominais (\*) não são comparados. A meta da especificação é comparada com esse valor.
+  - *Melhor concorrente técnico*: maior valor se o sentido é ↑, menor se é ↓; requisitos nominais (\*) não são comparados. A meta da especificação é comparada com esse valor (num intervalo, o limite menos exigente: o mínimo para ↑, o máximo para ↓).
+- **Meta atingida** (atendimento): `≥` medido ≥ meta; `≤` medido ≤ meta; intervalo: dentro dele; `=`: dentro da tolerância ± informada (sem tolerância, ±5% da meta).
   - *Inconsistência* (avaliação competitiva): os clientes dão nota maior a um produto, mas todos os requisitos de projeto com relação forte (9) com aquele requisito têm valores técnicos melhores no outro produto. Indica erro de medição, de nota ou um requisito de projeto faltando.
 
 - **Atendimento aos requisitos:**
@@ -102,7 +103,11 @@ Tudo fica numa única chave do LocalStorage, `qfd_data`:
   comparacaoCliente: [{ requisito1, requisito2, valor, created }],        // valor: 1, 3 ou 5
   correlacaoProjeto: [{ requisito1, requisito2, correlacao, created }],   // '++' '+' '-' '--'
   matrizQFD:         [{ requisitoCliente, requisitoProjeto, influencia, created }], // 1, 3 ou 9
-  especificacoesProjeto: [{ requisitoProjetoId, unidadeMedida, valorUnitario, observacao,
+  especificacoesProjeto: [{ requisitoProjetoId, unidadeMedida, observacao,
+                            tipoMeta,               // '>=' | '<=' | '=' | 'faixa' | '' (sem meta)
+                            valorMeta, valorMax,    // números; valorMax só no intervalo ('faixa')
+                            tolerancia,             // ± (só em '='; null = ±5%)
+                            metaTexto, revisarMeta, // texto antigo que não virou número
                             aspectosIndesejaveis, aspectosAutoGerado, updated }],
   avaliacaoCompetitiva: {
     produtos:        [{ id, nome, tipo }],          // tipo 'nosso' (id 'nosso') ou 'concorrente'; até 6 concorrentes
@@ -118,7 +123,9 @@ Outras chaves: `qfd_backup` (backup automático) e `qfd_data_corrompido` (cópia
 
 ### Versão da estrutura (migrações)
 
-`metadata.schemaVersion` guarda a versão da estrutura (atual: **3**; a versão 3 acrescentou `avaliacaoCompetitiva`). Ao abrir qualquer página ou importar um backup, dados de versões anteriores são atualizados pelas funções de `SCHEMA_MIGRATIONS` em `database.js`.
+`metadata.schemaVersion` guarda a versão da estrutura (atual: **4**; a versão 3 acrescentou `avaliacaoCompetitiva`; a 4 trocou o `valorUnitario` em texto das especificações pela meta tipada). Ao abrir qualquer página ou importar um backup, dados de versões anteriores são atualizados pelas funções de `SCHEMA_MIGRATIONS` em `database.js`.
+
+**Migração da versão 4:** o valor antigo que for só um número vira meta do tipo sugerido pelo sentido de melhoria (↑ `≥`, ↓ `≤`, \* `=`), como o sistema já avaliava antes; textos como `≥ 20`, `80 ± 5` e `10 a 12` viram o tipo correspondente. O que não puder ser convertido (ex.: "aprox. 3") fica guardado em `metaTexto` e a linha aparece com o aviso "Revisar meta" nas Especificações.
 
 Para mudar a estrutura dos dados:
 1. Aumente `SCHEMA_VERSION`.

@@ -23,42 +23,88 @@ ITENS DO QA ANTERIOR
 [Resolvido] Relatório quebrou após a adição das especificações.
             No teste automático o relatório abre e gera a prévia sem erros,
             incluindo a seção de especificações. Falta confirmar gerando o PDF.
+			
+[fazer] mudar a identidade visual para ficar parecida com a do gestão de peojetos, incluir os simbolos da inovaagro, do nimeq e do lab instagri	nos rodapés		
 
 [fazer] Tanto pro cliente quanto pro projeto fazer uma caixa de selecao para Requisito formador de função, requisito formador de boa pratica de projeto (intensão), exigir comentario ao marcar, colocar em um espaco especial no relatorio, remover do qfd, 
 
 [fazer] colocar um campo inicial com os emails de todos os envolvidos, que ao terminar de editar e exportar, envie um email com assunto "qfd - <nome projeto>" contendo o json gerado, 
 
-[fazer] Rodapé ainda diz "© 2024". atualizr para 2026 e colocar os nomes de quem gerou o software Desenvolvedor Marlon Soares Sigales, Equipe de projeto Roger Toscan Spagnolo, Ângelo Vieira dos Reis, Ádamo de Sousa Araújo, Gizele Ingrid Gadotti, Eduardo Walker, Giuseppe Stefanello, Fabrício Ardais, Equipe Inova Agro - UFPel - EMBRAPII, remover o que fala em LLMs
+[RESOLVIDO] Rodapé ainda diz "© 2024". atualizr para 2026 e colocar os nomes de quem gerou o software Desenvolvedor Marlon Soares Sigales, Equipe de projeto Roger Toscan Spagnolo, Ângelo Vieira dos Reis, Ádamo de Sousa Araújo, Gizele Ingrid Gadotti, Eduardo Walker, Giuseppe Stefanello, Fabrício Ardais, Equipe Inova Agro - UFPel - EMBRAPII, remover o que fala em LLMs
 
-[fazer] o relatório não precisa ter todas as comparações entre requisitos de projeto uma a uma, apenas mostrar a tabela do QFD
+[RESOLVIDO] o relatório não precisa ter todas as comparações entre requisitos de projeto uma a uma, apenas mostrar a tabela do QFD
+            A seção "Análise de Correlações" mostra só a contagem por tipo; os pares
+            ficam no telhado e na Matriz QFD.
 
-[fazer] os botões de avançar e voltar estão com design esquisito, o texto do botão não está correspondendo
+[RESOLVIDO] os botões de avançar e voltar estão com design esquisito, o texto do botão não está correspondendo
+            O texto saía cinza sobre o botão (o estilo do menu sobrepunha o do
+            botão). Agora o texto é branco e o botão mostra o destino
+            ("← Correlação", "Especificações →"). O "Avançar" desabilitado fica
+            esmaecido (antes não tinha diferença visual).
 
-[fazer] Diagrama de Mudge recarrega a página inteira a cada comparação salva.
+[RESOLVIDO] Diagrama de Mudge recarrega a página inteira a cada comparação salva.
+            Salvar/remover atualiza só a matriz, o status e o ranking (mantém a
+            rolagem); Enter abre a próxima célula na hora. Corrigido também:
+            "Remover" não recalculava a importância dos requisitos.
 
-[fazer] Mostrar o texto explicativo da especificação também no balão da Matriz QFD.
+[RESOLVIDO] Mostrar o texto explicativo da especificação também no balão da Matriz QFD.
 
-[fazer] Unificar o código dos balões, que ainda é diferente em cada página.
+[RESOLVIDO] Unificar o código dos balões, que ainda é diferente em cada página.
+            Um só balão (js/utils.js, classe .app-tooltip) em todas as páginas e
+            no relatório; texto puro com quebras de linha. Removidas as 4 versões
+            antigas e o CSS duplicado.
 
-[fazer] Limpar CSS duplicado e estilos injetados via JavaScript.
+[RESOLVIDO] Limpar CSS duplicado e estilos injetados via JavaScript.
+            ~1.240 linhas de CSS que o JS injetava (requisitos, correlação, popup,
+            dashboard, alertas) foram para o style.css, restritas à página por
+            :where(body.page-...). Removidas 123 declarações redefinidas e 26
+            regras vazias; tirada a seção oculta "Resultados" da Matriz QFD.
+            Conferido com capturas antes/depois de 17 telas. Mudanças visíveis
+            (correções): o rodapé do Dashboard não se move mais ao abrir os
+            detalhes; o cabeçalho do telhado não pula 1px ao abrir o 1º popup.
 
-[fazer] Remover qfd_system_updated.zip (versão antiga) do repositório.
+[RESOLVIDO] Remover qfd_system_updated.zip (versão antiga) do repositório.
 
-[fazer] hoje em especificações a coluna "valor" substituir por valor meta, e propor se deve ser maior que, menor que, ou igua em funçao do sentido de melhoria, ter campo para intervalo
+[RESOLVIDO] hoje em especificações a coluna "valor" substituir por valor meta, e propor se deve ser maior que, menor que, ou igua em funçao do sentido de melhoria, ter campo para intervalo
+            Coluna "Valor meta": tipo (≥ mínimo, ≤ máximo, = nominal com ± opcional,
+            intervalo "a"), sugerido pelo sentido de melhoria; valida números e
+            intervalo. Avaliação Competitiva e Atendimento usam o tipo. Dados na
+            versão 4: valores antigos numéricos migram sozinhos; texto como
+            "aprox. 3" fica marcado "Revisar meta". (Equivale ao P02.)
 
 [fazer] campo índice na comparação de concorrentes, onde se possa fazer operações matemáticas entre as linhas, adicionar mais indices indices para verificação
 
-[fazer] campo voltar em todo campo que apertar enter vai a frente, ter um botão de retornar 
+[RESOLVIDO] campo voltar em todo campo que apertar enter vai a frente, ter um botão de retornar
+            Mudge, telhado e Matriz QFD: botão "← Anterior" na janela e atalho
+            Shift+Enter, na ordem inversa do Enter (não salva a célula atual;
+            desabilitado na primeira).
 
-[fazer] 2 relatórios um pra equipe de projeto, e um para ser apresentado (sem comentários internos)
+[RESOLVIDO] 2 relatórios um pra equipe de projeto, e um para ser apresentado (sem comentários internos)
+            Relatório -> Configurações -> "Versão do relatório": Equipe de projeto
+            (completo) ou Apresentação (sem textos explicativos, inconsistências,
+            diagnóstico do atendimento e seção Análises). Vale para prévia,
+            impressão e PDF (arquivo com "-apresentacao").
 
-[fazer] relatório ajustar as comparações entre clientes para não cortar, talvez colocar um glosário do concorrente e indicar c1 a cn
+[RESOLVIDO] relatório ajustar as comparações entre clientes para não cortar, talvez colocar um glosário do concorrente e indicar c1 a cn
+            Quadro "Produtos comparados" (Nosso, C1...Cn com cor e nome); as
+            tabelas usam os códigos e quebram texto para caber na página
+            (conferido com 6 concorrentes de nomes longos).
 
-[fazer] relatório margens todas em 2cm 
+[RESOLVIDO] relatório margens todas em 2cm
+            PDF com 2 cm nos 4 lados em todas as páginas (o conteúdo é recortado
+            por página, não invade mais as margens) e impressão com @page 2cm.
+            Conferir gerando o PDF de um projeto com várias páginas.
 
-[fazer] fazer linha de somas de requisitos de projeto no quadro de qfd (uma de somas totais e uma normalizada percentual)
+[RESOLVIDO] fazer linha de somas de requisitos de projeto no quadro de qfd (uma de somas totais e uma normalizada percentual)
+            Rodapé da matriz com Soma (Σ relação × importância), Percentual (%) e
+            Ranking; atualiza ao preencher. As mesmas linhas saem no relatório.
 
-[fazer] fazer revisão das somas e ranqueamento dos requisitos de projeto
+[RESOLVIDO] fazer revisão das somas e ranqueamento dos requisitos de projeto
+            Fórmula conferida por teste. Corrigido: empates agora ficam na mesma
+            posição (1, 1, 3); o percentual zera quando não há relações (antes
+            ficava o valor antigo); a matriz recalcula ao abrir (se a comparação
+            dos clientes mudou depois). Rótulo "Requisitos" da matriz estava
+            invisível (branco no cinza) -- corrigido.
 
 [fazer] no qfd quando passar o mouse sobre a resposta aparecer as relaçoes que o roger tras no documento
 
@@ -117,7 +163,7 @@ Dica: antes de começar, exporte um backup (Backup & Export -> Exportar Backup).
 [ ] 9. Exportar CSV de requisitos e importar de volta -> deve ignorar os repetidos.
 [ ] 10. Exportar backup JSON, limpar os dados e importar -> projeto volta igual.
 
-Testes automáticos (52): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+Testes automáticos (62): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 
 ==========================================================================================
 PRÓXIMOS PASSOS
@@ -127,12 +173,6 @@ Publicar
 - Conferir em Settings -> Pages do repositório se o GitHub Pages está ativo.
 
 Melhorias sugeridas (detalhes no todo.md)
-- Diagrama de Mudge recarrega a página inteira a cada comparação salva.
-- Mostrar o texto explicativo da especificação também no balão da Matriz QFD.
-- Unificar o código dos balões, que ainda é diferente em cada página.
-- Limpar CSS duplicado e estilos injetados via JavaScript.
-- Rodapé ainda diz "© 2024".
-- Remover qfd_system_updated.zip (versão antiga) do repositório.
 - Uso das matrizes em celular.
 
 Baixa prioridade: acessibilidade.
@@ -154,7 +194,7 @@ Como usar:
   (Springer, 2007). As seções citadas estão em cada prompt.
 
 ------------------------------------------------------------------------------------------
-=== P01 - Exigência ou Desejo (prioridade ALTA)
+=== P01 - Exigência ou Desejo (prioridade ALTA) [rejeitado - remover]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente a
 classificação de requisitos como Exigência ou Desejo, conforme Pahl & Beitz,
@@ -188,7 +228,7 @@ Regras do projeto:
 === fim P01
 
 ------------------------------------------------------------------------------------------
-=== P02 - Metas com valor e tolerância (prioridade ALTA)
+=== P02 - Metas com valor e tolerância (prioridade ALTA) [útil] [FEITO]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), melhore as metas da
 página de Especificações conforme Pahl & Beitz, Engineering Design, Seções 2.1.2
@@ -226,7 +266,7 @@ Regras do projeto:
 === fim P02
 
 ------------------------------------------------------------------------------------------
-=== P03 - Origem, responsável e revisões da lista (prioridade ALTA)
+=== P03 - Origem, responsável e revisões da lista (prioridade ALTA) [rejeitar por hora]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente a
 rastreabilidade da lista de requisitos conforme Pahl & Beitz, Engineering
@@ -267,7 +307,7 @@ Regras do projeto:
 === fim P03
 
 ------------------------------------------------------------------------------------------
-=== P04 - Categorias do checklist e painel de cobertura (prioridade ALTA)
+=== P04 - Categorias do checklist e painel de cobertura (prioridade ALTA) [rejeitado por hora]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente o
 checklist de requisitos de Pahl & Beitz, Engineering Design, Fig. 5.3, cujas
@@ -305,7 +345,7 @@ Regras do projeto:
 === fim P04
 
 ------------------------------------------------------------------------------------------
-=== P05 - Análise da concorrência (QUASE PRONTO: falta a ligação com as Especificações)
+=== P05 - Análise da concorrência (QUASE PRONTO: falta a ligação com as Especificações) [útil]
 
 A página pages/avaliacao-competitiva.html (js/avaliacao-competitiva.js) já faz
 a avaliação competitiva completa (notas dos clientes, valores técnicos, gráfico,
@@ -337,7 +377,7 @@ Regras do projeto:
 === fim P05
 
 ------------------------------------------------------------------------------------------
-=== P06 - Definição do projeto (prioridade ALTA)
+=== P06 - Definição do projeto (prioridade ALTA) [rejeitado por hora]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie a página
 "Definição do projeto", baseada na proposta de produto de Pahl & Beitz,
@@ -377,7 +417,7 @@ Regras do projeto:
 === fim P06
 
 ------------------------------------------------------------------------------------------
-=== P07 - Cenários do ciclo de vida (prioridade MÉDIA)
+=== P07 - Cenários do ciclo de vida (prioridade MÉDIA) [rejeitado por hora]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um assistente de
 cenários conforme Pahl & Beitz, Engineering Design, Seção 5.2.4 (e o ciclo de
@@ -416,7 +456,7 @@ Regras do projeto:
 === fim P07
 
 ------------------------------------------------------------------------------------------
-=== P08 - Tipos de requisito do cliente (prioridade MÉDIA)
+=== P08 - Tipos de requisito do cliente (prioridade MÉDIA) [rejeitado por hora]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), classifique os
 requisitos de cliente conforme Pahl & Beitz, Engineering Design, Seção 5.2.3
@@ -452,7 +492,7 @@ Regras do projeto:
 === fim P08
 
 ------------------------------------------------------------------------------------------
-=== P09 - Árvore de requisitos do cliente (prioridade MÉDIA)
+=== P09 - Árvore de requisitos do cliente (prioridade MÉDIA) [rejeitado por hora]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), permita desdobrar
 requisitos do cliente em níveis, conforme Pahl & Beitz, Engineering Design,
@@ -491,7 +531,7 @@ Regras do projeto:
 === fim P09
 
 ------------------------------------------------------------------------------------------
-=== P10 - Caderno de ideias de solução (prioridade MÉDIA)
+=== P10 - Caderno de ideias de solução (prioridade MÉDIA) [útil]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um caderno de
 ideias conforme Pahl & Beitz, Engineering Design, Seção 5.4: durante o
@@ -529,7 +569,7 @@ Regras do projeto:
 === fim P10
 
 ------------------------------------------------------------------------------------------
-=== P11 - Requisitos de restrição (prioridade BAIXA)
+=== P11 - Requisitos de restrição (prioridade BAIXA) [rejeitado por hora]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente
 requisitos de restrição conforme Pahl & Beitz, Engineering Design, Seção 5.1:
@@ -564,7 +604,7 @@ Regras do projeto:
 === fim P11
 
 ------------------------------------------------------------------------------------------
-=== P12 - Listas parciais por departamento (prioridade BAIXA)
+=== P12 - Listas parciais por departamento (prioridade BAIXA) [rejeitado]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), implemente listas
 parciais de requisitos conforme Pahl & Beitz, Engineering Design, Seção 5.3.2
@@ -601,7 +641,7 @@ Regras do projeto:
 === fim P12
 
 ------------------------------------------------------------------------------------------
-=== P13 - Estado da técnica e referências (prioridade BAIXA)
+=== P13 - Estado da técnica e referências (prioridade BAIXA) [útil]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie o registro do
 estado da técnica conforme Pahl & Beitz, Engineering Design, Seção 3.1.4
@@ -637,7 +677,7 @@ Regras do projeto:
 === fim P13
 
 ------------------------------------------------------------------------------------------
-=== P14 - Módulo de planejamento do produto (prioridade BAIXA)
+=== P14 - Módulo de planejamento do produto (prioridade BAIXA) [útil para o futuro]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie um módulo
 opcional de planejamento do produto conforme Pahl & Beitz, Engineering Design,
@@ -678,7 +718,7 @@ Regras do projeto:
 === fim P14
 
 ------------------------------------------------------------------------------------------
-=== P15 - Fechamento: abstração e função global (prioridade BAIXA)
+=== P15 - Fechamento: abstração e função global (prioridade BAIXA) [útil]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), crie o assistente de
 fechamento do projeto informacional, que prepara a entrada do projeto
@@ -724,7 +764,7 @@ Regras do projeto:
 === fim P15
 
 ------------------------------------------------------------------------------------------
-=== P16 - Usar a dificuldade técnica (prioridade MÉDIA)
+=== P16 - Usar a dificuldade técnica (prioridade MÉDIA) [útil]
 
 No sistema QFD desta pasta (HTML/CSS/JS puro, sem build), os requisitos de
 projeto já têm o campo dificuldadeTecnica (1 a 5), cadastrado em

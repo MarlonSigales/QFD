@@ -276,64 +276,6 @@ function showProgressDetails() {
     
     document.body.appendChild(modal);
     
-    // Adiciona estilos do modal se não existirem
-    if (!document.getElementById('modal-styles')) {
-        const styles = document.createElement('style');
-        styles.id = 'modal-styles';
-        styles.textContent = `
-            .modal-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-            }
-            .modal-content {
-                background: white;
-                padding: 2rem;
-                border-radius: 12px;
-                max-width: 600px;
-                max-height: 80vh;
-                overflow-y: auto;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            }
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 1rem;
-                margin: 1rem 0;
-            }
-            .stat-item {
-                padding: 1rem;
-                background: #f8f9fa;
-                border-radius: 8px;
-                border-left: 4px solid #667eea;
-            }
-            .validation-errors {
-                margin-top: 1rem;
-                padding: 1rem;
-                background: #f8d7da;
-                border-radius: 8px;
-                border-left: 4px solid #dc3545;
-            }
-            .validation-errors ul {
-                margin: 0.5rem 0 0 1rem;
-            }
-            .last-modified-info {
-                text-align: center;
-                margin-top: 2rem;
-                padding-top: 1rem;
-                border-top: 1px solid #e9ecef;
-                color: #666;
-            }
-        `;
-        document.head.appendChild(styles);
-    }
 }
 
 /**
