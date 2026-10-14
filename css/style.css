@@ -5051,3 +5051,98 @@ tr.spec-critico > td:first-child {
     padding: 0;
     margin: 0.3rem 0 0.6rem;
 }
+
+/* Tutorial: projeto de exemplo (roda de bicicleta) */
+.tutorial-inicio {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1.2rem 1.4rem;
+    border-left: 6px solid var(--qfd-limao);
+}
+
+.tutorial-inicio-texto {
+    flex: 1;
+}
+
+.tutorial-inicio-texto h2 {
+    color: var(--qfd-teal);
+    margin-top: 0;
+}
+
+.tutorial-inicio-texto ol {
+    margin: 0.4rem 0 0.6rem 1.3rem;
+}
+
+.tutorial-inicio-acao {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    text-align: center;
+    color: #5b6b6a;
+}
+
+.tutorial-aviso {
+    color: #7a4a05;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.tutorial-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.tutorial-etapa {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    border: 1px solid #e3e8e7;
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+}
+
+.tutorial-num {
+    flex: 0 0 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    background: var(--qfd-verde);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.tutorial-etapa h3 {
+    margin: 0 0 0.2rem;
+    font-size: 1.05rem;
+}
+
+.tutorial-etapa h3 a {
+    color: var(--qfd-teal);
+}
+
+.tutorial-etapa p {
+    margin: 0.15rem 0;
+}
+
+.tutorial-exemplo {
+    color: #34514e;
+    background: var(--qfd-verde-claro);
+    border-radius: 6px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 700px) {
+    .tutorial-inicio {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

@@ -1,6 +1,6 @@
 QFD - QA
 Site: https://marlonsigales.github.io/QFD/index.html
-Atualizado em 14/10/2026 — dados na versão 10 — 94 testes automáticos
+Atualizado em 14/10/2026 — dados na versão 10 — 96 testes automáticos
 
 Legenda: [fazer] pendente · [aguardando] depende de outra pessoa ou material ·
          [futuro] fica para depois · [RESOLVIDO] feito e testado ·
@@ -12,7 +12,7 @@ RESUMO
   Por fazer ............ 0
   Aguardando ........... 2   (confirmações com o Roger)
   Futuro ............... 1   (P14)
-  Resolvidos ........... 40  (agrupados por área)
+  Resolvidos ........... 41  (agrupados por área)
   Rejeitados ........... 17
 
 ==========================================================================================
@@ -113,6 +113,14 @@ Nada pendente.
             situação; também no relatório e no CSV.
 
 --- Apoio ao projeto informacional ------------------------------------------------------
+
+[RESOLVIDO] Tutorial com projeto completo de exemplo (roda de bicicleta urbana):
+            página "Tutorial" (barra lateral -> Apoio e cartão no Dashboard) com
+            o botão "Carregar o exemplo" (oferece backup do projeto atual antes) e
+            o passo a passo das 13 páginas, dizendo o que observar no exemplo em
+            cada uma. O exemplo preenche todas as etapas: 5 RC + 1 formador de
+            função, Mudge, 6 RP, telhado, matriz, metas, 2 concorrentes, índice,
+            referências, ideias, falha, verificação e fechamento.
 
 [RESOLVIDO] Caderno de Ideias (P10): ideias de solução e falhas analisadas;
             botão 💡 com contador em cada requisito; "Criar requisito neutro" a
@@ -263,8 +271,10 @@ Relatório e dados
        Voltar/Avançar, nome do projeto no topo e logos no rodapé.
 [ ] 15. Exportar backup, limpar os dados e importar -> projeto volta igual.
 [ ] 16. Importar um backup antigo (antes de out/2026) -> nada perdido.
+[ ] 17. Tutorial: "Carregar o exemplo" (com projeto aberto -> oferece backup) e
+       conferir em cada página o que o passo a passo descreve.
 
-Testes automáticos (94): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+Testes automáticos (96): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 
 ==========================================================================================
 6. PRÓXIMOS PASSOS

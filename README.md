@@ -33,6 +33,7 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
 | 9 | Fechamento | Abstração da lista de requisitos em 5 passos, formulações do problema da mais restrita à mais ampla (com a adotada) e função global como caixa-preta, com entradas e saídas de energia, material e sinal (Pahl & Beitz, 6.2 e 6.3.1); botão "Sugerir" gera um rascunho de cada passo a partir dos dados |
 | 10 | Relatório PDF | Relatório configurável com as seções escolhidas, prévia e geração de PDF: capa de página inteira e sumário numerado, Diagrama de Mudge completo e quadro de especificações no formato do Quadro 8 (Spagnolo, 2011) em folha deitada |
 | — | Caderno de Ideias | Ideias de solução (ligadas a requisitos, com status) e falhas analisadas de produtos existentes, que geram requisitos neutros; fora da lista de requisitos (Pahl & Beitz, 5.4). Botão 💡 em cada requisito para registro rápido; anexo no relatório |
+| — | Tutorial | Projeto completo de exemplo (roda de bicicleta urbana), carregado por um botão, com o passo a passo do que observar em cada página |
 | — | Referências | Estado da técnica (Pahl & Beitz, 3.1.4): patentes, normas, regulamentos, artigos, produtos e sites consultados, com link, data de consulta, resumo e os requisitos ligados (aparecem no cartão do requisito e no relatório) |
 
 **Aparência:** mesma identidade visual do Gestão de Projetos (Inova Agro): barra superior branca com logo, nome do projeto e menu Backup & Export; barra lateral teal com as etapas numeradas; cores em variáveis CSS (`--qfd-teal`, `--qfd-verde`, `--qfd-limao`...) no início de `css/style.css`. Em telas estreitas a barra lateral abre pelo botão ☰.
@@ -94,6 +95,7 @@ QFD/
 │   ├── ideias.js               # Caderno de ideias e falhas analisadas
 │   ├── referencias.js          # Estado da técnica e referências
 │   ├── fechamento.js           # Abstração, formulação do problema e função global
+│   ├── tutorial.js             # Tutorial e projeto de exemplo (roda de bicicleta)
 │   └── relatorio.js            # Relatório e PDF (jsPDF + html2canvas)
 ├── pages/                      # Uma página HTML por etapa
 └── tests/

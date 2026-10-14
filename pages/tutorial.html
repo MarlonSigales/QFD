@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial - Sistema QFD</title>
+    <link rel="preload" href="../css/style.css" as="style">
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <header class="topbar">
+        <button type="button" class="sidebar-toggle" aria-label="Abrir o menu" aria-controls="sidebar" aria-expanded="false"><i class="fas fa-bars"></i></button>
+        <a href="../index.html" class="topbar-marca" title="Dashboard">
+            <img src="../img/logo-inovaagro.png" alt="EMBRAPII - Inova Agro" height="34">
+            <span>Sistema QFD</span>
+        </a>
+        <span class="topbar-projeto" title="Nome do projeto (editar no Dashboard)"><i class="fas fa-folder-open"></i> <span id="topbar-projeto-nome">Projeto</span></span>
+        <span class="topbar-selo" title="Os dados ficam salvos neste navegador; exporte o backup para levar a outro computador"><i class="fas fa-globe"></i> guardado no navegador</span>
+        <div class="topbar-acoes">
+            <div class="nav-page-actions">
+                <a href="../index.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Dashboard
+                </a>
+            </div>
+            <div class="nav-dropdown topbar-backup">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-database"></i> <span class="topbar-rotulo">Backup &amp; Export</span> <i class="fas fa-chevron-down topbar-seta"></i></a>
+                <div class="dropdown-menu">
+                    <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
+                    <a href="#" onclick="exportarEEnviarEmail()"><i class="fas fa-envelope"></i> Exportar e enviar por e-mail</a>
+                    <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
+    </header>
+    <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <nav aria-label="Etapas do QFD">
+            <a href="../index.html" class="sidebar-link" title="Dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <div class="sidebar-grupo">Etapas do QFD</div>
+            <a href="requisitos-cliente.html" class="sidebar-link" title="Requisitos de Cliente"><span class="sidebar-num">1</span><span>Requisitos de Cliente</span></a>
+            <a href="comparacao-cliente.html" class="sidebar-link" title="Comparação (Mudge)"><span class="sidebar-num">2</span><span>Comparação (Mudge)</span></a>
+            <a href="requisitos-projeto.html" class="sidebar-link" title="Requisitos de Projeto"><span class="sidebar-num">3</span><span>Requisitos de Projeto</span></a>
+            <a href="correlacao-projeto.html" class="sidebar-link" title="Correlação (telhado)"><span class="sidebar-num">4</span><span>Correlação (telhado)</span></a>
+            <a href="matriz-qfd.html" class="sidebar-link" title="Matriz QFD"><span class="sidebar-num">5</span><span>Matriz QFD</span></a>
+            <a href="especificacoes.html" class="sidebar-link" title="Especificações"><span class="sidebar-num">6</span><span>Especificações</span></a>
+            <a href="avaliacao-competitiva.html" class="sidebar-link" title="Avaliação Competitiva"><span class="sidebar-num">7</span><span>Avaliação Competitiva</span></a>
+            <a href="atendimento-requisitos.html" class="sidebar-link" title="Atendimento"><span class="sidebar-num">8</span><span>Atendimento</span></a>
+            <a href="fechamento.html" class="sidebar-link" title="Fechamento (abstração e função global)"><span class="sidebar-num">9</span><span>Fechamento</span></a>
+            <a href="relatorio.html" class="sidebar-link" title="Relatório"><span class="sidebar-num">10</span><span>Relatório</span></a>
+            <div class="sidebar-grupo">Apoio</div>
+            <a href="ideias.html" class="sidebar-link" title="Caderno de Ideias"><i class="fas fa-lightbulb"></i><span>Caderno de Ideias</span></a>
+            <a href="referencias.html" class="sidebar-link" title="Estado da técnica e referências"><i class="fas fa-book"></i><span>Referências</span></a>
+            <a href="tutorial.html" class="sidebar-link ativo" aria-current="page" title="Tutorial: projeto de exemplo (roda de bicicleta)"><i class="fas fa-graduation-cap"></i><span>Tutorial</span></a>
+        </nav>
+    </aside>
+        <div class="app-conteudo">
+            <div class="page-titulo">
+                <h1><i class="fas fa-graduation-cap"></i> Tutorial: roda de bicicleta</h1>
+                <p>Um projeto completo, pronto, para aprender cada ferramenta vendo-a em uso</p>
+            </div>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="card tutorial-inicio">
+                <div class="tutorial-inicio-texto">
+                    <h2>Como usar este tutorial</h2>
+                    <p>O exemplo é o projeto informacional de uma <strong>roda de bicicleta urbana</strong>: requisitos dos ciclistas, Diagrama de Mudge, telhado, Matriz QFD, especificações com metas, comparação com duas rodas do mercado, referências, ideias, verificação da lista e fechamento.</p>
+                    <ol>
+                        <li>Clique em <strong>Carregar o exemplo</strong>.</li>
+                        <li>Percorra as etapas abaixo na ordem, abrindo cada página pelo título.</li>
+                        <li>Mude valores à vontade para ver os cálculos reagirem; para recomeçar, carregue o exemplo de novo.</li>
+                    </ol>
+                    <p class="tutorial-aviso" id="tutorial-projeto-atual"></p>
+                </div>
+                <div class="tutorial-inicio-acao">
+                    <button type="button" class="btn btn-primary btn-carregar-exemplo"><i class="fas fa-bicycle"></i> Carregar o exemplo</button>
+                    <small>Seu projeto atual pode ser salvo em backup antes.</small>
+                </div>
+            </div>
+
+            <div class="card" id="tutorial-etapas">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-route"></i> Etapas do exemplo</h3>
+                </div>
+                <ol class="tutorial-lista">
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num"><i class="fas fa-home"></i></span>
+                    <div>
+                        <h3><a href="../index.html">Dashboard</a></h3>
+                        <p>Cartão "Projeto" com nome, cliente, instituição e equipe (vão para a capa do relatório) e o progresso de cada etapa.</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> Veja que todas as etapas aparecem preenchidas; clique num cartão para abrir a etapa.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">1</span>
+                    <div>
+                        <h3><a href="requisitos-cliente.html">Requisitos de Cliente</a></h3>
+                        <p>As necessidades do cliente, escritas como "ser/ter/estar + substantivo": "Ser leve", "Ter baixo custo"...</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> "Transmitir o movimento dos pedais ao solo" começa por outro verbo: é uma função, por isso está marcado como formador de função e fica fora do QFD. Experimente escrever "Eliminar o barulho" no cadastro para ver o aviso de redação.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">2</span>
+                    <div>
+                        <h3><a href="comparacao-cliente.html">Comparação (Mudge)</a></h3>
+                        <p>Cada par de requisitos de cliente é comparado: qual é mais importante e quanto (1 pouco, 3 médio, 5 muito).</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> "Ser resistente a buracos e meio-fio" vence todas as comparações e fica com o maior peso; "Ter manutenção fácil" perde todas e fica com 0%.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">3</span>
+                    <div>
+                        <h3><a href="requisitos-projeto.html">Requisitos de Projeto</a></h3>
+                        <p>Características mensuráveis do produto, com sentido de melhoria (↑ ↓ *) e dificuldade técnica (1 a 5).</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> Desça até "Verificação da lista": os 6 critérios estão marcados e confirmados, e "Cor do aro" aparece como requisito descartado, com o motivo.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">4</span>
+                    <div>
+                        <h3><a href="correlacao-projeto.html">Correlação (telhado)</a></h3>
+                        <p>Como os requisitos de projeto se influenciam: ++, +, -, --.</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> Massa × Carga radial é "--": aumentar a resistência tende a aumentar a massa. Esse conflito vira aspecto indesejado nas Especificações.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">5</span>
+                    <div>
+                        <h3><a href="matriz-qfd.html">Matriz QFD</a></h3>
+                        <p>Quanto cada requisito de projeto atende a cada requisito de cliente (1 fraca, 3 moderada, 9 forte). As linhas de baixo somam a importância de cada coluna.</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> Carga radial e Massa ficam em 1º e 2º. Troque "Valor do requisito de cliente" para "Classes de 1 a 10" e veja o ranking ser recalculado.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">6</span>
+                    <div>
+                        <h3><a href="especificacoes.html">Especificações</a></h3>
+                        <p>Meta (≥, ≤, = ou intervalo), unidade e forma de avaliação de cada requisito, na ordem do QFD.</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> Carga radial está no terço superior com dificuldade 4: aparece "Atenção: importante e difícil". Abaixo de cada meta está o melhor concorrente, com "Usar como meta".</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">7</span>
+                    <div>
+                        <h3><a href="avaliacao-competitiva.html">Avaliação Competitiva</a></h3>
+                        <p>Notas dos clientes (1 a 5) e valores técnicos do nosso produto e de dois concorrentes.</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> O índice "Carga por massa" (RP2 / RP1) compara a eficiência estrutural das três rodas; confira os pontos fortes e a melhorar.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">8</span>
+                    <div>
+                        <h3><a href="atendimento-requisitos.html">Atendimento</a></h3>
+                        <p>Quanto os valores medidos do nosso produto atingem as metas e, por elas, cada requisito de cliente.</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> A roda atual só atinge as metas de custo e de número de raios: o diagnóstico mostra o que falta em massa, carga radial, tempo de troca e desvio lateral.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">9</span>
+                    <div>
+                        <h3><a href="fechamento.html">Fechamento</a></h3>
+                        <p>Abstração da lista de requisitos, formulação do problema e função global (caixa-preta).</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> Veja como "Fazer uma roda de alumínio com 32 raios" foi ampliado até "Sustentar e rolar a bicicleta com segurança", e a caixa-preta com energia, material e sinal. Use "Sugerir" para comparar com o rascunho automático.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num"><i class="fas fa-lightbulb"></i></span>
+                    <div>
+                        <h3><a href="ideias.html">Caderno de Ideias</a></h3>
+                        <p>Ideias de solução e falhas de produtos existentes, guardadas fora da lista de requisitos.</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> "Aro de alumínio com parede dupla" está como promissora; a falha "Raios rompem perto do cubo" pode gerar um requisito neutro.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num"><i class="fas fa-book"></i></span>
+                    <div>
+                        <h3><a href="referencias.html">Referências</a></h3>
+                        <p>Normas, patentes, artigos e produtos consultados, ligados aos requisitos.</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> A norma de ensaio de rodas está ligada à resistência e ao desvio lateral; abra Requisitos de Projeto para vê-la no cartão de cada um.</p>
+                    </div>
+                </li>
+                <li class="tutorial-etapa">
+                    <span class="tutorial-num">10</span>
+                    <div>
+                        <h3><a href="relatorio.html">Relatório</a></h3>
+                        <p>Documento final com capa, sumário e as seções escolhidas, em PDF.</p>
+                        <p class="tutorial-exemplo"><i class="fas fa-bicycle"></i> Gere o PDF: capa na 1ª página, terços em quadros, Diagrama de Mudge completo e o quadro de especificações em folha deitada.</p>
+                    </div>
+                </li>
+                </ol>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-logos">
+                <img src="../img/logo-inovaagro.png" alt="EMBRAPII - Inova Agro - UFPel" height="64">
+                <img src="../img/logo-nimeq.png" alt="NIMEq" height="64">
+                <img src="../img/logo-instagri.png" alt="Laboratório de Instrumentação Agrícola - UFPel" height="64">
+            </div>
+            <p>&copy; 2026 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+            <p class="footer-credits">
+                <strong>Desenvolvedor:</strong> Marlon Soares Sigales<br>
+                <strong>Equipe de projeto:</strong> Roger Toscan Spagnolo, Ângelo Vieira dos Reis, Ádamo de Sousa Araújo, Gizele Ingrid Gadotti, Eduardo Walker, Giuseppe Stefanello, Fabrício Ardais<br>
+                <strong>Equipe Inova Agro - UFPel - EMBRAPII</strong>
+            </p>
+            <p class="footer-credits">
+                Os códigos estão abertos para quem quiser utilizar e ajustar no GitHub: <a href="https://github.com/MarlonSigales/QFD" target="_blank" rel="noopener">https://github.com/MarlonSigales/QFD</a>.
+                Cópias são permitidas desde que devidamente citadas.
+            </p>
+        </div>
+    </footer>
+        </div>
+    </div>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/tutorial.js"></script>
+</body>
+</html>

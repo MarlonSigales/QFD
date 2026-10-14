@@ -764,6 +764,10 @@ const PAGINAS = [
         texto: 'Ideia <b>teste</b>', seletores: ['#lista-ideias .ideia-chip', '#lista-falhas .falha-neutro', '#ideia-requisitos input[type=checkbox]']
     },
     {
+        arquivo: '../pages/tutorial.html', funcao: 'carregarExemploRodaBicicleta',
+        texto: 'Carregar o exemplo', seletores: ['.btn-carregar-exemplo', '.tutorial-lista .tutorial-etapa a[href="matriz-qfd.html"]', '#tutorial-projeto-atual']
+    },
+    {
         arquivo: '../pages/fechamento.html', funcao: 'renderPassos',
         preparar: () => { criarProjetoExemplo(); qfdDB.setFuncaoGlobal({ nome: 'Eliminar <plantas>', entradas: { energia: 'Calor' } }); qfdDB.addFormulacao('Formulação <ampla>'); },
         texto: 'Formulação <ampla>', seletores: ['#passos-abstracao textarea[data-passo="4"]', '#caixa-preta svg polygon', '#fechamento-lista-requisitos li', '#fluxos-saidas textarea[data-tipo="sinal"]']
@@ -818,8 +822,8 @@ function testarPagina(pagina) {
                 assert(doc.querySelector(sel), `elemento "${sel}" não encontrado`);
             });
 
-            // barra lateral com as 10 etapas + Dashboard + Caderno de Ideias + Referências, página atual destacada
-            assertEqual(doc.querySelectorAll('.sidebar .sidebar-link').length, 13, 'links da barra lateral');
+            // barra lateral com as 10 etapas + Dashboard + Caderno de Ideias + Referências + Tutorial, página atual destacada
+            assertEqual(doc.querySelectorAll('.sidebar .sidebar-link').length, 14, 'links da barra lateral');
             const ativo = doc.querySelector('.sidebar .sidebar-link.ativo');
             assert(ativo && pagina.arquivo.endsWith(ativo.getAttribute('href').split('/').pop()), 'página atual não destacada na barra lateral');
             assert(doc.getElementById('topbar-projeto-nome').textContent.trim(), 'nome do projeto na barra superior');
@@ -1051,6 +1055,42 @@ suite('Páginas', () => {
             assert(svg.querySelector('line[stroke-dasharray]'), 'sinal sem seta tracejada');
         } finally {
             iframe.remove();
+        }
+    });
+    test('Tutorial: o exemplo da roda de bicicleta preenche todas as etapas como o texto descreve', async () => {
+        qfdDB.clearAllData();
+        const iframe = await carregarPagina('../pages/tutorial.html');
+        try {
+            iframe.contentWindow.carregarExemploRodaBicicleta();
+        } finally {
+            iframe.remove();
+        }
+        const rcs = qfdDB.getRequisitosCliente();
+        assertEqual(rcs.length, 5, 'RC no QFD');
+        assertEqual(qfdDB.getRequisitosCliente({ todos: true }).length, 6, 'um formador de função fora do QFD');
+        const maior = [...rcs].sort((a, b) => b.peso - a.peso)[0];
+        assertEqual(maior.descricao, 'Ser resistente a buracos e meio-fio', 'maior peso no Mudge');
+        assertEqual(rcs.find(r => r.descricao === 'Ter manutenção fácil').peso, 0, 'manutenção com 0%');
+        const ordem = qfdDB.getEspecificacoesOrdenadas();
+        assertEqual(ordem.slice(0, 2).map(e => e.requisito.descricao), ['Carga radial suportada (N)', 'Massa da roda (g)'], '1º e 2º no QFD');
+        assert(ehRequisitoCritico(0, ordem.length, ordem[0].requisito.dificuldadeTecnica), 'carga radial deveria ser crítica');
+        assert(ordem.every(e => e.unidadeMedida && metaDefinida(e) && e.formaAvaliacao), 'especificações completas');
+        assert(/Carga radial/.test(ordem.find(e => e.requisito.descricao === 'Massa da roda (g)').aspectosIndesejaveis), 'aspecto do --');
+        const tec = qfdDB.getAnaliseCompetitiva().tecnicos.find(t => t.requisito.descricao === 'Massa da roda (g)');
+        assertEqual([tec.melhor.valor, tec.melhor.produtos[0]], [1700, 'Roda de alumínio parede dupla'], 'melhor concorrente');
+        assertEqual(qfdDB.getAnaliseCompetitiva().indices.length, 1, 'índice carga por massa');
+        const atingidas = qfdDB.getAnaliseAtendimento(false).projetos.filter(p => p.estado === 'atingida').map(p => p.requisito.descricao).sort();
+        assertEqual(atingidas, ['Custo de fabricação (R$)', 'Número de raios (un)'], 'metas atingidas (texto do tutorial)');
+        assert(qfdDB.getVerificacao().atualizada && qfdDB.getVerificacao().descartados.length === 1, 'verificação');
+        assertEqual(qfdDB.getFormulacaoFinal(), 'Sustentar e rolar a bicicleta com segurança');
+        assertEqual([qfdDB.getReferencias().length, qfdDB.getIdeias().length, qfdDB.getFalhas().length], [2, 2, 1]);
+        const rel = await carregarPagina('../pages/relatorio.html');
+        try {
+            const doc = rel.contentDocument;
+            ['.report-capa', '.report-mudge', '.report-terco', '.report-verificacao', '.report-referencias', '.report-fechamento svg', '.report-criticos li']
+                .forEach(sel => assert(doc.querySelector('#report-content ' + sel), `relatório sem ${sel}`));
+        } finally {
+            rel.remove();
         }
     });
     test('Relatório: capa com dados do projeto e sumário numerado', async () => {
