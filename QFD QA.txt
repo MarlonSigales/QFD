@@ -2,127 +2,41 @@ QFD - QA
 Site: https://marlonsigales.github.io/QFD/index.html
 Atualizado em 14/10/2026 — dados na versão 10 — 94 testes automáticos
 
-Legenda: [fazer] pendente · [aguardando] depende de material externo ·
-         [RESOLVIDO] feito e testado · [rejeitado] não será feito
+Legenda: [fazer] pendente · [aguardando] depende de outra pessoa ou material ·
+         [futuro] fica para depois · [RESOLVIDO] feito e testado ·
+         [rejeitado] não será feito ("por hora" = pode voltar)
 
 ==========================================================================================
 RESUMO
 
-  Por fazer ............ 1   (uso em celular, sem prioridade)
-  Aguardando ........... 1   (hierarquização com telhado)
+  Por fazer ............ 0
+  Aguardando ........... 2   (confirmações com o Roger)
   Futuro ............... 1   (P14)
-  Resolvidos ........... 43
-  Rejeitados ........... 16  (por hora ou definitivos)
+  Resolvidos ........... 40  (agrupados por área)
+  Rejeitados ........... 17
 
 ==========================================================================================
-1. POR FAZER (do mais fácil para o mais difícil)
+1. POR FAZER
 
-[RESOLVIDO] 1. Aviso de redação no requisito de cliente: deve ser "ser/ter/estar +
-            substantivo" (Fonseca, 2000). Com outro verbo ("eliminar plantas") o
-            requisito provavelmente é uma função: avisar ao cadastrar/editar e
-            sugerir marcá-lo como "formador de função". Só aviso, não bloqueia.
-            Feito: aviso abaixo da descrição (cadastro e edição) quando começa por
-            verbo no infinitivo que não é ser/ter/estar/possuir/apresentar/poder
-            (ignora "O produto deve..."); botão "Marcar como formador de função".
+Nada pendente.
 
-[RESOLVIDO] 2. Abstração automática no Fechamento (decisão: "se houver forma
-            automática, fazer"): botão "Sugerir" em cada passo que preenche um
-            rascunho a partir dos dados — passo 1/2: requisitos no QFD (os fora do
-            QFD e os do terço inferior saem); passo 3: metas trocadas por
-            expressões qualitativas pelo sentido (↓ "peso total reduzido", ↑
-            "altura de queda elevada"); passo 4: só os do terço superior; passo 5:
-            frase com a função global. O usuário revisa e edita.
-            Feito: botão "Sugerir" em cada passo (pede confirmação antes de
-            substituir um texto já escrito).
+==========================================================================================
+2. AGUARDANDO
 
-[RESOLVIDO] 3. Valor do requisito de cliente em classes de 1 a 10 (campo 2 da casa da
-            qualidade), convertido do % do Mudge, como usado pelo Roger/Reis
-            (2003), em vez da pontuação bruta. Opção por projeto (padrão: % atual).
-            Feito: na Matriz QFD, "Valor do requisito de cliente": Pontuação do
-            Mudge (padrão) ou Classes de 1 a 10; recalcula na hora e aparece na
-            matriz e no relatório. Fórmula adotada: classe = arredondar(10 × peso /
-            maior peso), mínimo 1 — CONFIRMAR COM O ROGER se é a mesma de Reis.
-
-[RESOLVIDO] 4. Verificação da lista de requisitos de projeto (Roozenburg & Eekels,
-            1995): validade, completude, operacionalidade, não redundância,
-            concisão e praticabilidade — checklist antes de ir para a matriz,
-            registrando os requisitos descartados e o motivo (30 → 26 no Roger).
-            Decisão: só obriga se o usuário marcar a opção no projeto.
-            Feito: cartão "Verificação da lista" em Requisitos de Projeto (6
-            critérios + "Confirmar verificação" + "Exigir a verificação antes da
-            Matriz QFD"). Exigida e não confirmada (ou lista alterada depois), a
-            Matriz mostra o aviso em vez da tabela. Ao excluir um requisito, o
-            motivo informado fica em "Requisitos descartados". Seção no relatório.
-            Dados na versão 10.
-
-[fazer] remover citações de referências bibliográficas (ex: "Roger/Reis (2003)", "Roozenburg & Eekels, 1995") do texto final, mantendo apenas a descrição técnica dos procedimentos.
-
-[fazer sem prioridade] 5. Uso das matrizes em celular.
-
-[ainda sem saber] Hierarquização "com telhado" (campo 8 da Fig. 10): telhado com
+[aguardando Roger] Hierarquização "com telhado" (campo 8 da Fig. 10): telhado com
             pesos ++ = +5, + = +1, - = -1, -- = -5 e uma segunda lista de
             importância, comparada por terços (Quadros 5 a 7), com a posição com
             telhado ao lado da posição sem telhado nos quadros do relatório.
-            Precisa confirmar com o Roger a fórmula exata (Reis, 2003) para
-            reproduzir os valores da Fig. 36.
+            Falta a fórmula exata (Reis, 2003) que reproduz os valores da Fig. 36.
 
-[futuro] P14 - Módulo de planejamento do produto. (prompt abaixo)
+[aguardando Roger] Confirmar a fórmula das classes de 1 a 10 do valor do requisito
+            de cliente. Adotada: classe = arredondar(10 × peso / maior peso),
+            mínimo 1.
 
-==========================================================================================
-1b. RESOLVIDOS RECENTES (13/10/2026)
-
-[RESOLVIDO] P05 - Concorrência nas Especificações: melhor valor dos concorrentes
-            abaixo da meta, botão "Usar como meta" (grava ≥ para ↑, ≤ para ↓) e
-            aviso quando a meta está abaixo do melhor concorrente.
-
-[RESOLVIDO] P16 - Dificuldade técnica: linha na Matriz QFD, coluna nas
-            Especificações e lista de "requisitos críticos" no relatório (terço
-            superior com dificuldade 4 ou 5). Pesos inalterados.
-
-[RESOLVIDO] P13 - Estado da técnica e referências: página "Referências" (tipo,
-            título, nº, link, data de consulta, resumo, requisitos ligados), no
-            cartão do requisito, no Dashboard e no relatório. Dados na versão 8.
-
-[RESOLVIDO] P15 - Fechamento (etapa 9; Relatório passou a 10): abstração em 5
-            passos, formulações do problema com a adotada e função global em
-            caixa-preta SVG (energia contínua, material dupla, sinal tracejada).
-            Seção no relatório. Dados na versão 9.
-
-[RESOLVIDO] Coluna "Forma de avaliação" nas Especificações (com sugestões).
-
-[RESOLVIDO] Lista de Requisitos de Projeto sem estilo (número, cartões e botões
-            soltos): as regras de CSS da lista valiam só para Requisitos de
-            Cliente; agora valem para as duas páginas.
-
---- Relatório final ----------------------------------------------------------------------
-
-[RESOLVIDO] Quadro de especificações no formato do Roger (Quadro 8): nº, requisito,
-            meta, forma de avaliação e aspectos indesejados, na ordem do QFD.
-            virar a folha se necessário. Especificações ganhou a coluna "Forma de
-            avaliação" (texto livre com sugestões: teste de campo, bancada, cálculo,
-            contagem...). No relatório o quadro sai em folha deitada no PDF e na
-            impressão. O PDF agora é montado seção a seção: uma seção que não cabe
-            no resto da página começa na seguinte, e a capa ocupa a 1ª página.
-
-[RESOLVIDO] Diagrama de Mudge completo no relatório (a matriz com números, a soma e
-            o %). Seção "Diagrama de Mudge": matriz triangular (célula = requisito
-            mais importante e valor), colunas S e %, total e aviso das comparações
-            que faltam. Substitui a antiga lista de pares.
-
-[RESOLVIDO] Hierarquização em terços em quadros separados (superior, médio,
-            inferior) e a justificativa da lista escolhida. Relatório -> Requisitos
-            de Projeto: um quadro por terço (posição, ID, requisito, sentido, imp.
-            rel., dificuldade). A justificativa é escrita nas Especificações
-            (abaixo do quadro) e sai no relatório.
-
-[RESOLVIDO] Estrutura de documento técnico: capa (título, equipe, instituição,
-            data, cliente), sumário. Dashboard -> "Projeto" ganhou Cliente,
-            Instituição e Equipe (uma pessoa por linha). Relatório -> "Capa e
-            sumário": capa de página inteira (logos, título, cliente, instituição,
-            responsável, equipe, data, versão) e sumário com as seções numeradas.
+[futuro] P14 - Módulo de planejamento do produto. (prompt na seção 7)
 
 ==========================================================================================
-2. RESOLVIDOS
+3. RESOLVIDOS
 
 --- Requisitos ---------------------------------------------------------------------------
 
@@ -130,72 +44,120 @@ RESUMO
             flutuante nas demais páginas (comparação, correlação, matriz, relatório).
 
 [RESOLVIDO] Requisito formador de função / de boa prática de projeto (intenção),
-            para cliente e projeto, com comentário obrigatório, fora do QFD e com
-            espaço próprio no relatório.
-            Campo "Tipo de requisito" no cadastro e na edição. O requisito marcado
-            sai da comparação, do telhado, da matriz, das especificações, da
-            avaliação competitiva e do atendimento, e vai para a seção "Requisitos
-            fora do QFD" do relatório. Comparações e relações ficam guardadas e
-            voltam ao desmarcar.
+            para cliente e projeto, com justificativa obrigatória. O requisito
+            marcado sai da comparação, do telhado, da matriz, das especificações,
+            da avaliação competitiva e do atendimento, e vai para a seção
+            "Requisitos fora do QFD" do relatório. Comparações e relações ficam
+            guardadas e voltam ao desmarcar.
 
-[RESOLVIDO] Caderno de ideias de solução e falhas analisadas (P10).
-            Página "Caderno de Ideias" (Menu e Dashboard); botão 💡 com contador em
-            cada requisito para registro rápido; "Criar requisito neutro" a partir
-            de uma falha; anexo no relatório.
+[RESOLVIDO] Aviso de redação no requisito de cliente ("ser/ter/estar +
+            substantivo"): quando começa por outro verbo no infinitivo
+            ("eliminar plantas"), aviso abaixo da descrição e botão "Marcar como
+            formador de função". Só aviso, não bloqueia.
+
+[RESOLVIDO] Verificação da lista de requisitos de projeto: cartão em Requisitos de
+            Projeto com 6 critérios (validade, completude, operacionalidade, não
+            redundância, concisão, praticabilidade), "Confirmar verificação" e
+            opção "Exigir a verificação antes da Matriz QFD" (só bloqueia se
+            marcada; lista alterada pede nova confirmação). Requisitos excluídos
+            com motivo ficam em "Requisitos descartados". Seção no relatório.
+
+[RESOLVIDO] Lista de Requisitos de Projeto sem estilo: as regras de CSS da lista
+            valiam só para Requisitos de Cliente; agora valem para as duas.
 
 --- Comparação, telhado e Matriz QFD -----------------------------------------------------
 
-[RESOLVIDO] Matriz QFD: ao passar o mouse, mostrar as relações que o Roger traz no
-            documento. Balão de cada célula e janela de preenchimento com o roteiro
-            dele: na matriz, "Pode este RP influenciar este RC? Este RC afeta este
-            RP? → fraca, moderada ou forte"; no telhado, as 4 perguntas do
-            Apêndice B para a combinação de setas dos dois requisitos (ex.: ↓ e ↑),
-            com os nomes dos requisitos e se o "sim" indica correlação positiva ou
-            negativa.
+[RESOLVIDO] Roteiro de preenchimento do Roger no balão e na janela de cada célula:
+            na matriz, "Pode este RP influenciar este RC? Este RC afeta este RP?
+            → fraca, moderada ou forte"; no telhado, as 4 perguntas do Apêndice B
+            para a combinação de setas dos dois requisitos.
 
-[RESOLVIDO] Diagrama de Mudge recarregava a página a cada comparação salva.
-            Agora atualiza só a matriz e mantém a rolagem; "Remover" passou a
-            recalcular a importância.
+[RESOLVIDO] Diagrama de Mudge não recarrega mais a página a cada comparação;
+            "Remover" recalcula a importância.
 
-[RESOLVIDO] Botão de voltar onde o Enter avança: "← Anterior" e Shift+Enter no
-            Mudge, no telhado e na Matriz QFD.
+[RESOLVIDO] "← Anterior" e Shift+Enter no Mudge, no telhado e na Matriz QFD.
 
-[RESOLVIDO] Linhas de soma na Matriz QFD: Soma (Σ relação × importância),
-            Percentual (%) e Ranking, também no relatório.
-
-[RESOLVIDO] Revisão das somas e do ranking: empates na mesma posição (1, 1, 3);
-            percentual zera sem relações; matriz recalcula ao abrir; rótulo
-            "Requisitos" estava invisível.
+[RESOLVIDO] Linhas abaixo da Matriz QFD: Soma (Σ relação × importância),
+            Percentual (%), Ranking (empates na mesma posição) e Dificuldade
+            técnica; também no relatório.
 
 [RESOLVIDO] Texto explicativo da especificação no balão da Matriz QFD.
 
+[RESOLVIDO] Dificuldade técnica (P16): linha na Matriz, coluna nas
+            Especificações e "Requisitos críticos" (terço superior com
+            dificuldade 4 ou 5) no relatório. Pesos inalterados.
+
+[RESOLVIDO] Valor do requisito de cliente na Matriz: pontuação do Mudge (padrão)
+            ou classes de 1 a 10 (opção na própria Matriz); recalcula na hora e
+            aparece no relatório. Fórmula aguardando confirmação (seção 2).
+
 --- Especificações, concorrentes e atendimento -------------------------------------------
 
-[RESOLVIDO] Especificações sem os quadros a preencher; aspectos indesejáveis vêm
-            das correlações -- do telhado.
+[RESOLVIDO] Aspectos indesejáveis vêm das correlações -- do telhado.
 
-[RESOLVIDO] "Valor" virou "Valor meta" (P02): ≥ mínimo, ≤ máximo, = nominal com ±,
-            ou intervalo; tipo sugerido pelo sentido de melhoria. Valores antigos
+[RESOLVIDO] "Valor meta" (P02): ≥ mínimo, ≤ máximo, = nominal com ±, ou
+            intervalo; tipo sugerido pelo sentido de melhoria. Valores antigos
             migram sozinhos; texto não numérico fica marcado "Revisar meta".
+
+[RESOLVIDO] Coluna "Forma de avaliação" (teste de campo, bancada, cálculo...).
+
+[RESOLVIDO] Concorrência nas Especificações (P05): melhor valor dos concorrentes
+            abaixo da meta, "Usar como meta" (≥ para ↑, ≤ para ↓) e aviso quando a
+            meta está abaixo do melhor concorrente.
+
+[RESOLVIDO] Justificativa da hierarquização (abaixo do quadro), que sai no
+            relatório.
 
 [RESOLVIDO] Índices na comparação de concorrentes: fórmulas entre requisitos
             (RP2 / RP1, (RP3 - RP4) * 100), valor por produto, melhor concorrente e
             situação; também no relatório e no CSV.
 
+--- Apoio ao projeto informacional ------------------------------------------------------
+
+[RESOLVIDO] Caderno de Ideias (P10): ideias de solução e falhas analisadas;
+            botão 💡 com contador em cada requisito; "Criar requisito neutro" a
+            partir de uma falha; anexo no relatório.
+
+[RESOLVIDO] Referências / estado da técnica (P13): patentes, normas, artigos,
+            produtos e sites, com link, data de consulta, resumo e requisitos
+            ligados; aparecem no cartão do requisito, no Dashboard e no relatório.
+
+[RESOLVIDO] Fechamento (P15), etapa 9: abstração em 5 passos, formulações do
+            problema com a adotada marcada e função global em caixa-preta
+            (energia contínua, material dupla, sinal tracejada). Seção no
+            relatório.
+
+[RESOLVIDO] Botão "Sugerir" em cada passo da abstração: rascunho automático a
+            partir dos requisitos, dos terços, dos sentidos e da função global.
+
 --- Relatório ----------------------------------------------------------------------------
 
-[RESOLVIDO] Relatório quebrava após a adição das especificações.
+[RESOLVIDO] Capa de página inteira (logos, título, cliente, instituição,
+            responsável, equipe, data, versão) e sumário com seções numeradas.
+            Cliente, Instituição e Equipe ficam no cartão "Projeto" do Dashboard.
 
-[RESOLVIDO] Sem a lista de pares RPx ↔ RPy; só a contagem por tipo (os pares
-            estão no telhado e na matriz).
+[RESOLVIDO] Diagrama de Mudge completo (matriz com valores, S e %).
 
-[RESOLVIDO] Comparação com concorrentes não corta mais: quadro "Produtos
-            comparados" (Nosso, C1...Cn) e tabelas com códigos.
+[RESOLVIDO] Requisitos de projeto em quadros separados por terço (posição, ID,
+            requisito, sentido, imp. rel., dificuldade).
 
-[RESOLVIDO] Margens de 2 cm em todas as páginas do PDF e na impressão.
+[RESOLVIDO] Quadro de especificações no formato do Quadro 8 (requisito, valor
+            meta, forma de avaliação, aspectos indesejados), em folha deitada.
+
+[RESOLVIDO] PDF montado seção a seção: seção que não cabe começa na página
+            seguinte; margens de 2 cm em todas as páginas e na impressão.
 
 [RESOLVIDO] Dois relatórios: "Equipe de projeto" (completo) e "Apresentação" (sem
             textos explicativos, inconsistências, diagnóstico e análises).
+
+[RESOLVIDO] Comparação com concorrentes sem corte: quadro "Produtos comparados"
+            (Nosso, C1...Cn) e tabelas com códigos.
+
+[RESOLVIDO] Telhado sem a lista de pares RPx ↔ RPy; só a contagem por tipo.
+
+[RESOLVIDO] Relatório quebrava após a adição das especificações.
+
+[RESOLVIDO] Coluna vazia extra nas tabelas do relatório (estilo antigo de balão).
 
 --- Projeto, backup e e-mail -------------------------------------------------------------
 
@@ -204,55 +166,45 @@ RESUMO
             com os envolvidos e o assunto "qfd - <nome>" (anexar o arquivo à mão);
             "Compartilhar" anexa o JSON onde o navegador permite.
 
+[RESOLVIDO] Estrutura dos dados com versão e migração automática (hoje versão 10);
+            backups antigos continuam abrindo.
+
 --- Aparência e navegação ----------------------------------------------------------------
 
-[RESOLVIDO] Identidade visual igual à do Gestão de Projetos.
-            Paleta teal (#085357) / verde (#409580) / limão (#a8e156) com fundo
-            #f4f7f6; barra superior branca com o logo da Inova Agro, "Sistema QFD",
-            o nome do projeto, "guardado no navegador", Voltar/Avançar e Backup;
-            barra lateral teal com as 9 etapas numeradas (página atual destacada)
-            e o Caderno de Ideias. No celular a barra lateral abre pelo botão ☰.
-            Tabelas com cabeçalho verde-claro; relatório com cabeçalho teal.
+[RESOLVIDO] Citações bibliográficas removidas dos textos que o sistema mostra
+            (telas, balões e relatório): "Como avaliar (Spagnolo, 2011)", "(Pahl &
+            Beitz, Seção ...)", "(Roozenburg & Eekels, 1995)", "(Reis, 2003)",
+            "(Fonseca, 2000)". Ficam só nos comentários do código e no QA.
 
-[RESOLVIDO] Logos da Inova Agro (EMBRAPII), do NIMEq e do Lab InstAgri no rodapé
-            de todas as páginas (versões leves em img/logo-*.png).
+[RESOLVIDO] Identidade visual igual à do Gestão de Projetos: paleta teal
+            (#085357) / verde (#409580) / limão (#a8e156); barra superior com
+            logo, nome do projeto e Backup; barra lateral com as 10 etapas
+            numeradas, Caderno de Ideias e Referências. No celular a barra lateral
+            abre pelo botão ☰.
 
-[RESOLVIDO] Rodapé com © 2026, desenvolvedor, equipe de projeto e Equipe Inova
-            Agro - UFPel - EMBRAPII; removida a menção a IA.
+[RESOLVIDO] Logos da Inova Agro (EMBRAPII), do NIMEq e do Lab InstAgri no rodapé;
+            rodapé com © 2026, desenvolvedor e equipe; sem menção a IA.
 
-[RESOLVIDO] Botões Voltar/Avançar com texto legível e o nome do destino.
+[RESOLVIDO] Botões Voltar/Avançar legíveis, com o nome do destino; menus
+            padronizados; balões unificados.
 
-[RESOLVIDO] Menus padronizados em todas as páginas (Menu e Backup & Export).
-
-[RESOLVIDO] Balões unificados (um só código e estilo em todas as páginas).
-
-[RESOLVIDO] CSS duplicado e estilos injetados via JavaScript movidos para o
-            style.css (conferido com capturas antes/depois de 17 telas).
-
-[RESOLVIDO] Removido qfd_system_updated.zip (versão antiga).
-
-[RESOLVIDO] QA reorganizado em "por fazer", "resolvidos" e "rejeitados".
-
-[RESOLVIDO] Código legado: removida a janela antiga do telhado (não era mais
-            usada) e o link do rodapé passou a apontar para
-            github.com/MarlonSigales/QFD.
-
-[RESOLVIDO] Ideias para o relatório final e para o projeto informacional: ver a
-            seção 1b (tiradas dos documentos do Roger).
+[RESOLVIDO] Limpeza: CSS duplicado e estilos injetados via JavaScript movidos
+            para o style.css; janela antiga do telhado e qfd_system_updated.zip
+            removidos; link do rodapé para github.com/MarlonSigales/QFD.
 
 ==========================================================================================
-3. REJEITADOS
+4. REJEITADOS
 
+[rejeitado] Uso das matrizes em celular.
 [rejeitado] Diagrama de Mudge com letras (A/B/C) como no Roger (Fig. 35).
 [rejeitado] Escala das relações da matriz configurável (Roger: 1/3/5).
+[rejeitado] P01 - Exigência ou Desejo.
+[rejeitado] P12 - Listas parciais por departamento.
 [rejeitado por hora] Requisitos de cliente por fase do ciclo de vida e tipo de
             cliente (Quadros 2 e 4).
 [rejeitado por hora] Atributos de Fonseca (2000) nos requisitos de projeto.
 [rejeitado por hora] Registro da coleta de necessidades (entrevistas,
             questionário, tamanho da amostra).
-
-[rejeitado] P01 - Exigência ou Desejo.
-[rejeitado] P12 - Listas parciais por departamento.
 [rejeitado por hora] P03 - Origem, responsável e revisões da lista.
 [rejeitado por hora] P04 - Categorias do checklist e painel de cobertura.
 [rejeitado por hora] P06 - Definição do projeto.
@@ -264,64 +216,64 @@ RESUMO
 [baixa prioridade] Acessibilidade (rever quando o resto estiver pronto).
 
 ==========================================================================================
-4. ROTEIRO DE QA MANUAL (no site publicado, depois do git push)
+5. ROTEIRO DE QA MANUAL (no site publicado)
 
 Dica: antes de começar, exporte um backup (Backup & Export -> Exportar Backup).
 
-[ ] 1. Dashboard: preencher nome do projeto e 2 e-mails (um inválido -> deve
-       avisar). "Exportar e enviar por e-mail": baixa o JSON e abre o e-mail com
-       os envolvidos e o assunto "qfd - <nome>".
-[ ] 2. Requisitos de cliente: cadastrar 4, um com texto explicativo com aspas
-       (ex.: tela de 6" ou mais); tentar um repetido -> deve recusar. Marcar um
-       como "formador de função" sem justificativa -> deve recusar; com
-       justificativa -> número vira etiqueta cinza. Registrar uma ideia pelo 💡.
-[ ] 3. Comparação (Mudge): o requisito marcado não aparece; salvar com Enter
-       (não recarrega, abre a próxima); Shift+Enter volta; balões sem código.
-[ ] 4. Requisitos de projeto: cadastrar 4 com texto explicativo.
+Cadastro
+[ ] 1. Dashboard: nome do projeto, 2 e-mails (um inválido -> deve avisar),
+       cliente, instituição e equipe. "Exportar e enviar por e-mail": baixa o
+       JSON e abre o e-mail com os envolvidos e o assunto "qfd - <nome>".
+[ ] 2. Requisitos de cliente: cadastrar 4, um com texto explicativo com aspas;
+       repetido -> recusa. "Eliminar plantas daninhas" -> aviso de redação;
+       "Marcar como formador de função" sem justificativa -> recusa. Ideia pelo 💡.
+[ ] 3. Comparação (Mudge): o requisito marcado não aparece; Enter salva e abre a
+       próxima (sem recarregar); Shift+Enter volta.
+[ ] 4. Requisitos de projeto: cadastrar 4 com texto explicativo; marcar os 6
+       critérios, confirmar a verificação e "Exigir"; excluir um requisito
+       informando o motivo -> aparece em "Requisitos descartados".
+
+Casa da qualidade
 [ ] 5. Correlação: marcar uma correlação --; "← Anterior" e Shift+Enter.
-[ ] 6. Matriz QFD: preencher; conferir as linhas Soma / Percentual / Ranking e os
-       balões (RP com o texto da especificação).
-[ ] 7. Especificações: aspectos indesejáveis vindos do --; metas ≥, ≤, = com ± e
-       intervalo (intervalo invertido -> deve avisar).
+[ ] 6. Matriz QFD: com a verificação exigida e a lista alterada -> aviso no lugar
+       da matriz. Preencher; conferir Soma / Percentual / Ranking / Dificuldade;
+       trocar "Valor do requisito de cliente" para classes 1 a 10 -> recalcula.
+[ ] 7. Especificações: aspectos vindos do --; metas ≥, ≤, = com ± e intervalo
+       (invertido -> aviso); forma de avaliação; dificuldade 5 no terço superior
+       -> "importante e difícil"; melhor concorrente e "Usar como meta";
+       justificativa da hierarquização.
+
+Depois do QFD
 [ ] 8. Avaliação Competitiva: 2 concorrentes (nome repetido -> recusa), notas,
-       metas, valores técnicos; criar o índice "RP2 / RP1"; forçar uma
-       inconsistência; exportar o CSV e abrir no Excel (acentos e índices).
-[ ] 9. Atendimento aos Requisitos: valores que atinjam e não atinjam cada tipo de
-       meta; conferir ✓/✗ e o diagnóstico.
-[ ] 10. Caderno de Ideias: ideia com 2 requisitos; falha -> "Criar requisito
-       neutro" -> o requisito aparece em Requisitos de Projeto.
-[ ] 11. Relatório: versão "Equipe" e "Apresentação"; seções "Requisitos fora do
-       QFD" e "Anexo: Caderno de Ideias"; GERAR O PDF e conferir margens de 2 cm,
-       gráfico e tabelas de concorrentes sem corte.
-[ ] 12. Em todas as páginas: barra lateral (etapa atual destacada), menu Backup,
-       botões Voltar/Avançar, nome do projeto no topo e logos no rodapé. No
-       celular: botão ☰ abre e fecha a barra lateral.
-[ ] 13. Exportar backup JSON, limpar os dados e importar -> projeto volta igual.
-[ ] 14. Importar um backup antigo (antes de out/2026) -> metas convertidas e nada
-       perdido.
-[ ] 15. Especificações: dificuldade 5 num requisito do terço superior -> aviso
-       "importante e difícil"; melhor concorrente e "Usar como meta"; forma de
-       avaliação; justificativa da hierarquização.
-[ ] 16. Referências: norma ligada a 2 requisitos -> aparece nos 2 cartões e no
-       relatório.
-[ ] 17. Fechamento: 5 passos, 2 formulações (marcar a adotada) e função global
-       com entradas/saídas -> caixa-preta na página e no relatório.
-[ ] 18. Relatório: capa, sumário, terços em quadros, Mudge completo e quadro de
-       especificações em folha deitada no PDF.
+       metas, valores técnicos; índice "RP2 / RP1"; forçar uma inconsistência;
+       CSV no Excel (acentos e índices).
+[ ] 9. Atendimento: valores que atinjam e não atinjam cada tipo de meta;
+       conferir ✓/✗ e o diagnóstico.
+[ ] 10. Fechamento: "Sugerir" nos 5 passos; 2 formulações (marcar a adotada);
+       função global com entradas/saídas -> caixa-preta.
+[ ] 11. Caderno de Ideias: ideia com 2 requisitos; falha -> "Criar requisito
+       neutro" -> aparece em Requisitos de Projeto.
+[ ] 12. Referências: norma ligada a 2 requisitos -> aparece nos 2 cartões.
+
+Relatório e dados
+[ ] 13. Relatório: versões "Equipe" e "Apresentação"; capa, sumário, terços em
+       quadros, Mudge completo, verificação, referências, fechamento; GERAR O
+       PDF: capa na 1ª página, especificações em folha deitada, margens de 2 cm.
+[ ] 14. Todas as páginas: barra lateral (etapa atual destacada), Backup,
+       Voltar/Avançar, nome do projeto no topo e logos no rodapé.
+[ ] 15. Exportar backup, limpar os dados e importar -> projeto volta igual.
+[ ] 16. Importar um backup antigo (antes de out/2026) -> nada perdido.
 
 Testes automáticos (94): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 
 ==========================================================================================
-5. PRÓXIMOS PASSOS
+6. PRÓXIMOS PASSOS
 
-- Fazer o commit e o git push; conferir o site publicado e o roteiro acima.
-- Conferir em Settings -> Pages do repositório se o GitHub Pages está ativo.
-- Confirmar com o Roger a fórmula da hierarquização com telhado (Reis, 2003).
-- Itens 1 a 4 da seção 1 feitos em 14/10/2026; falta o 5 (celular).
-- P05, P16, P13 e P15 feitos em 13/10/2026 (prompts mantidos abaixo como registro).
+- Conferir o site publicado com o roteiro da seção 5.
+- Confirmar com o Roger as duas fórmulas da seção 2.
 
 ==========================================================================================
-6. PROMPTS PARA DESENVOLVIMENTO - PROJETO INFORMACIONAL (Pahl & Beitz)
+7. PROMPTS PARA DESENVOLVIMENTO - PROJETO INFORMACIONAL (Pahl & Beitz)
 
 Como usar:
 - Copie o bloco inteiro de UM prompt (de "=== Pxx" até "=== fim Pxx") e cole numa
@@ -335,7 +287,8 @@ Como usar:
 - Referência: Pahl, Beitz, Feldhusen, Grote - Engineering Design, 3ª ed.
   (Springer, 2007). As seções citadas estão em cada prompt.
 
-Pendentes: P14 (futuro). P05, P16, P13 e P15 feitos em 13/10/2026.
+Pendente: P14 (futuro). Feitos em 13/10/2026: P05, P16, P13 e P15 (prompts mantidos
+abaixo como registro).
 Rejeitados por hora (guardados caso voltem): P03, P04, P06, P07, P08, P09, P11.
 ------------------------------------------------------------------------------------------
 === P05 - Análise da concorrência (QUASE PRONTO: falta a ligação com as Especificações) [útil]

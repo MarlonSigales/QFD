@@ -112,7 +112,7 @@ function generateQFDMatrix() {
     });
     const classes = qfdDB.getProjeto().escalaValorCliente === 'classes';
     html += `<th class="importance-header" data-tooltip="${escapeAttr(classes
-        ? 'Classe de 1 a 10 proporcional ao maior peso do Diagrama de Mudge (Reis, 2003). É o valor usado no cálculo.'
+        ? 'Classe de 1 a 10 proporcional ao maior peso do Diagrama de Mudge. É o valor usado no cálculo.'
         : 'Pontuação do Diagrama de Mudge. É o valor usado no cálculo.')}">${classes ? 'Valor (1–10)' : 'Pontuação'}</th><th class="importance-header">Percentual (%)</th></tr>`;
     html += '</thead><tbody>';
 
@@ -123,7 +123,7 @@ function generateQFDMatrix() {
         requisitosProjeto.forEach((rp, j) => {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
             const roteiro = roteiroRelacaoQFD(rotuloRequisito(`RC${i + 1}`, rc), rotuloRequisito(`RP${j + 1}`, rp));
-            const cellTip = `RC${i + 1} × RP${j + 1}: influência ${val || 'não definida'}\n\nComo avaliar (${FONTE_ROTEIRO}):\n${roteiro.join('\n')}`;
+            const cellTip = `RC${i + 1} × RP${j + 1}: influência ${val || 'não definida'}\n\nComo avaliar:\n${roteiro.join('\n')}`;
             html += `<td class="influence-cell" data-cliente="${rc.id}" data-projeto="${rp.id}" data-i="${i}" data-j="${j}" data-tooltip="${escapeAttr(cellTip)}" onclick="openInfluenceModal(this)">${val || ''}</td>`;
         });
         html += `<td class="importance-value-cell">${classes ? (rc.classe || 0) : (rc.importancia || 0).toFixed(1)}</td>`;
@@ -165,7 +165,7 @@ function openInfluenceModal(cell) {
         <strong>RP${currentInfluenceJ + 1}:</strong> ${escapeHtml(rp?.descricao || '')}${rpObsHtml}
         <small>Valor atual: <strong>${currentVal}</strong> (pressione <kbd>Enter</kbd> para salvar e ir para a próxima célula, <kbd>Shift</kbd>+<kbd>Enter</kbd> para voltar)</small>
         <div class="roteiro-box">
-            <strong><i class="fas fa-question-circle"></i> Como avaliar</strong> <small>(${FONTE_ROTEIRO})</small>
+            <strong><i class="fas fa-question-circle"></i> Como avaliar</strong>
             <ol>${roteiroRelacaoQFD(rotuloRequisito(`RC${currentInfluenceI + 1}`, rc), rotuloRequisito(`RP${currentInfluenceJ + 1}`, rp))
                 .map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ol>
         </div>

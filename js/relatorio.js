@@ -240,7 +240,7 @@ function generateVerificacao() {
     const marcados = Object.keys(CRITERIOS_VERIFICACAO).filter(c => v.criterios[c]);
     if (!marcados.length && !v.descartados.length) return '';
     let html = '<div class="report-section report-verificacao"><h3>Verificação da lista de requisitos de projeto</h3>';
-    html += `<p class="report-hint">Critérios de Roozenburg &amp; Eekels (1995). ${v.atualizada
+    html += `<p class="report-hint">${v.atualizada
         ? `Verificação confirmada em ${escapeHtml(formatDate(v.confirmadoEm))}.`
         : (v.confirmada ? 'A lista foi alterada depois da verificação.' : 'Verificação não confirmada.')}</p>`;
     html += '<ul class="report-verificacao-criterios">' + Object.entries(CRITERIOS_VERIFICACAO)

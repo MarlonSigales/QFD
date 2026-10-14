@@ -640,7 +640,7 @@ function ligarAvisoRedacao(campo, idClassificacao, idJust) {
         const tipo = document.getElementById(idClassificacao);
         if (!verbo || (tipo && tipo.value)) { aviso.style.display = 'none'; return; }
         aviso.style.display = '';
-        aviso.innerHTML = `<i class="fas fa-spell-check"></i> Requisito de cliente deve ser "ser/ter/estar + substantivo" (Fonseca, 2000).
+        aviso.innerHTML = `<i class="fas fa-spell-check"></i> Requisito de cliente deve ser "ser/ter/estar + substantivo".
             Começando por "<strong></strong>", ele provavelmente descreve uma função.
             <button type="button" class="aviso-redacao-btn">Marcar como formador de função</button>`;
         aviso.querySelector('strong').textContent = verbo;
@@ -824,7 +824,6 @@ function abrirRegistroIdeia(tipo, id) {
 // ROTEIROS DE PREENCHIMENTO (Spagnolo, 2011 — tese, seção 4.1.5 e Apêndice B)
 // ============================================================================
 
-const FONTE_ROTEIRO = 'Spagnolo (2011)';
 
 /** Nome curto de um requisito para as perguntas: 'RP2 "Custo de produção"' */
 function rotuloRequisito(sigla, req) {
@@ -883,7 +882,7 @@ function roteiroTelhado(sentidoA, sentidoB, a, b) {
 function textoRoteiroTelhado(sentidoA, sentidoB, a, b) {
     const linhas = roteiroTelhado(sentidoA, sentidoB, a, b).map((p, k) =>
         `${k + 1}. ${p.texto} Sim → ${p.sinal === '+' ? 'positiva (+ ou ++)' : 'negativa (- ou --)'}`);
-    return `Como avaliar (${FONTE_ROTEIRO}):\n${linhas.join('\n')}\nTodas "não": sem correlação (0).`;
+    return `Como avaliar:\n${linhas.join('\n')}\nTodas "não": sem correlação (0).`;
 }
 
 /** Roteiro do telhado em HTML (janela de preenchimento) */
@@ -892,7 +891,7 @@ function htmlRoteiroTelhado(sentidoA, sentidoB, a, b) {
         `<li><span></span> <em class="roteiro-sinal ${p.sinal === '+' ? 'positivo' : 'negativo'}">sim → ${p.sinal === '+' ? '+ ou ++' : '- ou --'}</em></li>`);
     const box = document.createElement('div');
     box.className = 'roteiro-box';
-    box.innerHTML = `<strong><i class="fas fa-question-circle"></i> Como avaliar</strong> <small>(${FONTE_ROTEIRO}, Apêndice B)</small>
+    box.innerHTML = `<strong><i class="fas fa-question-circle"></i> Como avaliar</strong>
         <ol>${itens.join('')}</ol><small>Se todas forem "não", não há correlação (0).</small>`;
     roteiroTelhado(sentidoA, sentidoB, a, b).forEach((p, k) => {
         box.querySelectorAll('li > span')[k].textContent = p.texto;
