@@ -184,6 +184,33 @@ function autoResizeTextarea(event) {
 }
 
 // ============================================================================
+// DIFICULDADE TÉCNICA (P16)
+// ============================================================================
+
+const ROTULOS_DIFICULDADE = { 1: 'Muito fácil', 2: 'Fácil', 3: 'Moderada', 4: 'Difícil', 5: 'Muito difícil' };
+
+/** Nome da dificuldade técnica (1 a 5) */
+function rotuloDificuldade(n) {
+    return ROTULOS_DIFICULDADE[Number(n)] || 'Indefinida';
+}
+
+/** Selo com o nível da dificuldade técnica (cor de 1 = verde a 5 = vermelho) */
+function seloDificuldade(n) {
+    const v = Number(n) || 1;
+    return `<span class="dif-nivel level-${v}" title="Dificuldade técnica: ${rotuloDificuldade(v)}">${v}</span>`;
+}
+
+/**
+ * Requisito crítico: está no terço superior da hierarquia do QFD e tem
+ * dificuldade técnica 4 ou 5 (importante e difícil). Não altera os pesos.
+ * @param {number} indice - posição na lista ordenada pelo QFD (0 = mais importante)
+ * @param {number} total - total de requisitos na lista
+ */
+function ehRequisitoCritico(indice, total, dificuldade) {
+    return indice < Math.ceil(total / 3) && Number(dificuldade) >= 4;
+}
+
+// ============================================================================
 // SENTIDO DE MELHORIA
 // ============================================================================
 
@@ -605,6 +632,78 @@ function numerosNoQFD(lista) {
 // ============================================================================
 // REGISTRO RÁPIDO DE IDEIA (páginas de requisitos)
 // ============================================================================
+
+/** Quebra um texto em linhas de até n caracteres (para o SVG) */
+function quebrarLinhas(texto, n) {
+    const linhas = [];
+    let atual = '';
+    String(texto || '').split(/\s+/).filter(Boolean).forEach(p => {
+        if (atual && (atual + ' ' + p).length > n) { linhas.push(atual); atual = p; }
+        else atual = atual ? `${atual} ${p}` : p;
+    });
+    if (atual) linhas.push(atual);
+    return linhas;
+}
+
+/**
+ * Caixa-preta da função global (Pahl & Beitz, Figs. 2.2 e 2.4): entradas à
+ * esquerda e saídas à direita; energia em seta contínua, material em seta
+ * dupla e sinal em seta tracejada. Retorna o SVG como texto.
+ */
+function svgCaixaPreta(funcao) {
+    const lista = lado => Object.keys(TIPOS_FLUXO).flatMap(t => ((funcao[lado] || {})[t] || []).map(texto => ({ tipo: t, texto })));
+    const entradas = lista('entradas'), saidas = lista('saidas');
+    const W = 680, passo = 46, topo = 30;
+    const H = Math.max(entradas.length, saidas.length, 2) * passo + topo * 2;
+    const caixa = { x: 250, y: 18, w: 180, h: H - 36 };
+    const seta = (x1, x2, y, tipo) => {
+        const corpo = tipo === 'material'
+            ? `<line x1="${x1}" y1="${y - 3}" x2="${x2 - 10}" y2="${y - 3}" stroke="#085357" stroke-width="2"/><line x1="${x1}" y1="${y + 3}" x2="${x2 - 10}" y2="${y + 3}" stroke="#085357" stroke-width="2"/>`
+            : `<line x1="${x1}" y1="${y}" x2="${x2 - 10}" y2="${y}" stroke="#085357" stroke-width="2"${tipo === 'sinal' ? ' stroke-dasharray="7 5"' : ''}/>`;
+        return corpo + `<polygon points="${x2},${y} ${x2 - 12},${y - 6} ${x2 - 12},${y + 6}" fill="#085357"/>`;
+    };
+    const fluxos = (itens, x1, x2, xTexto) => itens.map((f, i) => {
+        const y = topo + passo * i + passo / 2 + (H - topo * 2 - passo * itens.length) / 2;
+        return seta(x1, x2, y, f.tipo) +
+            `<text x="${xTexto}" y="${y - 9}" font-size="12" fill="#1f2d2c">${escapeHtml(truncateText(f.texto, 30))}</text>`;
+    }).join('');
+    const nome = quebrarLinhas(funcao.nome || 'Função global', 20).slice(0, 5);
+    const yNome = caixa.y + caixa.h / 2 - (nome.length - 1) * 9;
+    return `<svg class="caixa-preta" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Função global">
+        <rect x="${caixa.x}" y="${caixa.y}" width="${caixa.w}" height="${caixa.h}" rx="6" fill="#e9f5ef" stroke="#085357" stroke-width="2"/>
+        ${nome.map((l, i) => `<text x="${caixa.x + caixa.w / 2}" y="${yNome + i * 18}" text-anchor="middle" font-size="14" font-weight="700" fill="#085357">${escapeHtml(l)}</text>`).join('')}
+        ${fluxos(entradas, 10, caixa.x, 10)}
+        ${fluxos(saidas, caixa.x + caixa.w, W - 10, caixa.x + caixa.w + 10)}
+    </svg>`;
+}
+
+/** Legenda dos tipos de fluxo da caixa-preta */
+function htmlLegendaFluxos() {
+    return `<div class="caixa-preta-legenda">
+        <span><svg width="40" height="10"><line x1="0" y1="5" x2="40" y2="5" stroke="#085357" stroke-width="2"/></svg> Energia</span>
+        <span><svg width="40" height="10"><line x1="0" y1="2" x2="40" y2="2" stroke="#085357" stroke-width="2"/><line x1="0" y1="8" x2="40" y2="8" stroke="#085357" stroke-width="2"/></svg> Material</span>
+        <span><svg width="40" height="10"><line x1="0" y1="5" x2="40" y2="5" stroke="#085357" stroke-width="2" stroke-dasharray="7 5"/></svg> Sinal</span>
+    </div>`;
+}
+
+/** Só deixa virar link um endereço http(s); o resto aparece apenas como texto */
+function linkSeguro(url) {
+    const u = String(url || '').trim();
+    return /^https?:\/\/[^\s]+$/i.test(u) ? u : '';
+}
+
+/** Nome curto de uma referência: "NBR 5410 — Instalações elétricas" */
+function rotuloReferencia(ref) {
+    return ref.identificacao ? `${ref.identificacao} — ${ref.titulo}` : ref.titulo;
+}
+
+/** Linha "Referências: ..." no cartão do requisito (estado da técnica, P13) */
+function htmlReferenciasRequisito(tipo, id) {
+    const refs = qfdDB.getReferenciasDoRequisito(tipo, id);
+    if (!refs.length) return '';
+    const chips = refs.map(r => `<span class="ideia-chip" title="${escapeAttr(TIPOS_REFERENCIA[r.tipo] || '')}">${escapeHtml(truncateText(rotuloReferencia(r), 60))}</span>`).join(' ');
+    return `<div class="requisito-referencias"><i class="fas fa-book"></i> Referências: ${chips}</div>`;
+}
 
 /** Botão 💡 com o número de ideias ligadas ao requisito */
 function htmlBotaoIdeia(tipo, id) {

@@ -55,9 +55,11 @@
             <a href="especificacoes.html" class="sidebar-link ativo" aria-current="page" title="Especificações"><span class="sidebar-num">6</span><span>Especificações</span></a>
             <a href="avaliacao-competitiva.html" class="sidebar-link" title="Avaliação Competitiva"><span class="sidebar-num">7</span><span>Avaliação Competitiva</span></a>
             <a href="atendimento-requisitos.html" class="sidebar-link" title="Atendimento"><span class="sidebar-num">8</span><span>Atendimento</span></a>
-            <a href="relatorio.html" class="sidebar-link" title="Relatório"><span class="sidebar-num">9</span><span>Relatório</span></a>
+            <a href="fechamento.html" class="sidebar-link" title="Fechamento (abstração e função global)"><span class="sidebar-num">9</span><span>Fechamento</span></a>
+            <a href="relatorio.html" class="sidebar-link" title="Relatório"><span class="sidebar-num">10</span><span>Relatório</span></a>
             <div class="sidebar-grupo">Apoio</div>
             <a href="ideias.html" class="sidebar-link" title="Caderno de Ideias"><i class="fas fa-lightbulb"></i><span>Caderno de Ideias</span></a>
+            <a href="referencias.html" class="sidebar-link" title="Estado da técnica e referências"><i class="fas fa-book"></i><span>Referências</span></a>
         </nav>
     </aside>
         <div class="app-conteudo">
@@ -136,14 +138,23 @@
                         <thead>
                             <tr>
                                 <th>Requisito de Projeto (hierarquia QFD)</th>
+                                <th title="Dificuldade técnica (1 = muito fácil, 5 = muito difícil), cadastrada em Requisitos de Projeto">Dif.</th>
                                 <th>Unidade de mensuração</th>
                                 <th>Valor meta</th>
+                                <th title="Como verificar se a meta foi atingida">Forma de avaliação</th>
                                 <th title="Aparece como balão flutuante no relatório">Texto explicativo <i class="fas fa-comment-dots"></i></th>
                                 <th>Aspectos indesejáveis</th>
                             </tr>
                         </thead>
                         <tbody id="especificacoes-tbody"></tbody>
                     </table>
+                </div>
+
+                <div class="form-group justificativa-hierarquia">
+                    <label for="justificativa-hierarquia"><i class="fas fa-list-ol"></i> Justificativa da hierarquização</label>
+                    <textarea id="justificativa-hierarquia" class="form-control" rows="3" maxlength="3000"
+                        placeholder="Por que esta lista (ordem do QFD) foi adotada para o projeto; ex.: os requisitos do terço superior concentram as necessidades de maior peso..."></textarea>
+                    <small class="form-text">Aparece no relatório, abaixo dos quadros dos terços (Requisitos de Projeto).</small>
                 </div>
             </div>
         </div>

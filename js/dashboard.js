@@ -82,6 +82,21 @@ function updateDashboard() {
         countIdeias.textContent = `${nIdeias} ideia${nIdeias === 1 ? '' : 's'} · ${nFalhas} falha${nFalhas === 1 ? '' : 's'}`;
         document.getElementById('status-ideias').textContent = nIdeias + nFalhas ? 'Em uso' : 'Nenhum registro';
     }
+    const nRefs = qfdDB.getReferencias().length;
+    const countRefs = document.getElementById('count-referencias');
+    if (countRefs) {
+        countRefs.textContent = `${nRefs} referência${nRefs === 1 ? '' : 's'}`;
+        document.getElementById('status-referencias').textContent = nRefs ? 'Em uso' : 'Nenhum registro';
+    }
+    const fechamento = qfdDB.getFechamento();
+    const nPassos = fechamento.abstracao.filter(t => t.trim()).length;
+    const countFechamento = document.getElementById('count-fechamento');
+    if (countFechamento) {
+        const temFuncao = !!fechamento.funcaoGlobal.nome;
+        countFechamento.textContent = `${nPassos}/5 passos${temFuncao ? ' · função global' : ''}`;
+        document.getElementById('status-fechamento').textContent =
+            nPassos === 5 && temFuncao ? 'Concluído' : (nPassos || temFuncao || fechamento.formulacoes.length ? 'Em andamento' : 'Não iniciado');
+    }
     updateProgressCard('atendimento', atendimento === null ? 0 : Math.round(atendimento * 100), '% atendido');
     
     // Atualiza status do relatório
@@ -440,6 +455,14 @@ function setupProjeto() {
             aviso.textContent = err.message;
             aviso.classList.add('projeto-aviso-erro');
         }
+    });
+
+    // cliente, instituição e equipe (capa do relatório)
+    [['projeto-cliente', 'cliente'], ['projeto-instituicao', 'instituicao'], ['projeto-equipe', 'equipe']].forEach(([id, campo]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = campo === 'equipe' ? projeto.equipe.join('\n') : projeto[campo];
+        el.addEventListener('change', () => qfdDB.setProjeto({ [campo]: el.value }));
     });
 
     const btnCompartilhar = document.getElementById('btn-compartilhar');

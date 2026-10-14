@@ -195,7 +195,8 @@ function buildTotaisProjetoHTML() {
     const linhas = [
         { classe: 'qfd-sum-total', rotulo: 'Soma (Σ relação × importância)', tip: 'Soma das relações da coluna multiplicadas pela importância de cada requisito de cliente' },
         { classe: 'qfd-sum-percent', rotulo: 'Percentual (%)', tip: 'Soma da coluna dividida pela soma de todas as colunas' },
-        { classe: 'qfd-sum-rank', rotulo: 'Ranking', tip: 'Posição pela soma; empates ficam na mesma posição' }
+        { classe: 'qfd-sum-rank', rotulo: 'Ranking', tip: 'Posição pela soma; empates ficam na mesma posição' },
+        { classe: 'qfd-sum-dif', rotulo: 'Dificuldade técnica (1–5)', tip: 'Cadastrada em Requisitos de Projeto (1 = muito fácil, 5 = muito difícil). Informação complementar: não muda os pesos.\nRequisito do terço superior com dificuldade 4 ou 5 é crítico (importante e difícil).' }
     ];
     let html = '<tfoot>';
     linhas.forEach(l => {
@@ -211,6 +212,7 @@ function buildTotaisProjetoHTML() {
 function formatTotalProjeto(classe, rp) {
     if (classe === 'qfd-sum-total') return (rp.importanciaAbsoluta || 0).toFixed(1);
     if (classe === 'qfd-sum-percent') return ((rp.pesoRelativo || 0) * 100).toFixed(1) + '%';
+    if (classe === 'qfd-sum-dif') return seloDificuldade(rp.dificuldadeTecnica);
     return rp.importanciaAbsoluta > 0 ? `${rp.importanciaRelativa}º` : '-';
 }
 
@@ -218,7 +220,8 @@ function formatTotalProjeto(classe, rp) {
 function updateTotaisProjeto() {
     requisitosProjeto = qfdDB.getRequisitosProjeto();
     document.querySelectorAll('.qfd-sum-row').forEach(tr => {
-        const classe = ['qfd-sum-total', 'qfd-sum-percent', 'qfd-sum-rank'].find(c => tr.classList.contains(c));
+        const classe = ['qfd-sum-total', 'qfd-sum-percent', 'qfd-sum-rank', 'qfd-sum-dif'].find(c => tr.classList.contains(c));
+        if (classe === 'qfd-sum-dif') return; // a dificuldade não muda com a matriz
         tr.querySelectorAll('td[data-j]').forEach(td => {
             const rp = requisitosProjeto[parseInt(td.dataset.j, 10)];
             if (rp) td.textContent = formatTotalProjeto(classe, rp);

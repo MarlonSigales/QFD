@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fechamento - Sistema QFD</title>
+    <link rel="preload" href="../css/style.css" as="style">
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <header class="topbar">
+        <button type="button" class="sidebar-toggle" aria-label="Abrir o menu" aria-controls="sidebar" aria-expanded="false"><i class="fas fa-bars"></i></button>
+        <a href="../index.html" class="topbar-marca" title="Dashboard">
+            <img src="../img/logo-inovaagro.png" alt="EMBRAPII - Inova Agro" height="34">
+            <span>Sistema QFD</span>
+        </a>
+        <span class="topbar-projeto" title="Nome do projeto (editar no Dashboard)"><i class="fas fa-folder-open"></i> <span id="topbar-projeto-nome">Projeto</span></span>
+        <span class="topbar-selo" title="Os dados ficam salvos neste navegador; exporte o backup para levar a outro computador"><i class="fas fa-globe"></i> guardado no navegador</span>
+        <div class="topbar-acoes">
+            <div class="nav-page-actions">
+                <a href="atendimento-requisitos.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Atendimento
+                </a>
+                <a href="relatorio.html" class="btn btn-primary">
+                    Relatório <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="nav-dropdown topbar-backup">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-database"></i> <span class="topbar-rotulo">Backup &amp; Export</span> <i class="fas fa-chevron-down topbar-seta"></i></a>
+                <div class="dropdown-menu">
+                    <a href="#" onclick="exportProjectData()"><i class="fas fa-download"></i> Exportar Backup (JSON)</a>
+                    <a href="#" onclick="exportarEEnviarEmail()"><i class="fas fa-envelope"></i> Exportar e enviar por e-mail</a>
+                    <a href="#" onclick="document.getElementById('import-file').click()"><i class="fas fa-upload"></i> Importar Backup (JSON)</a>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="import-file" style="display: none;" onchange="importProjectData(event)" accept=".json">
+    </header>
+    <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <nav aria-label="Etapas do QFD">
+            <a href="../index.html" class="sidebar-link" title="Dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <div class="sidebar-grupo">Etapas do QFD</div>
+            <a href="requisitos-cliente.html" class="sidebar-link" title="Requisitos de Cliente"><span class="sidebar-num">1</span><span>Requisitos de Cliente</span></a>
+            <a href="comparacao-cliente.html" class="sidebar-link" title="Comparação (Mudge)"><span class="sidebar-num">2</span><span>Comparação (Mudge)</span></a>
+            <a href="requisitos-projeto.html" class="sidebar-link" title="Requisitos de Projeto"><span class="sidebar-num">3</span><span>Requisitos de Projeto</span></a>
+            <a href="correlacao-projeto.html" class="sidebar-link" title="Correlação (telhado)"><span class="sidebar-num">4</span><span>Correlação (telhado)</span></a>
+            <a href="matriz-qfd.html" class="sidebar-link" title="Matriz QFD"><span class="sidebar-num">5</span><span>Matriz QFD</span></a>
+            <a href="especificacoes.html" class="sidebar-link" title="Especificações"><span class="sidebar-num">6</span><span>Especificações</span></a>
+            <a href="avaliacao-competitiva.html" class="sidebar-link" title="Avaliação Competitiva"><span class="sidebar-num">7</span><span>Avaliação Competitiva</span></a>
+            <a href="atendimento-requisitos.html" class="sidebar-link" title="Atendimento"><span class="sidebar-num">8</span><span>Atendimento</span></a>
+            <a href="fechamento.html" class="sidebar-link ativo" aria-current="page" title="Fechamento (abstração e função global)"><span class="sidebar-num">9</span><span>Fechamento</span></a>
+            <a href="relatorio.html" class="sidebar-link" title="Relatório"><span class="sidebar-num">10</span><span>Relatório</span></a>
+            <div class="sidebar-grupo">Apoio</div>
+            <a href="ideias.html" class="sidebar-link" title="Caderno de Ideias"><i class="fas fa-lightbulb"></i><span>Caderno de Ideias</span></a>
+            <a href="referencias.html" class="sidebar-link" title="Estado da técnica e referências"><i class="fas fa-book"></i><span>Referências</span></a>
+        </nav>
+    </aside>
+        <div class="app-conteudo">
+            <div class="page-titulo">
+                <h1><i class="fas fa-flag-checkered"></i> Fechamento do projeto informacional</h1>
+                <p>Abstração da lista de requisitos, formulação do problema e função global (entrada do projeto conceitual)</p>
+            </div>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h2>Do que foi especificado ao problema essencial</h2>
+                <p>Antes de buscar soluções, abstraia a lista de requisitos até o problema essencial, formulado sem prender a uma solução (Pahl &amp; Beitz, Seção 6.2), e represente a função global como uma caixa-preta com as entradas e saídas de energia, material e sinal (Seção 6.3.1).</p>
+            </div>
+
+            <div class="card">
+                <details class="fechamento-requisitos">
+                    <summary><i class="fas fa-list"></i> Lista de requisitos (para consulta)</summary>
+                    <div id="fechamento-lista-requisitos"></div>
+                </details>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-filter"></i> Abstração em 5 passos <span class="section-count" id="total-passos">0/5</span></h3>
+                </div>
+                <div id="passos-abstracao" class="fechamento-passos"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-expand-arrows-alt"></i> Ampliação da formulação do problema</h3>
+                </div>
+                <p class="fechamento-dica">Escreva formulações cada vez mais amplas do problema (da mais restrita à mais ampla) e marque a adotada. Ex.: "pesar combustível no tanque" → "medir a quantidade de combustível" → "indicar a quantidade de combustível disponível".</p>
+                <ol id="lista-formulacoes" class="fechamento-formulacoes"></ol>
+                <form id="form-formulacao" class="fechamento-form" autocomplete="off">
+                    <input type="text" id="formulacao-texto" class="form-control" maxlength="500" placeholder="Nova formulação, mais ampla que a anterior">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Acrescentar</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-cube"></i> Função global (caixa-preta)</h3>
+                </div>
+                <div class="fechamento-funcao">
+                    <div class="form-group">
+                        <label for="funcao-nome">Função global (verbo + substantivo)</label>
+                        <input type="text" id="funcao-nome" class="form-control" maxlength="120" placeholder="Ex.: Eliminar plantas daninhas">
+                    </div>
+                    <div class="fechamento-fluxos">
+                        <div><h4>Entradas</h4><div id="fluxos-entradas"></div></div>
+                        <div><h4>Saídas</h4><div id="fluxos-saidas"></div></div>
+                    </div>
+                    <div class="caixa-preta-area">
+                        <div id="caixa-preta"></div>
+                        <div id="caixa-preta-legenda"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-logos">
+                <img src="../img/logo-inovaagro.png" alt="EMBRAPII - Inova Agro - UFPel" height="64">
+                <img src="../img/logo-nimeq.png" alt="NIMEq" height="64">
+                <img src="../img/logo-instagri.png" alt="Laboratório de Instrumentação Agrícola - UFPel" height="64">
+            </div>
+            <p>&copy; 2026 Sistema QFD - Desenvolvido para Engenheiros de Produto</p>
+            <p class="footer-credits">
+                <strong>Desenvolvedor:</strong> Marlon Soares Sigales<br>
+                <strong>Equipe de projeto:</strong> Roger Toscan Spagnolo, Ângelo Vieira dos Reis, Ádamo de Sousa Araújo, Gizele Ingrid Gadotti, Eduardo Walker, Giuseppe Stefanello, Fabrício Ardais<br>
+                <strong>Equipe Inova Agro - UFPel - EMBRAPII</strong>
+            </p>
+            <p class="footer-credits">
+                Os códigos estão abertos para quem quiser utilizar e ajustar no GitHub: <a href="https://github.com/MarlonSigales/QFD" target="_blank" rel="noopener">https://github.com/MarlonSigales/QFD</a>.
+                Cópias são permitidas desde que devidamente citadas.
+            </p>
+        </div>
+    </footer>
+        </div>
+    </div>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/fechamento.js"></script>
+</body>
+</html>

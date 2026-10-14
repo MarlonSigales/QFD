@@ -93,7 +93,7 @@ dos dados (P01–P04) devem ser feitos um de cada vez, cada um com sua migraçã
 - [x] P02 — Metas com tipo (=, ≥, ≤, faixa), valor e tolerância nas Especificações — Seções 2.1.2 e 5.2.1
 - [ ] P03 — Origem, responsável, histórico de alterações e revisões numeradas da lista de requisitos — Fig. 5.2 e Seção 5.3.1
 - [ ] P04 — Categorias do checklist (17 títulos) e painel de cobertura — Fig. 5.3
-- [x] P05 — Análise da concorrência (benchmarking) por requisito de cliente e de projeto — Fig. 3.4 (feito como página "Avaliação Competitiva"; falta só o botão "usar como referência para a meta" nas Especificações)
+- [x] P05 — Análise da concorrência (benchmarking) por requisito de cliente e de projeto — Fig. 3.4 (feito como página "Avaliação Competitiva"; nas Especificações, melhor concorrente, "Usar como meta" e aviso)
 - [ ] P06 — Página "Definição do projeto": funções pretendidas, custo-alvo, volume, prazos — Seção 3.1.4, passo 6
 
 **Prioridade média**
@@ -101,14 +101,14 @@ dos dados (P01–P04) devem ser feitos um de cada vez, cada um com sua migraçã
 - [ ] P08 — Tipos de requisito do cliente: básico, desempenho técnico, atratividade — Seção 5.2.3
 - [ ] P09 — Árvore de requisitos do cliente (declaração → desenvolvimento → refinamento) — Seções 5.2.4 e 3.3.2
 - [x] P10 — Caderno de ideias de solução, separado da lista de requisitos — Seção 5.4
-- [ ] P16 — Mostrar a dificuldade técnica nas Especificações, na Matriz e no relatório
+- [x] P16 — Mostrar a dificuldade técnica nas Especificações, na Matriz e no relatório
 
 **Prioridade baixa**
 - [ ] P11 — Requisitos de restrição ("o produto não deve…") em destaque — Seção 5.1
 - [ ] P12 — Listas parciais por departamento e visão consolidada — Seção 5.3.2 e Fig. 5.6
-- [ ] P13 — Estado da técnica: patentes, normas e referências ligadas aos requisitos — Seções 3.1.4 e 5.2.3
+- [x] P13 — Estado da técnica: patentes, normas e referências ligadas aos requisitos — Seções 3.1.4 e 5.2.3
 - [ ] P14 — Módulo de planejamento do produto (ciclo de vida, matriz produto–mercado, portfólio, necessidade–competência, critérios da Tabela 3.1) — Seção 3.1
-- [ ] P15 — Assistente de fechamento: abstração em 5 passos e função global (ponte para o projeto conceitual) — Seções 6.2 e 6.3.1
+- [x] P15 — Assistente de fechamento: abstração em 5 passos e função global (ponte para o projeto conceitual) — Seções 6.2 e 6.3.1
 
 ### Melhorias sugeridas
 - [x] Diagrama de Mudge: parar de recarregar a página inteira a cada comparação salva

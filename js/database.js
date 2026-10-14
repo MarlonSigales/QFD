@@ -25,7 +25,7 @@
  * Ao mudar a estrutura, incremente este número e adicione a migração
  * correspondente em SCHEMA_MIGRATIONS.
  */
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 9;
 
 /** ID fixo do nosso produto na avaliação competitiva */
 const PRODUTO_NOSSO_ID = 'nosso';
@@ -192,6 +192,36 @@ function estaNoQFD(req) {
  */
 const STATUS_IDEIA = { nova: 'Nova', promissora: 'Promissora', descartada: 'Descartada' };
 
+/**
+ * Estado da técnica (Pahl & Beitz, 3.1.4 e 5.2.3): patentes, normas,
+ * regulamentos, literatura e produtos consultados, ligados aos requisitos
+ * que ajudaram a definir.
+ */
+/**
+ * Fechamento do projeto informacional (Pahl & Beitz, 6.2 e 6.3.1): abstração
+ * da lista de requisitos em 5 passos, ampliação da formulação do problema e
+ * função global como caixa-preta (entradas e saídas de energia, material e sinal).
+ */
+const TIPOS_FLUXO = { energia: 'Energia', material: 'Material', sinal: 'Sinal' };
+
+function criarFluxosVazios() {
+    return { energia: [], material: [], sinal: [] };
+}
+
+function criarFechamentoVazio() {
+    return {
+        abstracao: ['', '', '', '', ''],  // resultado de cada passo da abstração (6.2.3)
+        formulacoes: [],                  // [{ id, texto }], da mais restrita à mais ampla (6.2.2)
+        formulacaoEscolhida: null,        // id da formulação adotada
+        funcaoGlobal: { nome: '', entradas: criarFluxosVazios(), saidas: criarFluxosVazios() }
+    };
+}
+
+const TIPOS_REFERENCIA = {
+    patente: 'Patente', norma: 'Norma', regulamento: 'Regulamento', artigo: 'Artigo / livro',
+    produto: 'Produto', site: 'Site', outro: 'Outro'
+};
+
 function criarCadernoVazio() {
     return {
         ideias: [],  // { id, titulo, descricao, autor, data, requisitos: [{ tipo: 'cliente'|'projeto', id }], status }
@@ -201,7 +231,7 @@ function criarCadernoVazio() {
 
 /** Dados gerais do projeto: nome e e-mails de quem recebe o backup */
 function criarProjetoVazio() {
-    return { nome: '', emails: [] };
+    return { nome: '', emails: [], cliente: '', instituicao: '', equipe: [], justificativaHierarquia: '' };
 }
 
 /**
@@ -365,6 +395,16 @@ const SCHEMA_MIGRATIONS = {
         if (!data.cadernoIdeias || typeof data.cadernoIdeias !== 'object') data.cadernoIdeias = criarCadernoVazio();
     },
 
+    // v9: fechamento (abstração, formulação do problema e função global)
+    9(data) {
+        if (!data.fechamento || typeof data.fechamento !== 'object') data.fechamento = criarFechamentoVazio();
+    },
+
+    // v8: estado da técnica e referências (patentes, normas, artigos...)
+    8(data) {
+        if (!Array.isArray(data.referencias)) data.referencias = [];
+    },
+
     // v6: dados do projeto (nome e e-mails dos envolvidos)
     6(data) {
         if (!data.projeto || typeof data.projeto !== 'object') data.projeto = criarProjetoVazio();
@@ -419,6 +459,8 @@ class QFDDatabase {
             avaliacaoCompetitiva: criarAvaliacaoCompetitivaVazia(),
             projeto: criarProjetoVazio(),
             cadernoIdeias: criarCadernoVazio(),
+            referencias: [],
+            fechamento: criarFechamentoVazio(),
             metadata: {
                 created: new Date().toISOString(),
                 lastModified: new Date().toISOString(),
@@ -1211,6 +1253,7 @@ class QFDDatabase {
                 ...pickMeta(esp),
                 metaFormatada: formatarMeta(esp),
                 observacao: esp.observacao || '',
+                formaAvaliacao: esp.formaAvaliacao || '',
                 aspectosIndesejaveis: esp.aspectosIndesejaveis || '',
                 aspectosAutoGerado: esp.aspectosAutoGerado !== false
             };
@@ -1305,6 +1348,7 @@ class QFDDatabase {
                     ...meta,
                     unidadeMedida: item.unidadeMedida ?? data.especificacoesProjeto[index].unidadeMedida,
                     observacao: item.observacao ?? data.especificacoesProjeto[index].observacao ?? '',
+                    formaAvaliacao: item.formaAvaliacao ?? data.especificacoesProjeto[index].formaAvaliacao ?? '',
                     aspectosIndesejaveis: item.aspectosIndesejaveis ?? data.especificacoesProjeto[index].aspectosIndesejaveis,
                     aspectosAutoGerado: item.aspectosAutoGerado ?? false,
                     updated: new Date().toISOString()
@@ -1422,6 +1466,161 @@ class QFDDatabase {
         return this.getIdeias().filter(i => i.requisitos.some(r => r.tipo === tipo && r.id === id)).length;
     }
 
+    // ========================================================================
+    // SEÇÃO: FECHAMENTO - ABSTRAÇÃO E FUNÇÃO GLOBAL
+    // ========================================================================
+
+    _ensureFechamento(data) {
+        let f = data.fechamento;
+        if (!f || typeof f !== 'object' || Array.isArray(f)) f = data.fechamento = criarFechamentoVazio();
+        const vazio = criarFechamentoVazio();
+        if (!Array.isArray(f.abstracao)) f.abstracao = vazio.abstracao;
+        f.abstracao = [0, 1, 2, 3, 4].map(i => String(f.abstracao[i] || ''));
+        if (!Array.isArray(f.formulacoes)) f.formulacoes = [];
+        if (!f.formulacoes.some(x => x.id === f.formulacaoEscolhida)) f.formulacaoEscolhida = null;
+        if (!f.funcaoGlobal || typeof f.funcaoGlobal !== 'object') f.funcaoGlobal = vazio.funcaoGlobal;
+        f.funcaoGlobal.nome = String(f.funcaoGlobal.nome || '');
+        ['entradas', 'saidas'].forEach(lado => {
+            const fl = f.funcaoGlobal[lado] && typeof f.funcaoGlobal[lado] === 'object' ? f.funcaoGlobal[lado] : {};
+            f.funcaoGlobal[lado] = {};
+            Object.keys(TIPOS_FLUXO).forEach(t => { f.funcaoGlobal[lado][t] = Array.isArray(fl[t]) ? fl[t].map(String) : []; });
+        });
+        return f;
+    }
+
+    getFechamento() {
+        return JSON.parse(JSON.stringify(this._ensureFechamento(this.loadData())));
+    }
+
+    /** Resultado de um dos 5 passos da abstração (índice 0 a 4) */
+    setPassoAbstracao(indice, texto) {
+        const i = Number(indice);
+        if (!(i >= 0 && i <= 4)) throw new Error('Passo inválido.');
+        const data = this.loadData();
+        this._ensureFechamento(data).abstracao[i] = String(texto || '').trim().slice(0, 3000);
+        this.saveData(data);
+    }
+
+    /** Nova formulação do problema, mais ampla que as anteriores (vai para o fim da lista) */
+    addFormulacao(texto) {
+        const t = String(texto || '').trim().slice(0, 500);
+        if (!t) throw new Error('Escreva a formulação do problema.');
+        const data = this.loadData();
+        const nova = { id: this.generateUUID(), texto: t };
+        this._ensureFechamento(data).formulacoes.push(nova);
+        this.saveData(data);
+        return nova;
+    }
+
+    removeFormulacao(id) {
+        const data = this.loadData();
+        const f = this._ensureFechamento(data);
+        f.formulacoes = f.formulacoes.filter(x => x.id !== id);
+        if (f.formulacaoEscolhida === id) f.formulacaoEscolhida = null;
+        this.saveData(data);
+    }
+
+    escolherFormulacao(id) {
+        const data = this.loadData();
+        const f = this._ensureFechamento(data);
+        f.formulacaoEscolhida = f.formulacoes.some(x => x.id === id) ? id : null;
+        this.saveData(data);
+    }
+
+    /**
+     * Função global: { nome, entradas: { energia, material, sinal }, saidas: {...} }.
+     * Cada fluxo aceita lista ou texto com um item por linha.
+     */
+    setFuncaoGlobal(campos) {
+        const data = this.loadData();
+        const fg = this._ensureFechamento(data).funcaoGlobal;
+        if (campos.nome !== undefined) fg.nome = String(campos.nome || '').trim().slice(0, 120);
+        ['entradas', 'saidas'].forEach(lado => {
+            if (!campos[lado]) return;
+            Object.keys(TIPOS_FLUXO).forEach(t => {
+                const v = campos[lado][t];
+                if (v === undefined) return;
+                const itens = Array.isArray(v) ? v : String(v || '').split(/\r?\n/);
+                fg[lado][t] = itens.map(x => String(x).trim().slice(0, 80)).filter(Boolean).slice(0, 10);
+            });
+        });
+        this.saveData(data);
+        return fg;
+    }
+
+    /** Formulação final do problema: a escolhida; sem escolha, o resultado do 5º passo */
+    getFormulacaoFinal() {
+        const f = this.getFechamento();
+        const escolhida = f.formulacoes.find(x => x.id === f.formulacaoEscolhida);
+        return escolhida ? escolhida.texto : f.abstracao[4];
+    }
+
+    // ========================================================================
+    // SEÇÃO: ESTADO DA TÉCNICA E REFERÊNCIAS
+    // ========================================================================
+
+    _ensureReferencias(data) {
+        if (!Array.isArray(data.referencias)) data.referencias = [];
+        return data.referencias;
+    }
+
+    _camposReferencia(data, campos) {
+        const out = {};
+        const texto = (v, max) => String(v || '').trim().slice(0, max);
+        if (campos.titulo !== undefined) {
+            out.titulo = texto(campos.titulo, 200);
+            if (!out.titulo) throw new Error('Informe o título da referência.');
+        }
+        if (campos.tipo !== undefined) out.tipo = TIPOS_REFERENCIA[campos.tipo] ? campos.tipo : 'outro';
+        if (campos.identificacao !== undefined) out.identificacao = texto(campos.identificacao, 100);
+        if (campos.link !== undefined) out.link = texto(campos.link, 500);
+        if (campos.dataConsulta !== undefined) {
+            const d = texto(campos.dataConsulta, 10);
+            out.dataConsulta = /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : '';
+        }
+        if (campos.resumo !== undefined) out.resumo = texto(campos.resumo, 2000);
+        if (campos.requisitos !== undefined) out.requisitos = this._requisitosExistentes(data, campos.requisitos);
+        return out;
+    }
+
+    getReferencias() {
+        const data = this.loadData();
+        return this._ensureReferencias(data).map(r => ({ ...r, requisitos: this._requisitosExistentes(data, r.requisitos) }));
+    }
+
+    /** Nova referência: { tipo, titulo, identificacao, link, dataConsulta, resumo, requisitos: [{ tipo, id }] } */
+    addReferencia(campos) {
+        const data = this.loadData();
+        const ref = {
+            id: this.generateUUID(), tipo: 'outro', identificacao: '', link: '', dataConsulta: '', resumo: '', requisitos: [],
+            data: new Date().toISOString(),
+            ...this._camposReferencia(data, { titulo: campos.titulo, ...campos })
+        };
+        this._ensureReferencias(data).push(ref);
+        this.saveData(data);
+        return ref;
+    }
+
+    updateReferencia(id, campos) {
+        const data = this.loadData();
+        const ref = this._ensureReferencias(data).find(r => r.id === id);
+        if (!ref) return null;
+        Object.assign(ref, this._camposReferencia(data, campos));
+        this.saveData(data);
+        return ref;
+    }
+
+    removeReferencia(id) {
+        const data = this.loadData();
+        data.referencias = this._ensureReferencias(data).filter(r => r.id !== id);
+        this.saveData(data);
+    }
+
+    /** Referências ligadas a um requisito (mostradas nas páginas de requisitos) */
+    getReferenciasDoRequisito(tipo, id) {
+        return this.getReferencias().filter(r => r.requisitos.some(x => x.tipo === tipo && x.id === id));
+    }
+
     getFalhas() {
         const data = this.loadData();
         return this._ensureCaderno(data).falhas.map(f => {
@@ -1478,7 +1677,14 @@ class QFDDatabase {
     /** Nome do projeto e e-mails dos envolvidos */
     getProjeto() {
         const p = this.loadData().projeto || {};
-        return { nome: p.nome || '', emails: Array.isArray(p.emails) ? p.emails : [] };
+        return {
+            nome: p.nome || '',
+            emails: Array.isArray(p.emails) ? p.emails : [],
+            cliente: p.cliente || '',
+            instituicao: p.instituicao || '',
+            equipe: Array.isArray(p.equipe) ? p.equipe : [],
+            justificativaHierarquia: p.justificativaHierarquia || ''
+        };
     }
 
     /**
@@ -1494,6 +1700,16 @@ class QFDDatabase {
             const { validos, invalidos } = separarEmails(texto);
             if (invalidos.length) throw new Error(`E-mail inválido: ${invalidos.join(', ')}`);
             projeto.emails = validos;
+        }
+        if (campos.cliente !== undefined) projeto.cliente = String(campos.cliente || '').trim().slice(0, 120);
+        if (campos.instituicao !== undefined) projeto.instituicao = String(campos.instituicao || '').trim().slice(0, 160);
+        if (campos.justificativaHierarquia !== undefined) {
+            projeto.justificativaHierarquia = String(campos.justificativaHierarquia || '').trim().slice(0, 3000);
+        }
+        if (campos.equipe !== undefined) {
+            // uma pessoa por linha (ex.: "Roger Spagnolo — coordenador")
+            const linhas = Array.isArray(campos.equipe) ? campos.equipe : String(campos.equipe || '').split(/\r?\n/);
+            projeto.equipe = linhas.map(l => String(l).trim().slice(0, 120)).filter(Boolean).slice(0, 30);
         }
         data.projeto = projeto;
         this.saveData(data);

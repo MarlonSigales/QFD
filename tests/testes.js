@@ -335,7 +335,7 @@ suite('Versionamento dos dados', () => {
             matrizQFD: [], especificacoesProjeto: [], metadata: { created: '2026-01-01', schemaVersion: 5 }
         };
         assert(qfdDB.importData(d), qfdDB.lastImportError);
-        assertEqual(qfdDB.loadData().projeto, { nome: '', emails: [] });
+        assertEqual(qfdDB.loadData().projeto, criarProjetoVazio());
     });
     test('banco novo já nasce na versão atual', () => {
         qfdDB.clearAllData();
@@ -401,6 +401,22 @@ suite('Caderno de ideias', () => {
         };
         assert(qfdDB.importData(d), qfdDB.lastImportError);
         assertEqual(qfdDB.loadData().cadernoIdeias, { ideias: [], falhas: [] });
+    });
+    test('v7 → v8: lista de referências vazia', () => {
+        const d = {
+            requisitosCliente: [], requisitosProjeto: [], comparacaoCliente: [], correlacaoProjeto: [],
+            matrizQFD: [], especificacoesProjeto: [], metadata: { created: '2026-01-01', schemaVersion: 7 }
+        };
+        assert(qfdDB.importData(d), qfdDB.lastImportError);
+        assertEqual(qfdDB.loadData().referencias, []);
+    });
+    test('v8 → v9: fechamento vazio', () => {
+        const d = {
+            requisitosCliente: [], requisitosProjeto: [], comparacaoCliente: [], correlacaoProjeto: [],
+            matrizQFD: [], especificacoesProjeto: [], metadata: { created: '2026-01-01', schemaVersion: 8 }
+        };
+        assert(qfdDB.importData(d), qfdDB.lastImportError);
+        assertEqual(qfdDB.loadData().fechamento, criarFechamentoVazio());
     });
 });
 
@@ -739,6 +755,16 @@ const PAGINAS = [
         texto: 'Ideia <b>teste</b>', seletores: ['#lista-ideias .ideia-chip', '#lista-falhas .falha-neutro', '#ideia-requisitos input[type=checkbox]']
     },
     {
+        arquivo: '../pages/fechamento.html', funcao: 'renderPassos',
+        preparar: () => { criarProjetoExemplo(); qfdDB.setFuncaoGlobal({ nome: 'Eliminar <plantas>', entradas: { energia: 'Calor' } }); qfdDB.addFormulacao('Formulação <ampla>'); },
+        texto: 'Formulação <ampla>', seletores: ['#passos-abstracao textarea[data-passo="4"]', '#caixa-preta svg polygon', '#fechamento-lista-requisitos li', '#fluxos-saidas textarea[data-tipo="sinal"]']
+    },
+    {
+        arquivo: '../pages/referencias.html', funcao: 'renderReferencias',
+        preparar: () => { const { rp } = criarProjetoExemplo(); qfdDB.addReferencia({ tipo: 'norma', titulo: 'Norma <b>X</b>', identificacao: 'NBR 1', link: 'javascript:alert(1)', requisitos: [{ tipo: 'projeto', id: rp[0].id }] }); },
+        texto: 'NBR 1 — Norma <b>X</b>', seletores: ['#lista-referencias .ideia-chip', '#ref-requisitos input[type=checkbox]', '#ref-tipo option[value=patente]']
+    },
+    {
         arquivo: '../pages/avaliacao-competitiva.html', funcao: 'updateComputed', preparar: criarAvaliacaoExemplo,
         texto: 'Marca "B" <x>', seletores: ['#grafico-clientes svg circle', '#clientes-tbody .sit-atras', '#tecnicos-tbody .valor-input', '#form-indice #indice-formula']
     },
@@ -783,8 +809,8 @@ function testarPagina(pagina) {
                 assert(doc.querySelector(sel), `elemento "${sel}" não encontrado`);
             });
 
-            // barra lateral com as 9 etapas + Dashboard + Caderno de Ideias, página atual destacada
-            assertEqual(doc.querySelectorAll('.sidebar .sidebar-link').length, 11, 'links da barra lateral');
+            // barra lateral com as 10 etapas + Dashboard + Caderno de Ideias + Referências, página atual destacada
+            assertEqual(doc.querySelectorAll('.sidebar .sidebar-link').length, 13, 'links da barra lateral');
             const ativo = doc.querySelector('.sidebar .sidebar-link.ativo');
             assert(ativo && pagina.arquivo.endsWith(ativo.getAttribute('href').split('/').pop()), 'página atual não destacada na barra lateral');
             assert(doc.getElementById('topbar-projeto-nome').textContent.trim(), 'nome do projeto na barra superior');
@@ -890,6 +916,183 @@ suite('Páginas', () => {
             mudar('valorMeta', 'abc');
             assert(campo('valorMeta').classList.contains('spec-input-erro'), 'texto não numérico sem destaque de erro');
             assertEqual(esp().valorMeta, 10, 'valor inválido não deve ser salvo');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Especificações: melhor concorrente (↑ e ↓), "Usar como meta" e aviso de meta abaixo', async () => {
+        const { rp, a, b } = criarAvaliacaoExemplo(); // RP1 ↓: meta ≤ 1,2; A 1,5; B 0,9. RP3 nominal: A 4
+        const altura = qfdDB.addRequisitoProjeto('Altura de queda (m)', 'up', 2);
+        qfdDB.setValorTecnico(altura.id, a.id, '1');
+        qfdDB.setValorTecnico(altura.id, b.id, '2,5');
+        const iframe = await carregarPagina('../pages/especificacoes.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            const box = id => doc.querySelector(`tr[data-req-id="${id}"] .spec-concorrente`);
+            assertEqual(box(rp[0].id).querySelector('.spec-concorrente-info').textContent, 'Melhor concorrente: 0,9 kg — Marca "B" <x>', '↓');
+            assertEqual(box(altura.id).querySelector('.spec-concorrente-info').textContent, 'Melhor concorrente: 2,5 — Marca "B" <x>', '↑');
+            assertEqual(box(rp[2].id).childElementCount, 0, 'nominal não mostra concorrente');
+            assertEqual(box(rp[0].id).querySelector('.spec-concorrente-aviso').textContent, 'Meta abaixo do melhor concorrente');
+            box(rp[0].id).querySelector('.spec-usar-meta').click();
+            const esp = qfdDB.getEspecificacoesProjeto().find(e => e.requisitoProjetoId === rp[0].id);
+            assertEqual([esp.tipoMeta, esp.valorMeta], ['<=', 0.9], 'meta copiada');
+            assertEqual(box(rp[0].id).querySelector('.spec-concorrente-aviso').textContent, '', 'aviso deveria sumir');
+            assert(win.document === doc, 'página não recarregou');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Referências: norma ligada a dois requisitos aparece nos dois e no relatório', async () => {
+        const { rc, rp } = criarProjetoExemplo();
+        const norma = qfdDB.addReferencia({
+            tipo: 'norma', titulo: 'Segurança de máquinas agrícolas', identificacao: 'NBR ISO 4254',
+            link: 'https://www.abnt.org.br', dataConsulta: '2026-10-01',
+            requisitos: [{ tipo: 'cliente', id: rc[0].id }, { tipo: 'projeto', id: rp[1].id }, { tipo: 'projeto', id: 'nao-existe' }]
+        });
+        assertEqual(norma.requisitos.length, 2, 'ligação com requisito inexistente descartada');
+        assertEqual(linkSeguro('javascript:alert(1)'), '', 'link perigoso');
+        for (const [pagina, id] of [['requisitos-cliente', rc[0].id], ['requisitos-projeto', rp[1].id]]) {
+            const iframe = await carregarPagina(`../pages/${pagina}.html`);
+            try {
+                const ref = iframe.contentDocument.querySelector(`.requisito-item[data-id="${id}"] .requisito-referencias`);
+                assert(ref && ref.textContent.includes('NBR ISO 4254'), `referência ausente em ${pagina}`);
+            } finally {
+                iframe.remove();
+            }
+        }
+        qfdDB.removeRequisitoProjeto(rp[1].id);
+        assertEqual(qfdDB.getReferencias()[0].requisitos.length, 1, 'requisito excluído sai da ligação');
+        const iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const secao = iframe.contentDocument.querySelector('#report-content .report-referencias');
+            assert(secao && secao.textContent.includes('NBR ISO 4254 — Segurança de máquinas agrícolas'), 'seção no relatório');
+            assert(secao.textContent.includes('RC1') && secao.textContent.includes('01/10/2026'), 'requisitos/data no relatório');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Fechamento: formulação final e caixa-preta com entradas e saídas no relatório', async () => {
+        criarProjetoExemplo();
+        qfdDB.setPassoAbstracao(4, 'Eliminar plantas indesejadas na lavoura');
+        assertEqual(qfdDB.getFormulacaoFinal(), 'Eliminar plantas indesejadas na lavoura', 'sem escolha vale o 5º passo');
+        qfdDB.addFormulacao('Retirar ervas com fogo');
+        const ampla = qfdDB.addFormulacao('Controlar plantas <daninhas>');
+        qfdDB.escolherFormulacao(ampla.id);
+        assertEqual(qfdDB.getFormulacaoFinal(), 'Controlar plantas <daninhas>');
+        qfdDB.setFuncaoGlobal({
+            nome: 'Eliminar plantas daninhas',
+            entradas: { energia: 'Gás GLP\n\n', material: 'Plantas daninhas', sinal: 'Acionamento' },
+            saidas: { energia: 'Calor dissipado', material: 'Plantas mortas\nCO2' }
+        });
+        assertEqual(qfdDB.getFechamento().funcaoGlobal.entradas.energia, ['Gás GLP'], 'linhas vazias ignoradas');
+        const iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const secao = iframe.contentDocument.querySelector('#report-content .report-fechamento');
+            assert(secao, 'seção ausente');
+            assert(secao.querySelector('.report-formulacao-final').textContent.includes('Controlar plantas <daninhas>'), 'formulação final');
+            const svg = secao.querySelector('svg.caixa-preta');
+            const textos = [...svg.querySelectorAll('text')].map(t => t.textContent);
+            ['Gás GLP', 'Plantas daninhas', 'Acionamento', 'Calor dissipado', 'Plantas mortas', 'CO2'].forEach(t =>
+                assert(textos.includes(t), `caixa-preta sem "${t}"`));
+            assertEqual(svg.querySelectorAll('polygon').length, 6, 'uma seta por fluxo');
+            assert(svg.querySelector('line[stroke-dasharray]'), 'sinal sem seta tracejada');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Relatório: capa com dados do projeto e sumário numerado', async () => {
+        criarProjetoExemplo();
+        qfdDB.setProjeto({ nome: 'Capinadora térmica', cliente: 'Cooperativa Sul-Ecológica', instituicao: 'UFPel', equipe: ['Ana — coordenadora', '', 'Bruno'].join('\n') });
+        assertEqual(qfdDB.getProjeto().equipe, ['Ana — coordenadora', 'Bruno'], 'equipe uma por linha');
+        const iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const doc = iframe.contentDocument;
+            const capa = doc.querySelector('#report-content .report-capa');
+            assert(capa, 'capa ausente');
+            ['Capinadora térmica', 'Cooperativa Sul-Ecológica', 'UFPel', 'Ana — coordenadora'].forEach(t =>
+                assert(capa.textContent.includes(t), `capa sem "${t}"`));
+            const itens = [...doc.querySelectorAll('#report-sumario-lista li')].map(li => li.textContent);
+            assert(itens.length > 5 && itens.includes('Diagrama de Mudge'), 'sumário incompleto: ' + itens.join(' | '));
+            assert(doc.querySelector('#report-content .report-mudge h3 .secao-num'), 'seção sem número');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Relatório: quadro de especificações no formato do Quadro 8, em folha deitada', async () => {
+        const { rp } = criarProjetoExemplo();
+        qfdDB.updateEspecificacao(rp[0].id, { formaAvaliacao: 'Teste de campo' });
+        assertEqual(qfdDB.getEspecificacoesOrdenadas().find(e => e.requisito.id === rp[0].id).formaAvaliacao, 'Teste de campo');
+        const iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const tabela = iframe.contentDocument.querySelector('#report-content .especificacoes-report-table');
+            assertEqual([...tabela.querySelectorAll('thead th')].map(th => th.textContent),
+                ['Requisito', 'Valor meta', 'Forma de avaliação', 'Aspectos indesejados']);
+            assert(tabela.textContent.includes('Teste de campo') && tabela.textContent.includes('≤ 1,2 kg'), 'linha do RP1');
+            assert(tabela.closest('.report-section').classList.contains('pagina-paisagem'), 'seção não marcada para folha deitada');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Dificuldade técnica: terço superior com dificuldade 5 é crítico nas Especificações, na Matriz e no relatório', async () => {
+        criarProjetoExemplo();
+        const ordem = qfdDB.getEspecificacoesOrdenadas().map(e => e.requisito);
+        qfdDB.updateRequisitoProjeto(ordem[0].id, { dificuldadeTecnica: 5 });
+        qfdDB.updateRequisitoProjeto(ordem[2].id, { dificuldadeTecnica: 5 }); // terço inferior: não é crítico
+        assert(ehRequisitoCritico(0, 3, 5) && !ehRequisitoCritico(0, 3, 3) && !ehRequisitoCritico(2, 3, 5), 'regra do crítico');
+        let iframe = await carregarPagina('../pages/especificacoes.html');
+        try {
+            const doc = iframe.contentDocument;
+            const criticos = [...doc.querySelectorAll('tr.spec-critico')].map(tr => tr.dataset.reqId);
+            assertEqual(criticos, [ordem[0].id], 'linhas críticas nas Especificações');
+            assert(/importante e difícil/.test(doc.querySelector('tr.spec-critico').textContent), 'aviso ausente');
+            assertEqual(doc.querySelector(`tr[data-req-id="${ordem[2].id}"] .dif-nivel`).textContent, '5', 'coluna da dificuldade');
+        } finally {
+            iframe.remove();
+        }
+        iframe = await carregarPagina('../pages/matriz-qfd.html');
+        try {
+            const linha = iframe.contentDocument.querySelector('.qfd-sum-dif');
+            assert(linha, 'linha da dificuldade ausente na Matriz');
+            assertEqual(linha.querySelectorAll('.dif-nivel').length, 3, 'um selo por requisito de projeto');
+        } finally {
+            iframe.remove();
+        }
+        iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const doc = iframe.contentDocument;
+            const itens = [...doc.querySelectorAll('#report-content .report-criticos li')].map(li => li.textContent);
+            assertEqual(itens.length, 1, 'requisitos críticos: ' + itens.join(' | '));
+            assert(itens[0].includes(ordem[0].descricao), 'crítico errado no relatório');
+            assert(doc.querySelector('#report-content .qfd-matrix-report .qfd-sum-dif'), 'dificuldade ausente na matriz do relatório');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Relatório: terços em quadros separados e justificativa da hierarquização', async () => {
+        criarProjetoExemplo();
+        qfdDB.addRequisitoProjeto('Vida útil (anos)', 'up', 2); // 4 requisitos: terços com 2, 1 e 1
+        qfdDB.setProjeto({ justificativaHierarquia: 'Adotada a lista <sem telhado>.' });
+        const iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const doc = iframe.contentDocument;
+            const quadros = [...doc.querySelectorAll('#report-content .report-terco')];
+            assertEqual(quadros.map(q => q.querySelectorAll('tbody tr').length), [2, 1, 1], 'linhas por terço');
+            assertEqual(quadros.map(q => q.querySelector('tbody td').textContent), ['1º', '3º', '4º'], 'posições');
+            assertEqual(doc.querySelector('#report-content .report-justificativa p').textContent, 'Adotada a lista <sem telhado>.');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Relatório: Diagrama de Mudge completo com soma e %', async () => {
+        criarProjetoExemplo(); // RC1>RC2 (3), RC1>RC3 (5), RC2>RC3 (1)
+        const iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const tabela = iframe.contentDocument.querySelector('#report-content .mudge-report');
+            assert(tabela, 'tabela do Mudge ausente');
+            const linhas = [...tabela.querySelectorAll('tbody tr')].map(tr => [...tr.children].map(c => c.textContent.trim()));
+            assertEqual(linhas[0], ['1', '13', '15', '8', '88.89'], 'linha RC1');
+            assertEqual(linhas[1], ['2', '', '21', '1', '11.11'], 'linha RC2');
+            assertEqual(linhas[3].slice(-2), ['9', '100'], 'total');
         } finally {
             iframe.remove();
         }

@@ -53,9 +53,11 @@
             <a href="pages/especificacoes.html" class="sidebar-link" title="Especificações"><span class="sidebar-num">6</span><span>Especificações</span></a>
             <a href="pages/avaliacao-competitiva.html" class="sidebar-link" title="Avaliação Competitiva"><span class="sidebar-num">7</span><span>Avaliação Competitiva</span></a>
             <a href="pages/atendimento-requisitos.html" class="sidebar-link" title="Atendimento"><span class="sidebar-num">8</span><span>Atendimento</span></a>
-            <a href="pages/relatorio.html" class="sidebar-link" title="Relatório"><span class="sidebar-num">9</span><span>Relatório</span></a>
+            <a href="pages/fechamento.html" class="sidebar-link" title="Fechamento (abstração e função global)"><span class="sidebar-num">9</span><span>Fechamento</span></a>
+            <a href="pages/relatorio.html" class="sidebar-link" title="Relatório"><span class="sidebar-num">10</span><span>Relatório</span></a>
             <div class="sidebar-grupo">Apoio</div>
             <a href="pages/ideias.html" class="sidebar-link" title="Caderno de Ideias"><i class="fas fa-lightbulb"></i><span>Caderno de Ideias</span></a>
+            <a href="pages/referencias.html" class="sidebar-link" title="Estado da técnica e referências"><i class="fas fa-book"></i><span>Referências</span></a>
         </nav>
     </aside>
         <div class="app-conteudo">
@@ -80,6 +82,19 @@
                             <label for="projeto-emails">E-mails dos envolvidos</label>
                             <textarea id="projeto-emails" class="form-control" rows="2" placeholder="pessoa@exemplo.com, outra@exemplo.com"></textarea>
                             <small class="form-text" id="projeto-emails-aviso">Separe por vírgula ou linha. Recebem o backup ao exportar.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="projeto-cliente">Cliente</label>
+                            <input type="text" id="projeto-cliente" class="form-control" maxlength="120" placeholder="Empresa ou pessoa para quem o produto é desenvolvido">
+                        </div>
+                        <div class="form-group">
+                            <label for="projeto-instituicao">Instituição</label>
+                            <input type="text" id="projeto-instituicao" class="form-control" maxlength="160" placeholder="Ex.: UFPel - Inova Agro - EMBRAPII">
+                        </div>
+                        <div class="form-group projeto-equipe">
+                            <label for="projeto-equipe">Equipe</label>
+                            <textarea id="projeto-equipe" class="form-control" rows="3" placeholder="Uma pessoa por linha, ex.: Roger Spagnolo — coordenador"></textarea>
+                            <small class="form-text">Aparecem na capa do relatório.</small>
                         </div>
                     </div>
                     <div class="projeto-acoes">
@@ -188,6 +203,28 @@
                                 <h4>Caderno de Ideias</h4>
                                 <p class="status" id="status-ideias">Nenhum registro</p>
                                 <span class="count" id="count-ideias">0 ideias · 0 falhas</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-card clickable" id="progress-referencias" onclick="window.location.href='pages/referencias.html'">
+                            <div class="card-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4>Estado da técnica</h4>
+                                <p class="status" id="status-referencias">Nenhum registro</p>
+                                <span class="count" id="count-referencias">0 referências</span>
+                            </div>
+                        </div>
+
+                        <div class="progress-card clickable" id="progress-fechamento" onclick="window.location.href='pages/fechamento.html'">
+                            <div class="card-icon">
+                                <i class="fas fa-flag-checkered"></i>
+                            </div>
+                            <div class="card-content">
+                                <h4>Fechamento</h4>
+                                <p class="status" id="status-fechamento">Não iniciado</p>
+                                <span class="count" id="count-fechamento">0/5 passos</span>
                             </div>
                         </div>
 

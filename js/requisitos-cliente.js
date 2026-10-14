@@ -163,6 +163,7 @@ function loadRequisitos() {
                     </div>
                     ${requisito.observacao ? `<div class="requisito-observacao-preview"><i class="fas fa-comment-dots"></i> ${escapeHtml(requisito.observacao)}</div>` : ''}
                     ${htmlSeloClassificacao(requisito)}
+                    ${htmlReferenciasRequisito('cliente', requisito.id)}
                     <div class="requisito-meta">
                         <small class="text-muted">
                             <i class="fas fa-calendar"></i> 

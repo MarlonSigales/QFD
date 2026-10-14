@@ -1,6 +1,6 @@
 QFD - QA
 Site: https://marlonsigales.github.io/QFD/index.html
-Atualizado em 13/10/2026 — dados na versão 7 — 77 testes automáticos
+Atualizado em 13/10/2026 — dados na versão 9 — 89 testes automáticos
 
 Legenda: [fazer] pendente · [aguardando] depende de material externo ·
          [RESOLVIDO] feito e testado · [rejeitado] não será feito
@@ -17,18 +17,33 @@ RESUMO
 
 [fazer] linhas abaixo do qfd, onde se analise o somatório das linhas, verificando a pontuação de cada requisito de projeto, verificando tanto somatório quanto percentual normalizado.
 
-[fazer] P05 - Ligar a análise da concorrência às Especificações: mostrar o melhor
+[RESOLVIDO] P05 - Ligar a análise da concorrência às Especificações: mostrar o melhor
             valor dos concorrentes abaixo da meta, botão "Usar como meta" e aviso
-            quando a meta está abaixo do melhor concorrente. (prompt abaixo)
+            quando a meta está abaixo do melhor concorrente. Só para requisitos ↑/↓
+            com valores técnicos de concorrentes; "Usar como meta" grava ≥ (↑) ou
+            ≤ (↓) com o valor do melhor concorrente.
 
-[fazer] P16 - Usar a dificuldade técnica: linha na Matriz QFD, coluna nas
-            Especificações e lista de "requisitos críticos" no relatório. (prompt abaixo)
+[RESOLVIDO] P16 - Usar a dificuldade técnica: linha na Matriz QFD, coluna nas
+            Especificações e lista de "requisitos críticos" no relatório. Selo 1-5
+            colorido; requisito do terço superior com dificuldade 4 ou 5 ganha
+            "Atenção: importante e difícil" nas Especificações e entra em "Requisitos
+            críticos" (seção Requisitos de Projeto do relatório). Pesos inalterados.
 
-[fazer] P13 - Estado da técnica e referências (patentes, normas, artigos) ligados
-            aos requisitos. (prompt abaixo)
+[RESOLVIDO] P13 - Estado da técnica e referências (patentes, normas, artigos) ligados
+            aos requisitos. Nova página "Referências" (barra lateral -> Apoio):
+            tipo, título, nº, link (só vira link se for http/https), data de
+            consulta, resumo e requisitos ligados (muitos-para-muitos). O cartão do
+            requisito mostra as referências; Dashboard ganhou o cartão "Estado da
+            técnica"; relatório ganhou a seção "Estado da técnica e referências".
+            Dados na versão 8.
 
-[fazer] P15 - Fechamento: abstração da lista de requisitos e função global
-            (caixa-preta). (prompt abaixo)
+[RESOLVIDO] P15 - Fechamento: abstração da lista de requisitos e função global
+            (caixa-preta). Nova etapa 9 "Fechamento" (o Relatório passou a 10):
+            lista de requisitos para consulta, abstração em 5 passos, formulações
+            do problema da mais restrita à mais ampla (com a adotada marcada) e
+            função global com entradas/saídas de energia, material e sinal,
+            desenhada em SVG (contínua, dupla e tracejada). Relatório ganhou a
+            seção "Formulação do problema e função global". Dados na versão 9.
 
 [fazer sem prioridade] Uso das matrizes em celular.
 
@@ -39,10 +54,6 @@ RESUMO
     "QFD preenchimento") — marque [fazer] ou [rejeitado] em cada uma
 
 --- Projeto informacional e QFD (da mais simples para a mais complexa) --------------------
-
-[ideia] Coluna "Forma de avaliação" nas Especificações (teste de campo, bancada,
-            cálculo, contagem...). O Quadro 8 do Roger tem meta, forma de avaliação e
-            aspectos indesejados; o sistema ainda não tem a forma de avaliação.
 
 [ideia] Aviso de redação no requisito de cliente: deve ser "ser/ter/estar +
             substantivo" (Fonseca, 2000). Com outro verbo ("eliminar plantas") o
@@ -93,20 +104,34 @@ RESUMO
 
 --- Relatório final ----------------------------------------------------------------------
 
-[ideia] Quadro de especificações no formato do Roger (Quadro 8): nº, requisito,
+[RESOLVIDO] Quadro de especificações no formato do Roger (Quadro 8): nº, requisito,
             meta, forma de avaliação e aspectos indesejados, na ordem do QFD.
+            virar a folha se necessário. Especificações ganhou a coluna "Forma de
+            avaliação" (texto livre com sugestões: teste de campo, bancada, cálculo,
+            contagem...). No relatório o quadro sai em folha deitada no PDF e na
+            impressão. O PDF agora é montado seção a seção: uma seção que não cabe
+            no resto da página começa na seguinte, e a capa ocupa a 1ª página.
 
-[ideia] Diagrama de Mudge completo no relatório (a matriz com letras, a soma e
-            o %), como a Fig. 35, além da lista de pesos.
+[RESOLVIDO] Diagrama de Mudge completo no relatório (a matriz com números, a soma e
+            o %). Seção "Diagrama de Mudge": matriz triangular (célula = requisito
+            mais importante e valor), colunas S e %, total e aviso das comparações
+            que faltam. Substitui a antiga lista de pares.
 
-[ideia] Hierarquização em terços em quadros separados (superior, médio,
-            inferior), com a posição sem e com telhado lado a lado (Quadros 5 a 7)
-            e a justificativa da lista escolhida.
+[RESOLVIDO] Hierarquização em terços em quadros separados (superior, médio,
+            inferior) e a justificativa da lista escolhida. Relatório -> Requisitos
+            de Projeto: um quadro por terço (posição, ID, requisito, sentido, imp.
+            rel., dificuldade). A justificativa é escrita nas Especificações
+            (abaixo do quadro) e sai no relatório.
 
-[ideia] Estrutura de documento acadêmico: capa (título, equipe, instituição,
-            data), sumário, listas de figuras e quadros numeradas, legenda com fonte
-            em cada figura/quadro e referências no fim — para colar direto em tese,
-            dissertação ou relatório técnico.
+[aguardando Roger] Posição "com telhado" ao lado da posição sem telhado nos
+            quadros dos terços (Quadros 5 a 7). Depende da fórmula de Reis (2003)
+            — ver a ideia "Hierarquização com telhado" na seção 1b.
+
+[RESOLVIDO] Estrutura de documento técnico: capa (título, equipe, instituição,
+            data, cliente), sumário. Dashboard -> "Projeto" ganhou Cliente,
+            Instituição e Equipe (uma pessoa por linha). Relatório -> "Capa e
+            sumário": capa de página inteira (logos, título, cliente, instituição,
+            responsável, equipe, data, versão) e sumário com as seções numeradas.
 
 ==========================================================================================
 2. RESOLVIDOS
@@ -279,7 +304,7 @@ Dica: antes de começar, exporte um backup (Backup & Export -> Exportar Backup).
 [ ] 14. Importar um backup antigo (antes de out/2026) -> metas convertidas e nada
        perdido.
 
-Testes automáticos (77): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+Testes automáticos (89): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 
 ==========================================================================================
 5. PRÓXIMOS PASSOS
@@ -287,7 +312,7 @@ Testes automáticos (77): powershell -ExecutionPolicy Bypass -File tests\rodar-t
 - Fazer o commit e o git push; conferir o site publicado e o roteiro acima.
 - Conferir em Settings -> Pages do repositório se o GitHub Pages está ativo.
 - Enviar o documento do Roger (item [aguardando]).
-- Depois: P05, P16, P13 e P15, nessa ordem (prompts abaixo).
+- P05, P16, P13 e P15 feitos em 13/10/2026 (prompts mantidos abaixo como registro).
 
 ==========================================================================================
 6. PROMPTS PARA DESENVOLVIMENTO - PROJETO INFORMACIONAL (Pahl & Beitz)
@@ -299,12 +324,12 @@ Como usar:
   do item e o commit.
 - Feitos e removidos daqui: P02 (metas) e P10 (caderno de ideias).
   Rejeitados e removidos: P01 e P12.
-- A estrutura dos dados está na versão 7: um prompt que mude a estrutura deve
-  criar a versão 8 (SCHEMA_VERSION e SCHEMA_MIGRATIONS em js/database.js).
+- A estrutura dos dados está na versão 9: um prompt que mude a estrutura deve
+  criar a versão 10 (SCHEMA_VERSION e SCHEMA_MIGRATIONS em js/database.js).
 - Referência: Pahl, Beitz, Feldhusen, Grote - Engineering Design, 3ª ed.
   (Springer, 2007). As seções citadas estão em cada prompt.
 
-Pendentes, em ordem: P05, P16, P13, P15, P14.
+Pendentes: P14 (futuro). P05, P16, P13 e P15 feitos em 13/10/2026.
 Rejeitados por hora (guardados caso voltem): P03, P04, P06, P07, P08, P09, P11.
 ------------------------------------------------------------------------------------------
 === P05 - Análise da concorrência (QUASE PRONTO: falta a ligação com as Especificações) [útil]

@@ -20,8 +20,8 @@
         <span class="topbar-selo" title="Os dados ficam salvos neste navegador; exporte o backup para levar a outro computador"><i class="fas fa-globe"></i> guardado no navegador</span>
         <div class="topbar-acoes">
             <div class="nav-page-actions">
-                <a href="atendimento-requisitos.html" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Atendimento
+                <a href="fechamento.html" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Fechamento
                 </a>
                 <a href="../index.html" class="btn btn-primary">
                     Finalizar <i class="fas fa-home"></i>
@@ -60,9 +60,11 @@
             <a href="especificacoes.html" class="sidebar-link" title="Especificações"><span class="sidebar-num">6</span><span>Especificações</span></a>
             <a href="avaliacao-competitiva.html" class="sidebar-link" title="Avaliação Competitiva"><span class="sidebar-num">7</span><span>Avaliação Competitiva</span></a>
             <a href="atendimento-requisitos.html" class="sidebar-link" title="Atendimento"><span class="sidebar-num">8</span><span>Atendimento</span></a>
-            <a href="relatorio.html" class="sidebar-link ativo" aria-current="page" title="Relatório"><span class="sidebar-num">9</span><span>Relatório</span></a>
+            <a href="fechamento.html" class="sidebar-link" title="Fechamento (abstração e função global)"><span class="sidebar-num">9</span><span>Fechamento</span></a>
+            <a href="relatorio.html" class="sidebar-link ativo" aria-current="page" title="Relatório"><span class="sidebar-num">10</span><span>Relatório</span></a>
             <div class="sidebar-grupo">Apoio</div>
             <a href="ideias.html" class="sidebar-link" title="Caderno de Ideias"><i class="fas fa-lightbulb"></i><span>Caderno de Ideias</span></a>
+            <a href="referencias.html" class="sidebar-link" title="Estado da técnica e referências"><i class="fas fa-book"></i><span>Referências</span></a>
         </nav>
     </aside>
         <div class="app-conteudo">
@@ -206,6 +208,17 @@
                 <div class="sections-grid">
                     <div class="section-item">
                         <div class="section-checkbox">
+                            <input type="checkbox" id="section-capa" checked>
+                            <label for="section-capa">
+                                <i class="fas fa-book-open"></i>
+                                <span class="section-title">Capa e sumário</span>
+                                <span class="section-description">Capa de página inteira (cliente, instituição, equipe) e sumário numerado. Preencha os dados no Dashboard.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="section-item">
+                        <div class="section-checkbox">
                             <input type="checkbox" id="section-dictionary" checked>
                             <label for="section-dictionary">
                                 <i class="fas fa-book"></i>
@@ -244,6 +257,28 @@
                                 <i class="fas fa-project-diagram"></i>
                                 <span class="section-title">Requisitos de Projeto</span>
                                 <span class="section-description">Especificações técnicas com sentidos e dificuldades</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-fechamento" checked>
+                            <label for="section-fechamento">
+                                <i class="fas fa-flag-checkered"></i>
+                                <span class="section-title">Formulação do problema e função global</span>
+                                <span class="section-description">Abstração em 5 passos, formulações do problema e caixa-preta (Fechamento)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="section-item">
+                        <div class="section-checkbox">
+                            <input type="checkbox" id="section-referencias" checked>
+                            <label for="section-referencias">
+                                <i class="fas fa-book"></i>
+                                <span class="section-title">Estado da técnica e referências</span>
+                                <span class="section-description">Patentes, normas, artigos e produtos consultados, com os requisitos ligados a cada um</span>
                             </label>
                         </div>
                     </div>
@@ -341,8 +376,8 @@
                             <input type="checkbox" id="section-comparisons" checked>
                             <label for="section-comparisons">
                                 <i class="fas fa-balance-scale"></i>
-                                <span class="section-title">Comparações de Cliente</span>
-                                <span class="section-description">Diagrama de Mudge — pares comparados</span>
+                                <span class="section-title">Diagrama de Mudge</span>
+                                <span class="section-description">Matriz completa das comparações dos requisitos de cliente, com soma e %</span>
                             </label>
                         </div>
                     </div>

@@ -6,7 +6,16 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     loadPage();
+    setupJustificativa();
 });
+
+/** Justificativa da lista hierarquizada adotada (vai para o relatório) */
+function setupJustificativa() {
+    const campo = document.getElementById('justificativa-hierarquia');
+    if (!campo) return;
+    campo.value = qfdDB.getProjeto().justificativaHierarquia;
+    campo.addEventListener('change', () => qfdDB.setProjeto({ justificativaHierarquia: campo.value }));
+}
 
 function loadPage() {
     try {
@@ -19,7 +28,7 @@ function loadPage() {
         console.error('Erro ao carregar especificações:', err);
         const tbody = document.getElementById('especificacoes-tbody');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="5">Erro ao carregar dados. Recarregue a página.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7">Erro ao carregar dados. Recarregue a página.</td></tr>';
         }
         showToast('Erro ao carregar especificações.', 'danger');
     }
@@ -57,7 +66,7 @@ function renderTable(lista) {
 
     if (!lista.length) {
         const tr = document.createElement('tr');
-        tr.innerHTML = '<td colspan="5">Cadastre requisitos de projeto para preencher as especificações.</td>';
+        tr.innerHTML = '<td colspan="7">Cadastre requisitos de projeto para preencher as especificações.</td>';
         tbody.appendChild(tr);
         return;
     }
@@ -76,7 +85,8 @@ function renderTable(lista) {
         const completo = String(row.unidadeMedida || '').trim() && metaDefinida(row);
 
         const tr = document.createElement('tr');
-        tr.className = `${tercioClass}${completo ? ' spec-row-complete' : ''}`;
+        const critico = ehRequisitoCritico(index, total, req.dificuldadeTecnica);
+        tr.className = `${tercioClass}${completo ? ' spec-row-complete' : ''}${critico ? ' spec-critico' : ''}`;
         tr.dataset.reqId = req.id;
 
         const reqObs = req.observacao || '';
@@ -87,9 +97,14 @@ function renderTable(lista) {
             <strong>RP${row.numeroOriginal}</strong>
             <span class="spec-desc"></span>
             ${reqObs ? `<div class="spec-obs-preview"><i class="fas fa-comment-dots"></i> <span></span></div>` : ''}
-            <small class="spec-meta">Imp. rel.: ${impPct}</small>`;
+            <small class="spec-meta">Imp. rel.: ${impPct}</small>
+            ${critico ? '<div class="spec-critico-aviso"><i class="fas fa-triangle-exclamation"></i> Atenção: importante e difícil</div>' : ''}`;
         tdReq.querySelector('.spec-desc').textContent = req.descricao;
         if (reqObs) tdReq.querySelector('.spec-obs-preview span').textContent = reqObs;
+
+        const tdDif = document.createElement('td');
+        tdDif.className = 'spec-dif-cell';
+        tdDif.innerHTML = seloDificuldade(req.dificuldadeTecnica);
 
         const tdUnidade = document.createElement('td');
         const inputUnidade = document.createElement('input');
@@ -105,6 +120,20 @@ function renderTable(lista) {
 
         const tdValor = document.createElement('td');
         tdValor.appendChild(criarEditorMeta(req, row));
+        tdValor.appendChild(criarMelhorConcorrente(req, tdValor));
+
+        // Forma de avaliação (Quadro 8 de Spagnolo, 2011): texto livre com sugestões
+        const tdAvaliacao = document.createElement('td');
+        const inputAvaliacao = document.createElement('input');
+        inputAvaliacao.type = 'text';
+        inputAvaliacao.maxLength = 200;
+        inputAvaliacao.className = 'form-control spec-input';
+        inputAvaliacao.dataset.field = 'formaAvaliacao';
+        inputAvaliacao.setAttribute('list', 'formas-avaliacao');
+        inputAvaliacao.placeholder = 'Ex.: Teste de campo';
+        inputAvaliacao.value = row.formaAvaliacao || '';
+        inputAvaliacao.addEventListener('change', () => saveField(req.id, 'formaAvaliacao', inputAvaliacao.value.trim()));
+        tdAvaliacao.appendChild(inputAvaliacao);
 
         const tdObs = document.createElement('td');
         const textareaObs = document.createElement('textarea');
@@ -132,8 +161,10 @@ function renderTable(lista) {
         tdAspectos.appendChild(textarea);
 
         tr.appendChild(tdReq);
+        tr.appendChild(tdDif);
         tr.appendChild(tdUnidade);
         tr.appendChild(tdValor);
+        tr.appendChild(tdAvaliacao);
         tr.appendChild(tdObs);
         tr.appendChild(tdAspectos);
         tbody.appendChild(tr);
@@ -248,6 +279,78 @@ function criarEditorMeta(req, row) {
     return box;
 }
 
+/** Item técnico da avaliação competitiva (melhor concorrente e situação da meta) */
+function tecnicoCompetitivo(reqId) {
+    try {
+        return qfdDB.getAnaliseCompetitiva().tecnicos.find(t => t.requisito.id === reqId) || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Melhor valor dos concorrentes (Avaliação Competitiva) abaixo da meta, com o
+ * botão "Usar como meta" e o aviso quando a meta fica atrás dele. Só aparece
+ * para requisitos ↑/↓ com valores técnicos de concorrentes (P05).
+ */
+function criarMelhorConcorrente(req, tdValor) {
+    const box = document.createElement('div');
+    box.className = 'spec-concorrente';
+    const tec = tecnicoCompetitivo(req.id);
+    if (!tec || !tec.melhor) return box;
+
+    const valor = formatarNumero(tec.melhor.valor);
+    const info = document.createElement('small');
+    info.className = 'spec-concorrente-info';
+    info.textContent = `Melhor concorrente: ${valor}${tec.unidade ? ' ' + tec.unidade : ''} — ${tec.melhor.produtos.join(', ')}`;
+
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.className = 'spec-usar-meta';
+    botao.textContent = 'Usar como meta';
+    botao.title = 'Copia o valor do melhor concorrente para a meta';
+    botao.addEventListener('click', () => {
+        const tipo = tdValor.querySelector('[data-field="tipoMeta"]');
+        const inputValor = tdValor.querySelector('[data-field="valorMeta"]');
+        // a meta igual ao melhor concorrente: ≥ para ↑ e ≤ para ↓
+        tipo.value = sugerirTipoMeta(req.sentidoMelhoria);
+        inputValor.value = valor;
+        inputValor.dispatchEvent(new Event('change'));
+    });
+
+    const aviso = document.createElement('small');
+    aviso.className = 'spec-concorrente-aviso';
+
+    box.append(info, botao, aviso);
+    atualizarAvisoConcorrente(box, tec);
+    return box;
+}
+
+/** Mostra "meta abaixo do melhor concorrente" quando a situação é "Atrás" */
+function atualizarAvisoConcorrente(box, tec) {
+    const aviso = box.querySelector('.spec-concorrente-aviso');
+    if (!aviso) return;
+    const atras = tec && tec.situacao === 'atras';
+    aviso.textContent = atras ? 'Meta abaixo do melhor concorrente' : '';
+    box.classList.toggle('spec-concorrente-atras', atras);
+}
+
+/** Sugestões de forma de avaliação (as usadas no Quadro 8 de Spagnolo, 2011) */
+const FORMAS_AVALIACAO = [
+    'Teste de campo', 'Simulação em bancada de teste', 'Testes de laboratório',
+    'Quantificação em laboratório', 'Contagem em laboratório', 'Cronometragem em laboratório',
+    'Cálculo', 'Soma dos valores gastos com material, processos e mão de obra',
+    'Análise do projeto (leiaute)', 'Controle das dimensões das peças do protótipo'
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('formas-avaliacao')) return;
+    const lista = document.createElement('datalist');
+    lista.id = 'formas-avaliacao';
+    FORMAS_AVALIACAO.forEach(f => lista.appendChild(new Option(f)));
+    document.body.appendChild(lista);
+});
+
 function saveField(requisitoProjetoId, field, value) {
     qfdDB.updateEspecificacao(requisitoProjetoId, { [field]: value });
     atualizarLinha(requisitoProjetoId);
@@ -262,6 +365,8 @@ function atualizarLinha(requisitoProjetoId) {
     const esp = qfdDB.getEspecificacoesProjeto().find(e => e.requisitoProjetoId === requisitoProjetoId);
     if (row && esp) {
         row.classList.toggle('spec-row-complete', String(esp.unidadeMedida || '').trim() !== '' && metaDefinida(esp));
+        const box = row.querySelector('.spec-concorrente');
+        if (box && box.childElementCount) atualizarAvisoConcorrente(box, tecnicoCompetitivo(requisitoProjetoId));
     }
 }
 

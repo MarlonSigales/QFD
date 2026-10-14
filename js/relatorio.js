@@ -145,16 +145,19 @@ function generatePreview() {
     if (!content) return;
 
     try {
-        let html = `<div class="report-page">
+        const comCapa = isSectionChecked('section-capa');
+        let html = '<div class="report-page">' + (comCapa ? generateCapa() : `
             <div class="report-header">
                 <h1>${escapeHtml(reportConfig.title)}</h1>
                 ${reportConfig.company ? `<h2>${escapeHtml(reportConfig.company)}</h2>` : ''}
                 <p><strong>Data:</strong> ${escapeHtml(reportConfig.date)} | <strong>Autor:</strong> ${escapeHtml(reportConfig.author)}</p>
                 <p class="report-versao">${isApresentacao() ? 'Versão para apresentação' : 'Versão da equipe de projeto (contém comentários internos)'}</p>
-            </div>`;
+            </div>`);
+        if (comCapa) html += '<div class="report-section report-sumario"><h3>Sumário</h3><ol id="report-sumario-lista"></ol></div>';
 
         if (isSectionChecked('section-dictionary')) html += safeSection('Dicionário', generateDictionary);
         if (isSectionChecked('section-summary')) html += safeSection('Resumo', generateSummary);
+        if (isSectionChecked('section-referencias')) html += safeSection('Estado da técnica', generateReferencias);
         if (isSectionChecked('section-client-req')) html += safeSection('Req. Cliente', generateClientReqs);
         if (isSectionChecked('section-project-req')) html += safeSection('Req. Projeto', generateProjectReqs);
         if (isSectionChecked('section-fora-qfd')) html += safeSection('Fora do QFD', generateForaQFD);
@@ -167,10 +170,12 @@ function generatePreview() {
         if (isSectionChecked('section-ranking')) html += safeSection('Ranking', generateRankingSection);
         if (isSectionChecked('section-analysis') && !isApresentacao()) html += safeSection('Análises', generateAnalysisSection);
         if (isSectionChecked('section-comparisons')) html += safeSection('Comparações', generateComparisonsSection);
+        if (isSectionChecked('section-fechamento')) html += safeSection('Fechamento', generateFechamento);
         if (isSectionChecked('section-ideias')) html += safeSection('Anexo: ideias e falhas', generateAnexoIdeias);
 
         html += '</div>';
         content.innerHTML = html;
+        if (comCapa) montarCapaESumario(content);
     } catch (err) {
         console.error('Erro ao gerar preview:', err);
         content.innerHTML = `<div class="report-section"><p class="alert alert-danger">Erro ao gerar relatório: ${escapeHtml(err.message)}</p></div>`;
@@ -228,15 +233,70 @@ function generateForaQFD() {
     return html + '</div>';
 }
 
+/** Formulação do problema e função global (P15): abstração, formulações e caixa-preta */
+function generateFechamento() {
+    const f = qfdDB.getFechamento();
+    const final = qfdDB.getFormulacaoFinal();
+    const fg = f.funcaoGlobal;
+    const temFluxos = ['entradas', 'saidas'].some(l => Object.values(fg[l]).some(x => x.length));
+    if (!final && !f.abstracao.some(Boolean) && !f.formulacoes.length && !fg.nome && !temFluxos) return '';
+
+    const passos = ['Eliminar as preferências pessoais', 'Omitir o que não tem relação direta com a função e as restrições essenciais',
+        'Transformar dados quantitativos em qualitativos', 'Generalizar', 'Formular o problema de forma neutra'];
+    let html = '<div class="report-section report-fechamento"><h3>Formulação do problema e função global</h3>';
+    if (final) html += `<div class="report-formulacao-final"><strong>Formulação do problema:</strong> ${escapeHtml(final)}</div>`;
+    if (f.abstracao.some(Boolean)) {
+        html += '<h4>Abstração da lista de requisitos</h4><table class="report-table"><thead><tr><th>Passo</th><th>Resultado</th></tr></thead><tbody>';
+        f.abstracao.forEach((t, i) => {
+            if (t) html += `<tr><td>${i + 1}. ${passos[i]}</td><td>${escapeHtml(t).replace(/\n/g, '<br>')}</td></tr>`;
+        });
+        html += '</tbody></table>';
+    }
+    if (f.formulacoes.length) {
+        html += '<h4>Ampliação da formulação do problema</h4><ol class="report-formulacoes">';
+        f.formulacoes.forEach(x => {
+            html += x.id === f.formulacaoEscolhida
+                ? `<li><strong>${escapeHtml(x.texto)}</strong> <small>(adotada)</small></li>`
+                : `<li>${escapeHtml(x.texto)}</li>`;
+        });
+        html += '</ol>';
+    }
+    if (fg.nome || temFluxos) {
+        html += `<h4>Função global</h4><div class="report-caixa-preta">${svgCaixaPreta(fg)}${htmlLegendaFluxos()}</div>`;
+    }
+    return html + '</div>';
+}
+
+/** Rótulo RCn/RPn de uma ligação { tipo, id } com requisito */
+function rotuloLigacao(ref) {
+    const lista = ref.tipo === 'cliente' ? requisitosCliente : requisitosProjeto;
+    const i = lista.findIndex(r => r.id === ref.id);
+    return i === -1 ? (ref.tipo === 'cliente' ? 'RC (fora do QFD)' : 'RP (fora do QFD)') : `${ref.tipo === 'cliente' ? 'RC' : 'RP'}${i + 1}`;
+}
+
+/** Estado da técnica e referências (P13), com os requisitos que cada uma originou */
+function generateReferencias() {
+    const refs = qfdDB.getReferencias();
+    if (!refs.length) return '';
+    let html = '<div class="report-section report-referencias"><h3>Estado da técnica e referências</h3>';
+    html += '<table class="report-table"><thead><tr><th>Tipo</th><th>Referência</th><th>Consulta</th><th>Requisitos ligados</th></tr></thead><tbody>';
+    refs.forEach(r => {
+        const link = r.link ? `<br><small class="report-link">${escapeHtml(r.link)}</small>` : '';
+        html += `<tr>
+            <td>${TIPOS_REFERENCIA[r.tipo] || ''}</td>
+            <td><strong>${escapeHtml(rotuloReferencia(r))}</strong>${r.resumo ? `<br><small>${escapeHtml(r.resumo)}</small>` : ''}${link}</td>
+            <td>${r.dataConsulta ? escapeHtml(dataPorExtenso(r.dataConsulta)) : '—'}</td>
+            <td>${r.requisitos.map(rotuloLigacao).join(', ') || '—'}</td>
+        </tr>`;
+    });
+    return html + '</tbody></table></div>';
+}
+
 /** Anexo com o Caderno de Ideias: ideias de solução e falhas analisadas */
 function generateAnexoIdeias() {
     const ideias = qfdDB.getIdeias(), falhas = qfdDB.getFalhas();
     if (!ideias.length && !falhas.length) return '';
-    const rotulo = ref => {
-        const lista = ref.tipo === 'cliente' ? requisitosCliente : requisitosProjeto;
-        const i = lista.findIndex(r => r.id === ref.id);
-        return i === -1 ? (ref.tipo === 'cliente' ? 'RC (fora do QFD)' : 'RP (fora do QFD)') : `${ref.tipo === 'cliente' ? 'RC' : 'RP'}${i + 1}`;
-    };
+    const rotulo = rotuloLigacao;
     let html = '<div class="report-section report-ideias"><h3>Anexo: Caderno de Ideias</h3>';
     if (ideias.length) {
         html += '<h4>Ideias de solução registradas</h4>';
@@ -267,6 +327,57 @@ function generateAnexoIdeias() {
     return html + '</div>';
 }
 
+/** Data do relatório (aaaa-mm-dd) no formato dd/mm/aaaa */
+function dataPorExtenso(iso) {
+    const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso || '');
+}
+
+/** Capa de página inteira: logos, título, cliente, instituição, equipe, data e versão */
+function generateCapa() {
+    const p = qfdDB.getProjeto();
+    const instituicao = p.instituicao || reportConfig.company;
+    const linha = (rotulo, valor) => valor ? `<p><span>${rotulo}</span> ${escapeHtml(valor)}</p>` : '';
+    return `<div class="report-capa">
+        <div class="capa-logos">
+            <img src="../img/logo-inovaagro.png" alt="EMBRAPII - Inova Agro">
+            <img src="../img/logo-nimeq.png" alt="NIMEq">
+            <img src="../img/logo-instagri.png" alt="Lab InstAgri">
+        </div>
+        <div class="capa-centro">
+            <p class="capa-tipo">Relatório de QFD — Casa da Qualidade</p>
+            <h1>${escapeHtml(reportConfig.title)}</h1>
+            ${linha('Cliente:', p.cliente)}
+            ${linha('Instituição:', instituicao)}
+            ${linha('Responsável:', reportConfig.author)}
+        </div>
+        ${p.equipe.length ? `<div class="capa-equipe"><p class="capa-rotulo">Equipe</p><ul>${p.equipe.map(n => `<li>${escapeHtml(n)}</li>`).join('')}</ul></div>` : ''}
+        <div class="capa-rodape">
+            <p>${escapeHtml(dataPorExtenso(reportConfig.date))}</p>
+            <p class="report-versao">${isApresentacao() ? 'Versão para apresentação' : 'Versão da equipe de projeto (contém comentários internos)'}</p>
+        </div>
+    </div>`;
+}
+
+/**
+ * Numera as seções (1., 2., ...) e preenche o sumário. A capa recebe a altura
+ * de uma página útil A4 (170 x 257 mm) na largura da prévia, para ocupar
+ * exatamente a 1ª página do PDF.
+ */
+function montarCapaESumario(content) {
+    const lista = content.querySelector('#report-sumario-lista');
+    let n = 0;
+    content.querySelectorAll('.report-section:not(.report-sumario) > h3').forEach(h3 => {
+        n++;
+        const titulo = h3.textContent.trim();
+        h3.insertAdjacentHTML('afterbegin', `<span class="secao-num">${n}.</span> `);
+        if (lista) lista.insertAdjacentHTML('beforeend', `<li><span></span></li>`);
+        if (lista) lista.lastElementChild.firstElementChild.textContent = titulo;
+    });
+    const capa = content.querySelector('.report-capa');
+    if (capa && capa.offsetWidth > 0) capa.style.minHeight = `${Math.floor(capa.offsetWidth * 257 / 170)}px`;
+}
+
 function generateSummary() {
     return `<div class="report-section"><h3>Resumo Executivo</h3><p>${escapeHtml(reportConfig.description || 'Sem descrição.')}</p></div>`;
 }
@@ -295,33 +406,51 @@ function generateProjectReqs() {
     const t1 = Math.ceil(total / 3);
     const t2 = Math.ceil((2 * total) / 3);
 
-    let html = `<div class="report-section">
+    // Hierarquização em terços em quadros separados (Fonseca, 2000; Quadros 5 a 7
+    // de Spagnolo, 2011). A posição "com telhado" entra quando a fórmula for definida.
+    const tercos = [
+        { nome: 'Superior', classe: 'tercio-superior', desc: 'maior importância relativa', itens: [] },
+        { nome: 'Médio', classe: 'tercio-medio', desc: 'importância intermediária', itens: [] },
+        { nome: 'Inferior', classe: 'tercio-inferior', desc: 'menor importância relativa', itens: [] }
+    ];
+    let html = `<div class="report-section report-tercos">
         <h3>Requisitos de Projeto</h3>
-        <div class="tercios-legend">
-            <div class="tercio-item tercio-superior"><strong>Terço Superior:</strong> maior importância relativa (verde).</div>
-            <div class="tercio-item tercio-medio"><strong>Terço Médio:</strong> importância intermediária (vermelho).</div>
-            <div class="tercio-item tercio-inferior"><strong>Terço Inferior:</strong> menor importância relativa (laranja).</div>
-        </div>
-        <table class="report-table"><thead><tr><th>ID</th><th>Descrição</th><th>Sentido</th><th>Imp. Rel.</th><th>Terço</th></tr></thead><tbody>`;
+        <p class="report-hint">Hierarquização pela Matriz QFD (sem telhado), dividida em terços.</p>`;
+    const criticos = [];
 
     ordenados.forEach((r, i) => {
-        let tercio = 'Inferior';
-        let tercioClass = 'tercio-inferior';
-        if (i < t1) { tercio = 'Superior'; tercioClass = 'tercio-superior'; }
-        else if (i < t2) { tercio = 'Médio'; tercioClass = 'tercio-medio'; }
-
+        const terco = tercos[i < t1 ? 0 : (i < t2 ? 1 : 2)];
         const rpNum = requisitosProjeto.findIndex(x => x.id === r.id) + 1;
         const impRel = r.pesoRelativo != null ? (r.pesoRelativo * 100).toFixed(1) + '%' : '-';
 
-        html += `<tr class="${tercioClass} report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${rpNum}`, r))}">
+        terco.itens.push(`<tr class="${terco.classe} report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${rpNum}`, r))}">
+            <td>${i + 1}º</td>
             <td>RP${rpNum}</td>
             <td>${escapeHtml(r.descricao)}</td>
             <td>${getSentidoSymbol(r.sentidoMelhoria)}</td>
             <td>${impRel}</td>
-            <td><strong>${tercio}</strong></td>
-        </tr>`;
+            <td>${seloDificuldade(r.dificuldadeTecnica)}</td>
+        </tr>`);
+        if (ehRequisitoCritico(i, total, r.dificuldadeTecnica)) criticos.push({ r, rpNum, impRel });
     });
-    return html + '</tbody></table></div>';
+
+    tercos.filter(t => t.itens.length).forEach(t => {
+        html += `<div class="report-terco ${t.classe}"><h4>Terço ${t.nome.toLowerCase()} <small>— ${t.desc}</small></h4>
+            <table class="report-table"><thead><tr><th>Posição</th><th>ID</th><th>Requisito</th><th>Sentido</th><th>Imp. Rel.</th><th title="Dificuldade técnica (1 = muito fácil, 5 = muito difícil)">Dif.</th></tr></thead>
+            <tbody>${t.itens.join('')}</tbody></table></div>`;
+    });
+
+    const justificativa = qfdDB.getProjeto().justificativaHierarquia;
+    if (justificativa) {
+        html += `<div class="report-justificativa"><h4>Justificativa da hierarquização</h4><p>${escapeHtml(justificativa).replace(/\n/g, '<br>')}</p></div>`;
+    }
+
+    // Requisitos críticos (P16): terço superior + dificuldade técnica >= 4
+    html += '<div class="report-criticos"><h4><i class="fas fa-triangle-exclamation"></i> Requisitos críticos (importantes e difíceis)</h4>';
+    html += criticos.length
+        ? '<ul>' + criticos.map(c => `<li><strong>RP${c.rpNum}</strong> — ${escapeHtml(c.r.descricao)} <small>(imp. rel. ${c.impRel}; dificuldade ${c.r.dificuldadeTecnica} — ${rotuloDificuldade(c.r.dificuldadeTecnica).toLowerCase()})</small></li>`).join('') + '</ul>'
+        : '<p>Nenhum requisito do terço superior tem dificuldade técnica 4 ou 5.</p>';
+    return html + '</div></div>';
 }
 
 function generateRoof() {
@@ -386,6 +515,8 @@ function generateMatrix() {
         + requisitosProjeto.map(rp => `<td>${((rp.pesoRelativo || 0) * 100).toFixed(1)}%</td>`).join('') + '<td></td></tr>';
     html += '<tr class="qfd-sum-row qfd-sum-rank"><th>Ranking</th>'
         + requisitosProjeto.map(rp => `<td>${rp.importanciaAbsoluta > 0 ? `${rp.importanciaRelativa}º` : '-'}</td>`).join('') + '<td></td></tr>';
+    html += '<tr class="qfd-sum-row qfd-sum-dif"><th>Dificuldade</th>'
+        + requisitosProjeto.map(rp => `<td>${seloDificuldade(rp.dificuldadeTecnica)}</td>`).join('') + '<td></td></tr>';
     return html + '</tfoot></table></div></div>';
 }
 
@@ -405,10 +536,12 @@ function generateEspecificacoes() {
     const t1 = Math.ceil(total / 3);
     const t2 = Math.ceil((2 * total) / 3);
 
-    let html = '<div class="report-section"><h3>Especificações dos Requisitos de Projeto</h3>';
-    html += '<p class="report-hint">Ordenados pela hierarquia do QFD.</p>';
+    // Quadro de especificações no formato do Quadro 8 de Spagnolo (2011);
+    // sai em folha deitada no PDF e na impressão
+    let html = '<div class="report-section pagina-paisagem"><h3>Especificações dos Requisitos de Projeto</h3>';
+    html += '<p class="report-hint">Especificação do projeto em ordem de importância obtida através do QFD.</p>';
     html += '<table class="report-table especificacoes-report-table"><thead><tr>';
-    html += '<th>#</th><th>Requisito</th><th>Unidade</th><th>Meta</th><th>Aspectos indesejáveis</th></tr></thead><tbody>';
+    html += '<th>Requisito</th><th>Valor meta</th><th>Forma de avaliação</th><th>Aspectos indesejados</th></tr></thead><tbody>';
 
     lista.forEach((row, index) => {
         let tercioClass = 'tercio-inferior';
@@ -420,11 +553,13 @@ function generateEspecificacoes() {
         if (obsInterna(row.observacao)) tip += `\nEspecificação: ${row.observacao}`;
         const specObs = obsInterna(row.observacao) ? `<br><em class="report-obs">${escapeHtml(row.observacao)}</em>` : '';
 
+        const meta = row.metaFormatada
+            ? escapeHtml(`${row.metaFormatada} ${row.unidadeMedida || ''}`.trim())
+            : (row.revisarMeta ? `<em>revisar: ${escapeHtml(row.metaTexto)}</em>` : '—');
         html += `<tr class="${tercioClass} report-has-tip" data-tooltip="${escapeAttr(tip)}">
-            <td>${row.rank}</td>
-            <td><strong>RP${row.numeroOriginal}</strong> — ${escapeHtml(row.requisito.descricao)}${specObs}</td>
-            <td>${escapeHtml(row.unidadeMedida || '—')}</td>
-            <td>${row.metaFormatada ? escapeHtml(row.metaFormatada) : (row.revisarMeta ? `<em>revisar: ${escapeHtml(row.metaTexto)}</em>` : '—')}</td>
+            <td>${row.rank}. ${escapeHtml(row.requisito.descricao)} <small>(RP${row.numeroOriginal})</small>${specObs}</td>
+            <td>${meta}</td>
+            <td>${escapeHtml(row.formaAvaliacao || '—')}</td>
             <td class="spec-aspectos-cell">${escapeHtml(aspectos).replace(/\n/g, '<br>')}</td>
         </tr>`;
     });
@@ -597,30 +732,48 @@ function generateAnalysisSection() {
         </ul></div>`;
 }
 
+/**
+ * Diagrama de Mudge completo (como a Fig. 35 de Spagnolo, 2011): matriz
+ * triangular RC x RC em que cada célula mostra o requisito mais importante e
+ * o valor (1 pouco, 3 médio, 5 muito mais importante), com a soma (S) e o %
+ */
 function generateComparisonsSection() {
+    const rcs = requisitosCliente;
+    if (rcs.length < 2) return '';
     const comparacoes = qfdDB.getComparacoesCliente();
-    if (!comparacoes.length) return '';
+    const numero = id => rcs.findIndex(r => r.id === id) + 1;
+    const total = rcs.reduce((soma, r) => soma + (r.importancia || 0), 0);
 
-    let html = '<div class="report-section"><h3>Comparações de Requisitos de Cliente</h3>';
-    html += '<table class="report-table"><thead><tr><th>Par</th><th>Vencedor</th><th>Importância</th><th>Detalhe</th></tr></thead><tbody>';
+    let html = '<div class="report-section report-mudge"><h3>Diagrama de Mudge</h3>';
+    html += '<p class="report-hint">Cada célula compara o requisito da linha com o da coluna: '
+        + 'mostra o requisito mais importante e quanto (1 = pouco, 3 = médio, 5 = muito mais importante). '
+        + 'S = soma dos pontos de cada requisito; % = peso usado na Matriz QFD.</p>';
+    html += '<div class="mudge-report-wrapper"><table class="report-table mudge-report"><thead><tr><th></th>';
+    rcs.forEach((r, j) => { if (j > 0) html += `<th data-tooltip="${escapeAttr(`RC${j + 1}: ${r.descricao}`)}">${j + 1}</th>`; });
+    html += '<th>S</th><th>%</th></tr></thead><tbody>';
 
-    comparacoes.forEach(c => {
-        const req1 = requisitosCliente.find(r => r.id === c.requisito1);
-        const req2 = requisitosCliente.find(r => r.id === c.requisito2);
-        if (!req1 || !req2) return;
-
-        const i1 = requisitosCliente.indexOf(req1) + 1;
-        const i2 = requisitosCliente.indexOf(req2) + 1;
-
-        html += `<tr class="report-has-tip" data-tooltip="${escapeAttr(`RC${i1} vs RC${i2}: importância ${c.valor}`)}">
-            <td>RC${i1} vs RC${i2}</td>
-            <td>RC${i1}</td>
-            <td>${c.valor}</td>
-            <td>${escapeHtml(truncateText(req1.descricao, 40))} / ${escapeHtml(truncateText(req2.descricao, 40))}</td>
-        </tr>`;
+    rcs.forEach((linha, i) => {
+        html += `<tr><th data-tooltip="${escapeAttr(`RC${i + 1}: ${linha.descricao}`)}">${i + 1}</th>`;
+        rcs.forEach((coluna, j) => {
+            if (j === 0) return;
+            if (j < i) { html += '<td class="mudge-vazio"></td>'; return; }
+            if (j === i) { html += '<td class="mudge-diagonal"></td>'; return; }
+            const c = comparacoes.find(x =>
+                (x.requisito1 === linha.id && x.requisito2 === coluna.id) ||
+                (x.requisito1 === coluna.id && x.requisito2 === linha.id));
+            html += c
+                ? `<td data-tooltip="${escapeAttr(`RC${i + 1} × RC${j + 1}: RC${numero(c.requisito1)} é mais importante (${c.valor})`)}">${numero(c.requisito1)}<sub>${c.valor}</sub></td>`
+                : '<td class="mudge-pendente" data-tooltip="Comparação não feita">—</td>';
+        });
+        const pts = linha.importancia || 0;
+        html += `<td><strong>${pts}</strong></td><td>${total > 0 ? ((pts / total) * 100).toFixed(2) : '0.00'}</td></tr>`;
     });
+    html += `<tr class="mudge-total"><th colspan="${rcs.length}">Total</th><td><strong>${total}</strong></td><td>100</td></tr>`;
+    html += '</tbody></table></div>';
 
-    return html + '</tbody></table></div>';
+    const pendentes = (rcs.length * (rcs.length - 1)) / 2 - comparacoes.length;
+    if (pendentes > 0) html += `<p class="report-hint">${pendentes} comparação(ões) ainda não feita(s) (—).</p>`;
+    return html + '</div>';
 }
 
 function printReport() {
@@ -637,6 +790,89 @@ function clearHistory() {
     if (list) list.innerHTML = '<p>Nenhum histórico salvo.</p>';
 }
 
+/** Medidas úteis (mm) de uma página A4 com margens de 2 cm */
+const PDF_MARGEM = 20;
+const PDF_UTIL = { p: { w: 170, h: 257 }, l: { w: 257, h: 170 } };
+
+/**
+ * Monta o PDF seção a seção: cada bloco da prévia (capa, sumário, seções) vira
+ * uma imagem e é posto na página; um bloco que não cabe no espaço restante
+ * começa numa página nova (assim as seções não são cortadas no meio), e só
+ * blocos maiores que uma página inteira são fatiados. Seções com a classe
+ * .pagina-paisagem saem em folha deitada, renderizadas mais largas para manter
+ * o tamanho da letra.
+ */
+async function montarPDF(jsPDF, reportElement) {
+    const pagina = reportElement.querySelector('.report-page') || reportElement;
+    const blocos = [...pagina.children].filter(el => el.offsetHeight > 0);
+    const larguraBase = pagina.clientWidth;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    let orientacao = 'p', usado = 0, primeira = true;
+
+    const novaPagina = (o) => {
+        if (primeira) {
+            if (o !== 'p') { pdf.deletePage(1); pdf.addPage('a4', o); }
+            primeira = false;
+        } else {
+            pdf.addPage('a4', o);
+        }
+        orientacao = o;
+        usado = 0;
+    };
+
+    for (const bloco of blocos) {
+        const o = bloco.classList.contains('pagina-paisagem') ? 'l' : 'p';
+        // folha deitada: alarga o bloco só durante a captura (mesmo tamanho de letra)
+        const estiloAntes = [bloco.style.width, pagina.style.maxWidth];
+        if (o === 'l') {
+            pagina.style.maxWidth = 'none';
+            bloco.style.width = `${Math.round(larguraBase * PDF_UTIL.l.w / PDF_UTIL.p.w)}px`;
+        }
+        let canvas;
+        try {
+            canvas = await window.html2canvas(bloco, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        } finally {
+            [bloco.style.width, pagina.style.maxWidth] = estiloAntes;
+        }
+        const util = PDF_UTIL[o];
+        const alturaMm = canvas.height * util.w / canvas.width;
+        const capa = bloco.classList.contains('report-capa');
+
+        if (primeira || o !== orientacao || capa || usado + alturaMm > util.h + 0.5) novaPagina(o);
+
+        if (capa) {
+            // a capa ocupa só a 1ª página: se passar da altura útil, é reduzida e centralizada
+            const h = Math.min(alturaMm, util.h), w = h * canvas.width / canvas.height;
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', PDF_MARGEM + (util.w - w) / 2, PDF_MARGEM, w, h);
+            usado = util.h; // conteúdo depois da capa começa na página seguinte
+            continue;
+        }
+
+        if (alturaMm <= util.h + 0.5) {
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', PDF_MARGEM, PDF_MARGEM + usado, util.w, alturaMm);
+            usado += alturaMm;
+            continue;
+        }
+
+        // bloco maior que uma página: fatia na altura útil
+        const fatiaPx = Math.floor(util.h * canvas.width / util.w);
+        const fatia = document.createElement('canvas');
+        fatia.width = canvas.width;
+        const ctx = fatia.getContext('2d');
+        for (let y = 0; y < canvas.height; y += fatiaPx) {
+            const h = Math.min(fatiaPx, canvas.height - y);
+            if (y > 0) novaPagina(o);
+            fatia.height = h;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, fatia.width, h);
+            ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+            pdf.addImage(fatia.toDataURL('image/png'), 'PNG', PDF_MARGEM, PDF_MARGEM, util.w, h * util.w / canvas.width);
+            usado = h * util.w / canvas.width;
+        }
+    }
+    return pdf;
+}
+
 async function generatePDF() {
     const reportElement = document.getElementById('report-content');
     if (!reportElement) return;
@@ -648,35 +884,7 @@ async function generatePDF() {
 
     try {
         const { jsPDF } = window.jspdf;
-        const canvas = await window.html2canvas(reportElement, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff'
-        });
-
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const margin = 20; // 2 cm em todos os lados
-        const usableWidth = pageWidth - margin * 2;
-        const usableHeight = pageHeight - margin * 2;
-
-        // Recorta o canvas em fatias da altura útil da página, para que o
-        // conteúdo não invada as margens superior e inferior das páginas seguintes
-        const sliceHeightPx = Math.floor(usableHeight * canvas.width / usableWidth);
-        const slice = document.createElement('canvas');
-        slice.width = canvas.width;
-        const ctx = slice.getContext('2d');
-
-        for (let y = 0; y < canvas.height; y += sliceHeightPx) {
-            const h = Math.min(sliceHeightPx, canvas.height - y);
-            slice.height = h;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, slice.width, h);
-            ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
-            if (y > 0) pdf.addPage();
-            pdf.addImage(slice.toDataURL('image/png'), 'PNG', margin, margin, usableWidth, (h * usableWidth) / canvas.width);
-        }
+        const pdf = await montarPDF(jsPDF, reportElement);
 
         const safeTitle = (reportConfig.title || 'relatorio-qfd').replace(/[^\w\-]+/g, '_')
             + (isApresentacao() ? '-apresentacao' : '');
