@@ -27,6 +27,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const campoClassificacao = document.getElementById('classificacao-novo');
     if (campoClassificacao) campoClassificacao.innerHTML = htmlCampoClassificacao('classificacao-requisito', 'justificativa-requisito');
+    ligarAvisoRedacao(document.getElementById('descricao-requisito'), 'classificacao-requisito', 'justificativa-requisito');
     loadRequisitos();
     setupEventListeners();
     updateNavigationState();
@@ -223,6 +224,7 @@ function editRequisito(id) {
         
         const textarea = document.getElementById(`edit-desc-${id}`);
         if (textarea) {
+            ligarAvisoRedacao(textarea, `edit-class-${id}`, `edit-just-${id}`);
             textarea.focus();
             autoResizeTextarea({ target: textarea });
         }

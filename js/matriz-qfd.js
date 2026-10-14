@@ -21,16 +21,21 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function loadData() {
-    requisitosCliente = qfdDB.getRequisitosCliente();
     // Recalcula: a importância dos RC pode ter mudado na Comparação depois da matriz
     qfdDB.calculateImportanciaProjeto();
+    requisitosCliente = qfdDB.getRequisitosCliente();
     requisitosProjeto = qfdDB.getRequisitosProjeto();
     relacoesFeitas = qfdDB.getMatrizQFDCompleta().length;
 }
 
 function setupMatrix() {
-    const hasData = requisitosCliente.length > 0 && requisitosProjeto.length > 0;
-    document.getElementById('insufficient-data').style.display = hasData ? 'none' : 'block';
+    const temDados = requisitosCliente.length > 0 && requisitosProjeto.length > 0;
+    // verificação da lista exigida pelo usuário e ainda não feita (ou desatualizada)
+    const bloqueada = temDados && qfdDB.getVerificacao().bloqueiaMatriz;
+    const hasData = temDados && !bloqueada;
+    document.getElementById('insufficient-data').style.display = temDados ? 'none' : 'block';
+    const aviso = document.getElementById('verificacao-pendente');
+    if (aviso) aviso.style.display = bloqueada ? 'block' : 'none';
     document.getElementById('qfd-section').style.display = hasData ? 'block' : 'none';
 
     const roofContainer = document.getElementById('qfd-roof-container');
@@ -40,6 +45,22 @@ function setupMatrix() {
         generateQFDMatrix();
         updateStatus();
     }
+    setupEscalaValorCliente();
+}
+
+/** Escolha do valor do requisito de cliente: pontuação do Mudge ou classes de 1 a 10 */
+function setupEscalaValorCliente() {
+    const select = document.getElementById('escala-valor-cliente');
+    if (!select || select.dataset.ligado) return;
+    select.dataset.ligado = '1';
+    select.value = qfdDB.getProjeto().escalaValorCliente;
+    select.addEventListener('change', () => {
+        qfdDB.setProjeto({ escalaValorCliente: select.value });
+        loadData();
+        generateQFDMatrix();
+        updateStatus();
+        showAlert(`Valor do requisito de cliente: ${ESCALAS_VALOR_CLIENTE[select.value]}. Importâncias recalculadas.`, 'info');
+    });
 }
 
 /** Telhado + matriz em uma única tabela para alinhamento perfeito das colunas RP */
@@ -89,7 +110,10 @@ function generateQFDMatrix() {
             <span class="rp-sentido">${getSentidoSymbol(rp.sentidoMelhoria)}</span>
         </th>`;
     });
-    html += '<th class="importance-header">Pontuação</th><th class="importance-header">Percentual (%)</th></tr>';
+    const classes = qfdDB.getProjeto().escalaValorCliente === 'classes';
+    html += `<th class="importance-header" data-tooltip="${escapeAttr(classes
+        ? 'Classe de 1 a 10 proporcional ao maior peso do Diagrama de Mudge (Reis, 2003). É o valor usado no cálculo.'
+        : 'Pontuação do Diagrama de Mudge. É o valor usado no cálculo.')}">${classes ? 'Valor (1–10)' : 'Pontuação'}</th><th class="importance-header">Percentual (%)</th></tr>`;
     html += '</thead><tbody>';
 
     requisitosCliente.forEach((rc, i) => {
@@ -102,7 +126,7 @@ function generateQFDMatrix() {
             const cellTip = `RC${i + 1} × RP${j + 1}: influência ${val || 'não definida'}\n\nComo avaliar (${FONTE_ROTEIRO}):\n${roteiro.join('\n')}`;
             html += `<td class="influence-cell" data-cliente="${rc.id}" data-projeto="${rp.id}" data-i="${i}" data-j="${j}" data-tooltip="${escapeAttr(cellTip)}" onclick="openInfluenceModal(this)">${val || ''}</td>`;
         });
-        html += `<td class="importance-value-cell">${(rc.importancia || 0).toFixed(1)}</td>`;
+        html += `<td class="importance-value-cell">${classes ? (rc.classe || 0) : (rc.importancia || 0).toFixed(1)}</td>`;
         html += `<td class="importance-percent-cell">${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
     });
 

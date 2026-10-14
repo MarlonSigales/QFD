@@ -418,6 +418,15 @@ suite('Caderno de ideias', () => {
         assert(qfdDB.importData(d), qfdDB.lastImportError);
         assertEqual(qfdDB.loadData().fechamento, criarFechamentoVazio());
     });
+    test('v9 → v10: verificação da lista vazia (não exige)', () => {
+        const d = {
+            requisitosCliente: [], requisitosProjeto: [], comparacaoCliente: [], correlacaoProjeto: [],
+            matrizQFD: [], especificacoesProjeto: [], metadata: { created: '2026-01-01', schemaVersion: 9 }
+        };
+        assert(qfdDB.importData(d), qfdDB.lastImportError);
+        assertEqual(qfdDB.loadData().verificacaoRP, criarVerificacaoVazia());
+        assertEqual(qfdDB.getVerificacao().bloqueiaMatriz, false);
+    });
 });
 
 suite('Projeto e envio por e-mail', () => {
@@ -842,6 +851,30 @@ function testarPagina(pagina) {
 
 suite('Páginas', () => {
     PAGINAS.forEach(p => test(p.arquivo.replace('../', ''), testarPagina(p)));
+    test('Requisitos de cliente: aviso de redação quando começa por verbo de função', async () => {
+        assertEqual(['Eliminar plantas daninhas', 'O produto deve permitir regulagem', 'Ser leve', 'Ter baixo custo',
+            'Fácil de usar', 'Estar sempre limpo', 'Regular a altura', 'Lugar para o operador']
+            .map(verboDeFuncao), ['eliminar', 'permitir', null, null, null, null, null, null]);
+        criarProjetoExemplo();
+        const iframe = await carregarPagina('../pages/requisitos-cliente.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            const campo = doc.getElementById('descricao-requisito');
+            const aviso = () => doc.querySelector('#form-requisito .aviso-redacao');
+            campo.value = 'Eliminar plantas daninhas';
+            campo.dispatchEvent(new win.Event('input'));
+            assert(aviso().style.display !== 'none' && /eliminar/.test(aviso().textContent), 'aviso não apareceu');
+            aviso().querySelector('button').click();
+            assertEqual(doc.getElementById('classificacao-requisito').value, 'funcao', 'não marcou como função');
+            assertEqual(aviso().style.display, 'none', 'aviso continua após marcar');
+            campo.value = 'Ser fácil de limpar';
+            doc.getElementById('classificacao-requisito').value = '';
+            campo.dispatchEvent(new win.Event('input'));
+            assertEqual(aviso().style.display, 'none', 'aviso indevido');
+        } finally {
+            iframe.remove();
+        }
+    });
     test('Requisitos de cliente: marcar como fora do QFD exige justificativa; relatório lista à parte', async () => {
         const { rc } = criarProjetoExemplo();
         let iframe = await carregarPagina('../pages/requisitos-cliente.html');
@@ -971,6 +1004,26 @@ suite('Páginas', () => {
             iframe.remove();
         }
     });
+    test('Fechamento: "Sugerir" preenche os passos da abstração a partir dos dados', async () => {
+        criarProjetoExemplo(); // RP3 * (1º), RP2 ↓ (2º), RP1 ↓ kg (3º)
+        qfdDB.setFuncaoGlobal({ nome: 'Eliminar plantas daninhas' });
+        const iframe = await carregarPagina('../pages/fechamento.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            const ordem = qfdDB.getEspecificacoesOrdenadas().map(e => e.requisito.descricao);
+            const p1 = win.sugerirPassoAbstracao(0);
+            assert(p1.includes('Fácil de usar por idosos') && p1.includes('Peso total (kg) (≤ 1,2 kg)'), 'passo 1: ' + p1);
+            assertEqual(win.sugerirPassoAbstracao(1).split('\n').length, 2, 'passo 2 sem o terço inferior');
+            assert(win.sugerirPassoAbstracao(2).includes('Custo de produção o menor possível'), 'passo 3 qualitativo');
+            assertEqual(win.sugerirPassoAbstracao(3).split('\n').length, 1, 'passo 4 só o terço superior');
+            assert(win.sugerirPassoAbstracao(4).startsWith('Eliminar plantas daninhas, com '), 'passo 5: ' + win.sugerirPassoAbstracao(4));
+            assert(ordem.length === 3, 'exemplo com 3 requisitos');
+            doc.querySelectorAll('.fechamento-sugerir')[4].click();
+            assertEqual(qfdDB.getFechamento().abstracao[4], win.sugerirPassoAbstracao(4), 'sugestão não foi salva');
+        } finally {
+            iframe.remove();
+        }
+    });
     test('Fechamento: formulação final e caixa-preta com entradas e saídas no relatório', async () => {
         criarProjetoExemplo();
         qfdDB.setPassoAbstracao(4, 'Eliminar plantas indesejadas na lavoura');
@@ -1032,6 +1085,62 @@ suite('Páginas', () => {
         } finally {
             iframe.remove();
         }
+    });
+    test('Verificação da lista: só bloqueia a Matriz se exigida; mudar a lista pede nova confirmação', async () => {
+        criarProjetoExemplo();
+        const matrizBloqueada = async () => {
+            const iframe = await carregarPagina('../pages/matriz-qfd.html');
+            try {
+                const doc = iframe.contentDocument;
+                return doc.getElementById('verificacao-pendente').style.display === 'block' && doc.getElementById('qfd-section').style.display === 'none';
+            } finally {
+                iframe.remove();
+            }
+        };
+        assert(!(await matrizBloqueada()), 'bloqueou sem o usuário exigir');
+        qfdDB.setVerificacao({ exigir: true });
+        assert(await matrizBloqueada(), 'não bloqueou com a verificação exigida');
+        let erro = '';
+        try { qfdDB.confirmarVerificacao(); } catch (e) { erro = e.message; }
+        assert(/6 critérios/.test(erro), 'confirmou sem os critérios');
+        const todos = {};
+        Object.keys(CRITERIOS_VERIFICACAO).forEach(c => { todos[c] = true; });
+        qfdDB.setVerificacao({ criterios: todos });
+        qfdDB.confirmarVerificacao();
+        assert(qfdDB.getVerificacao().atualizada && !(await matrizBloqueada()), 'verificada deveria liberar');
+        const novo = qfdDB.addRequisitoProjeto('Vida útil (anos)', 'up', 2);
+        assert(qfdDB.getVerificacao().bloqueiaMatriz, 'lista mudou: deveria pedir nova confirmação');
+        qfdDB.registrarDescarte(novo.descricao, 'Redundante com Peso total <kg>');
+        qfdDB.removeRequisitoProjeto(novo.id);
+        assert(qfdDB.getVerificacao().atualizada, 'voltou à lista confirmada');
+        const iframe = await carregarPagina('../pages/relatorio.html');
+        try {
+            const secao = iframe.contentDocument.querySelector('#report-content .report-verificacao');
+            assert(secao && secao.textContent.includes('Redundante com Peso total <kg>'), 'descarte no relatório');
+        } finally {
+            iframe.remove();
+        }
+    });
+    test('Matriz QFD: valor do requisito de cliente em classes de 1 a 10 (opção do projeto)', async () => {
+        const { rc, rp } = criarProjetoExemplo(); // Mudge: RC1 8 pts, RC2 1, RC3 0
+        assertEqual([classeValorCliente(0.5, 0.5), classeValorCliente(0.04, 0.5), classeValorCliente(0, 0.5)], [10, 1, 0]);
+        const ia = () => { qfdDB.calculateImportanciaProjeto(); return qfdDB.getRequisitosProjeto().map(r => r.importanciaAbsoluta); };
+        const infl = (i, j) => qfdDB.getMatrizQFD(rc[i].id, rp[j].id);
+        assertEqual(ia()[0], infl(0, 0) * 8 + infl(1, 0) * 1, 'pontuação (padrão)');
+        qfdDB.setProjeto({ escalaValorCliente: 'classes' });
+        assertEqual(qfdDB.getRequisitosCliente().map(r => r.classe), [10, 1, 0], 'classes');
+        assertEqual(ia()[0], infl(0, 0) * 10 + infl(1, 0) * 1, 'classes no cálculo');
+        const iframe = await carregarPagina('../pages/matriz-qfd.html');
+        try {
+            const doc = iframe.contentDocument;
+            assertEqual(doc.getElementById('escala-valor-cliente').value, 'classes');
+            assert([...doc.querySelectorAll('.importance-header')].some(th => th.textContent === 'Valor (1–10)'), 'cabeçalho');
+            assertEqual(doc.querySelector('.importance-value-cell').textContent, '10');
+        } finally {
+            iframe.remove();
+        }
+        qfdDB.setProjeto({ escalaValorCliente: 'xyz' });
+        assertEqual(qfdDB.getProjeto().escalaValorCliente, 'pontuacao', 'valor inválido volta ao padrão');
     });
     test('Dificuldade técnica: terço superior com dificuldade 5 é crítico nas Especificações, na Matriz e no relatório', async () => {
         criarProjetoExemplo();

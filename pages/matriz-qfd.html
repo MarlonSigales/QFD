@@ -126,6 +126,21 @@
             </div>
 
             <!-- Aviso se não há dados suficientes -->
+            <div id="verificacao-pendente" class="card alert-card" style="display: none;">
+                <div class="alert-content">
+                    <div class="alert-icon">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div class="alert-text">
+                        <h3>Verificação da lista pendente</h3>
+                        <p>Este projeto exige a verificação da lista de requisitos de projeto (Roozenburg &amp; Eekels, 1995) antes da Matriz QFD. Marque os critérios e confirme a verificação; se a lista mudar depois, confirme de novo.</p>
+                        <div class="alert-actions">
+                            <a href="requisitos-projeto.html#verificacao-card" class="btn btn-primary">Ir para a verificação</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="insufficient-data" class="card alert-card" style="display: none;">
                 <div class="alert-content">
                     <div class="alert-icon">
@@ -233,6 +248,13 @@
                         <button class="btn btn-sm btn-secondary" onclick="toggleDirections()" id="btn-toggle-directions">
                             <i class="fas fa-eye-slash"></i> Ocultar Sentidos
                         </button>
+                        <label class="escala-valor-cliente" title="Valor de cada requisito de cliente usado no cálculo da importância dos requisitos de projeto">
+                            Valor do requisito de cliente:
+                            <select id="escala-valor-cliente" class="form-control">
+                                <option value="pontuacao">Pontuação do Mudge</option>
+                                <option value="classes">Classes de 1 a 10 (Reis, 2003)</option>
+                            </select>
+                        </label>
                     </div>
                 </div>
 

@@ -56,18 +56,80 @@ function renderPassos() {
         const item = document.createElement('div');
         item.className = 'fechamento-passo';
         item.innerHTML = `
-            <label for="passo-${i}"><span class="fechamento-passo-num">${i + 1}</span> ${escapeHtml(p.titulo)}</label>
+            <div class="fechamento-passo-topo">
+                <label for="passo-${i}"><span class="fechamento-passo-num">${i + 1}</span> ${escapeHtml(p.titulo)}</label>
+                <button type="button" class="fechamento-sugerir" title="Preenche um rascunho a partir dos requisitos, do QFD e da função global; revise e edite"><i class="fas fa-magic"></i> Sugerir</button>
+            </div>
             <small class="form-text">${escapeHtml(p.dica)}</small>
-            <textarea id="passo-${i}" class="form-control" rows="3" maxlength="3000" data-passo="${i}"></textarea>`;
+            <textarea id="passo-${i}" class="form-control" rows="4" maxlength="3000" data-passo="${i}"></textarea>`;
         const campo = item.querySelector('textarea');
         campo.value = f.abstracao[i];
         campo.addEventListener('change', () => {
             qfdDB.setPassoAbstracao(i, campo.value);
             atualizarContagemPassos();
         });
+        item.querySelector('.fechamento-sugerir').addEventListener('click', () => {
+            const sugestao = sugerirPassoAbstracao(i);
+            if (!sugestao) { showAlert('Cadastre requisitos (e a função global, no 5º passo) para gerar a sugestão.', 'warning'); return; }
+            if (campo.value.trim() && campo.value.trim() !== sugestao && !confirm('Substituir o texto deste passo pela sugestão?')) return;
+            campo.value = sugestao;
+            qfdDB.setPassoAbstracao(i, sugestao);
+            atualizarContagemPassos();
+        });
         box.appendChild(item);
     });
     atualizarContagemPassos();
+}
+
+/**
+ * Rascunho automático de cada passo da abstração, a partir dos dados:
+ * 1) requisitos no QFD; 2) sem o terço inferior; 3) metas trocadas por
+ * expressões qualitativas pelo sentido de melhoria; 4) só o terço superior;
+ * 5) frase com a função global. É ponto de partida: o usuário revisa.
+ */
+function sugerirPassoAbstracao(indice) {
+    let esp = [];
+    try { esp = qfdDB.getEspecificacoesOrdenadas(); } catch (e) { esp = []; }
+    const rcs = qfdDB.getRequisitosCliente();
+    const total = esp.length;
+    const t1 = Math.ceil(total / 3), t2 = Math.ceil((2 * total) / 3);
+    const lista = itens => itens.map(t => `- ${t}`).join('\n');
+    // "Peso total (kg)" -> "Peso total"
+    const semUnidade = d => String(d).replace(/\s*\([^)]*\)\s*$/, '').trim();
+    const qualitativo = e => {
+        const nome = semUnidade(e.requisito.descricao);
+        if (e.requisito.sentidoMelhoria === 'down') return `${nome} o menor possível`;
+        if (e.requisito.sentidoMelhoria === 'up') return `${nome} o maior possível`;
+        return `${nome} adequado(a)`;
+    };
+    const metaTexto = e => (e.metaFormatada ? ` (${`${e.metaFormatada} ${e.unidadeMedida || ''}`.trim()})` : '');
+
+    switch (indice) {
+        case 0:
+            if (!rcs.length && !esp.length) return '';
+            return [
+                rcs.length ? `Requisitos de cliente:\n${lista(rcs.map(r => r.descricao))}` : '',
+                esp.length ? `Requisitos de projeto:\n${lista(esp.map(e => e.requisito.descricao + metaTexto(e)))}` : ''
+            ].filter(Boolean).join('\n\n');
+        case 1:
+            if (!esp.length) return '';
+            return lista(esp.slice(0, t2).map(e => e.requisito.descricao + metaTexto(e)));
+        case 2:
+            if (!esp.length) return '';
+            return lista(esp.slice(0, t2).map(qualitativo));
+        case 3:
+            if (!esp.length) return '';
+            return lista(esp.slice(0, t1).map(qualitativo));
+        case 4: {
+            const nome = qfdDB.getFechamento().funcaoGlobal.nome;
+            if (!nome && !esp.length) return '';
+            const essenciais = esp.slice(0, t1).map(qualitativo).map(t => t.charAt(0).toLowerCase() + t.slice(1));
+            const juntar = l => l.length > 1 ? `${l.slice(0, -1).join(', ')} e ${l[l.length - 1]}` : l.join('');
+            return `${nome || 'Cumprir a função global do produto'}${essenciais.length ? `, com ${juntar(essenciais)}` : ''}.`;
+        }
+        default:
+            return '';
+    }
 }
 
 function atualizarContagemPassos() {

@@ -119,7 +119,56 @@ function handleSubmitRequisito(event) {
     }
 }
 
+/** Cartão da verificação da lista (Roozenburg & Eekels, 1995) */
+function renderVerificacao() {
+    const box = document.getElementById('verificacao-criterios');
+    if (!box) return;
+    const v = qfdDB.getVerificacao();
+    box.innerHTML = '';
+    Object.entries(CRITERIOS_VERIFICACAO).forEach(([chave, c]) => {
+        const label = document.createElement('label');
+        label.className = 'verificacao-criterio';
+        label.innerHTML = `<input type="checkbox" data-criterio="${chave}"> <strong></strong> <small></small>`;
+        label.querySelector('strong').textContent = c.nome;
+        label.querySelector('small').textContent = c.dica;
+        const cb = label.querySelector('input');
+        cb.checked = !!v.criterios[chave];
+        cb.addEventListener('change', () => { qfdDB.setVerificacao({ criterios: { [chave]: cb.checked } }); renderVerificacao(); });
+        box.appendChild(label);
+    });
+
+    const status = document.getElementById('verificacao-status');
+    status.className = 'verificacao-status ' + (v.atualizada ? 'ok' : (v.confirmada ? 'desatualizada' : 'pendente'));
+    status.textContent = v.atualizada
+        ? `verificada em ${formatDate(v.confirmadoEm)}`
+        : (v.confirmada ? 'lista alterada depois da verificação' : 'não verificada');
+
+    const btn = document.getElementById('btn-confirmar-verificacao');
+    btn.disabled = !Object.keys(CRITERIOS_VERIFICACAO).every(c => v.criterios[c]);
+    btn.onclick = () => {
+        try { qfdDB.confirmarVerificacao(); showAlert('Verificação confirmada.', 'success'); } catch (e) { showAlert(escapeHtml(e.message), 'warning'); }
+        renderVerificacao();
+    };
+    const exigir = document.getElementById('verificacao-exigir');
+    exigir.checked = v.exigir;
+    exigir.onchange = () => { qfdDB.setVerificacao({ exigir: exigir.checked }); renderVerificacao(); };
+
+    const desc = document.getElementById('verificacao-descartados');
+    if (!v.descartados.length) { desc.innerHTML = ''; return; }
+    desc.innerHTML = `<h4>Requisitos descartados (${v.descartados.length})</h4><ul class="verificacao-lista-descartados"></ul>`;
+    const ul = desc.querySelector('ul');
+    v.descartados.forEach((d, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = '<strong></strong> — <span></span> <button type="button" class="btn-icon btn-delete" title="Remover do registro"><i class="fas fa-times"></i></button>';
+        li.querySelector('strong').textContent = d.descricao;
+        li.querySelector('span').textContent = d.motivo;
+        li.querySelector('button').addEventListener('click', () => { qfdDB.removerDescarte(i); renderVerificacao(); });
+        ul.appendChild(li);
+    });
+}
+
 function loadRequisitos() {
+    renderVerificacao();
     const requisitos = qfdDB.getRequisitosProjeto({ todos: true });
     const numeros = numerosNoQFD(requisitos);
     const listaContainer = document.getElementById('lista-requisitos');
@@ -341,6 +390,8 @@ function deleteRequisito(id) {
     
     if (confirm(confirmMessage)) {
         try {
+            const motivo = prompt('Motivo do descarte (opcional). Se informado, fica registrado na verificação da lista:', '');
+            if (motivo && motivo.trim()) qfdDB.registrarDescarte(requisito.descricao, motivo);
             qfdDB.removeRequisitoProjeto(id);
             showAlert('Requisito excluído com sucesso!', 'success');
             loadRequisitos();

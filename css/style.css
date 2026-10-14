@@ -2637,7 +2637,7 @@ body {
    Requisitos de Cliente (antes injetado por js/requisitos-cliente.js)
    ======================================================================== */
 
-:where(body.page-requisitos-cliente) .requisito-item {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-item {
     border: 1px solid #e9ecef;
     border-radius: 8px;
     margin-bottom: 1rem;
@@ -2645,18 +2645,18 @@ body {
     transition: box-shadow 0.3s ease;
 }
 
-:where(body.page-requisitos-cliente) .requisito-item:hover {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-item:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-:where(body.page-requisitos-cliente) .requisito-header {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-header {
     display: flex;
     align-items: flex-start;
     padding: 1rem;
     gap: 1rem;
 }
 
-:where(body.page-requisitos-cliente) .requisito-number {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-number {
     background: var(--qfd-verde);
     color: white;
     width: 40px;
@@ -2669,24 +2669,24 @@ body {
     flex-shrink: 0;
 }
 
-:where(body.page-requisitos-cliente) .requisito-content {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-content {
     flex: 1;
     min-width: 0;
 }
 
-:where(body.page-requisitos-cliente) .requisito-description {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-description {
     font-size: 1rem;
     line-height: 1.5;
     margin-bottom: 0.5rem;
     word-wrap: break-word;
 }
 
-:where(body.page-requisitos-cliente) .requisito-meta {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-meta {
     font-size: 0.875rem;
     color: #6c757d;
 }
 
-:where(body.page-requisitos-cliente) .requisito-observacao-preview {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-observacao-preview {
     font-size: 0.85rem;
     color: var(--qfd-verde);
     background: var(--qfd-verde-claro);
@@ -2697,7 +2697,7 @@ body {
     line-height: 1.4;
 }
 
-:where(body.page-requisitos-cliente) .requisito-actions {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-actions {
     display: flex;
     gap: 0.5rem;
     flex-shrink: 0;
@@ -2723,7 +2723,7 @@ body {
     color: #d32f2f;
 }
 
-:where(body.page-requisitos-cliente) .requisito-edit-form {
+:where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-edit-form {
     padding: 0 1rem 1rem 1rem;
     border-top: 1px solid #e9ecef;
     margin-top: 1rem;
@@ -2832,12 +2832,12 @@ body {
 }
 
 @media (max-width: 768px) {
-    :where(body.page-requisitos-cliente) .requisito-header {
+    :where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-header {
         flex-direction: column;
         gap: 0.5rem;
     }
 
-    :where(body.page-requisitos-cliente) .requisito-actions {
+    :where(body.page-requisitos-cliente, body.page-requisitos-projeto) .requisito-actions {
         align-self: flex-end;
     }
 
@@ -4921,4 +4921,133 @@ tr.spec-critico > td:first-child {
     .fechamento-form {
         flex-direction: column;
     }
+}
+
+/* Aviso de redação do requisito de cliente (ser/ter/estar + substantivo) */
+.aviso-redacao {
+    margin-top: 0.4rem;
+    padding: 0.45rem 0.7rem;
+    border-left: 4px solid #d97706;
+    background: #fff8eb;
+    color: #7a4a05;
+    font-size: 0.85rem;
+    border-radius: 4px;
+}
+
+.aviso-redacao-btn {
+    margin-left: 0.3rem;
+    border: 1px solid #d97706;
+    background: white;
+    color: #7a4a05;
+    border-radius: 4px;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.aviso-redacao-btn:hover {
+    background: #d97706;
+    color: white;
+}
+
+.fechamento-passo-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+}
+
+.fechamento-sugerir {
+    border: 1px solid var(--qfd-verde);
+    background: white;
+    color: var(--qfd-teal);
+    border-radius: 4px;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.fechamento-sugerir:hover {
+    background: var(--qfd-verde);
+    color: white;
+}
+
+.escala-valor-cliente {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 0.6rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.escala-valor-cliente select {
+    width: auto;
+    padding: 0.2rem 0.5rem;
+}
+
+/* Verificação da lista de requisitos de projeto (Roozenburg & Eekels, 1995) */
+.verificacao-corpo {
+    padding: 0 1rem 1rem;
+}
+
+.verificacao-dica {
+    color: #5b6b6a;
+    margin-bottom: 0.6rem;
+}
+
+.verificacao-criterios {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.5rem;
+}
+
+.verificacao-criterio {
+    border: 1px solid #e3e8e7;
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.verificacao-criterio small {
+    display: block;
+    color: #5b6b6a;
+    margin-top: 0.15rem;
+}
+
+.verificacao-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin: 0.8rem 0;
+}
+
+.verificacao-exigir {
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.verificacao-status {
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 0.1rem 0.6rem;
+    margin-left: 0.4rem;
+}
+
+.verificacao-status.ok { background: #dafbe1; color: #116329; }
+.verificacao-status.pendente { background: #eef1f4; color: #5b6b6a; }
+.verificacao-status.desatualizada { background: #fff8eb; color: #7a4a05; }
+
+.verificacao-lista-descartados {
+    margin: 0.3rem 0 0 1.2rem;
+}
+
+.report-verificacao-criterios {
+    list-style: none;
+    padding: 0;
+    margin: 0.3rem 0 0.6rem;
 }

@@ -1,6 +1,6 @@
 QFD - QA
 Site: https://marlonsigales.github.io/QFD/index.html
-Atualizado em 13/10/2026 — dados na versão 9 — 89 testes automáticos
+Atualizado em 14/10/2026 — dados na versão 10 — 94 testes automáticos
 
 Legenda: [fazer] pendente · [aguardando] depende de material externo ·
          [RESOLVIDO] feito e testado · [rejeitado] não será feito
@@ -8,99 +8,91 @@ Legenda: [fazer] pendente · [aguardando] depende de material externo ·
 ==========================================================================================
 RESUMO
 
-  Por fazer ............ 7   (e 15 ideias novas na seção 1b, para avaliar)
-  Resolvidos ........... 29
-  Rejeitados ........... 11  (9 "por hora", podem voltar)
+  Por fazer ............ 1   (uso em celular, sem prioridade)
+  Aguardando ........... 1   (hierarquização com telhado)
+  Futuro ............... 1   (P14)
+  Resolvidos ........... 43
+  Rejeitados ........... 16  (por hora ou definitivos)
 
 ==========================================================================================
-1. POR FAZER (em ordem de prioridade)
+1. POR FAZER (do mais fácil para o mais difícil)
 
-[fazer] linhas abaixo do qfd, onde se analise o somatório das linhas, verificando a pontuação de cada requisito de projeto, verificando tanto somatório quanto percentual normalizado.
+[RESOLVIDO] 1. Aviso de redação no requisito de cliente: deve ser "ser/ter/estar +
+            substantivo" (Fonseca, 2000). Com outro verbo ("eliminar plantas") o
+            requisito provavelmente é uma função: avisar ao cadastrar/editar e
+            sugerir marcá-lo como "formador de função". Só aviso, não bloqueia.
+            Feito: aviso abaixo da descrição (cadastro e edição) quando começa por
+            verbo no infinitivo que não é ser/ter/estar/possuir/apresentar/poder
+            (ignora "O produto deve..."); botão "Marcar como formador de função".
 
-[RESOLVIDO] P05 - Ligar a análise da concorrência às Especificações: mostrar o melhor
-            valor dos concorrentes abaixo da meta, botão "Usar como meta" e aviso
-            quando a meta está abaixo do melhor concorrente. Só para requisitos ↑/↓
-            com valores técnicos de concorrentes; "Usar como meta" grava ≥ (↑) ou
-            ≤ (↓) com o valor do melhor concorrente.
+[RESOLVIDO] 2. Abstração automática no Fechamento (decisão: "se houver forma
+            automática, fazer"): botão "Sugerir" em cada passo que preenche um
+            rascunho a partir dos dados — passo 1/2: requisitos no QFD (os fora do
+            QFD e os do terço inferior saem); passo 3: metas trocadas por
+            expressões qualitativas pelo sentido (↓ "peso total reduzido", ↑
+            "altura de queda elevada"); passo 4: só os do terço superior; passo 5:
+            frase com a função global. O usuário revisa e edita.
+            Feito: botão "Sugerir" em cada passo (pede confirmação antes de
+            substituir um texto já escrito).
 
-[RESOLVIDO] P16 - Usar a dificuldade técnica: linha na Matriz QFD, coluna nas
-            Especificações e lista de "requisitos críticos" no relatório. Selo 1-5
-            colorido; requisito do terço superior com dificuldade 4 ou 5 ganha
-            "Atenção: importante e difícil" nas Especificações e entra em "Requisitos
-            críticos" (seção Requisitos de Projeto do relatório). Pesos inalterados.
+[RESOLVIDO] 3. Valor do requisito de cliente em classes de 1 a 10 (campo 2 da casa da
+            qualidade), convertido do % do Mudge, como usado pelo Roger/Reis
+            (2003), em vez da pontuação bruta. Opção por projeto (padrão: % atual).
+            Feito: na Matriz QFD, "Valor do requisito de cliente": Pontuação do
+            Mudge (padrão) ou Classes de 1 a 10; recalcula na hora e aparece na
+            matriz e no relatório. Fórmula adotada: classe = arredondar(10 × peso /
+            maior peso), mínimo 1 — CONFIRMAR COM O ROGER se é a mesma de Reis.
 
-[RESOLVIDO] P13 - Estado da técnica e referências (patentes, normas, artigos) ligados
-            aos requisitos. Nova página "Referências" (barra lateral -> Apoio):
-            tipo, título, nº, link (só vira link se for http/https), data de
-            consulta, resumo e requisitos ligados (muitos-para-muitos). O cartão do
-            requisito mostra as referências; Dashboard ganhou o cartão "Estado da
-            técnica"; relatório ganhou a seção "Estado da técnica e referências".
-            Dados na versão 8.
+[RESOLVIDO] 4. Verificação da lista de requisitos de projeto (Roozenburg & Eekels,
+            1995): validade, completude, operacionalidade, não redundância,
+            concisão e praticabilidade — checklist antes de ir para a matriz,
+            registrando os requisitos descartados e o motivo (30 → 26 no Roger).
+            Decisão: só obriga se o usuário marcar a opção no projeto.
+            Feito: cartão "Verificação da lista" em Requisitos de Projeto (6
+            critérios + "Confirmar verificação" + "Exigir a verificação antes da
+            Matriz QFD"). Exigida e não confirmada (ou lista alterada depois), a
+            Matriz mostra o aviso em vez da tabela. Ao excluir um requisito, o
+            motivo informado fica em "Requisitos descartados". Seção no relatório.
+            Dados na versão 10.
 
-[RESOLVIDO] P15 - Fechamento: abstração da lista de requisitos e função global
-            (caixa-preta). Nova etapa 9 "Fechamento" (o Relatório passou a 10):
-            lista de requisitos para consulta, abstração em 5 passos, formulações
-            do problema da mais restrita à mais ampla (com a adotada marcada) e
-            função global com entradas/saídas de energia, material e sinal,
-            desenhada em SVG (contínua, dupla e tracejada). Relatório ganhou a
-            seção "Formulação do problema e função global". Dados na versão 9.
+[fazer] remover citações de referências bibliográficas (ex: "Roger/Reis (2003)", "Roozenburg & Eekels, 1995") do texto final, mantendo apenas a descrição técnica dos procedimentos.
 
-[fazer sem prioridade] Uso das matrizes em celular.
+[fazer sem prioridade] 5. Uso das matrizes em celular.
+
+[ainda sem saber] Hierarquização "com telhado" (campo 8 da Fig. 10): telhado com
+            pesos ++ = +5, + = +1, - = -1, -- = -5 e uma segunda lista de
+            importância, comparada por terços (Quadros 5 a 7), com a posição com
+            telhado ao lado da posição sem telhado nos quadros do relatório.
+            Precisa confirmar com o Roger a fórmula exata (Reis, 2003) para
+            reproduzir os valores da Fig. 36.
 
 [futuro] P14 - Módulo de planejamento do produto. (prompt abaixo)
 
 ==========================================================================================
-1b. IDEIAS PARA AVALIAR (tiradas da tese do Roger: Spagnolo, 2011, e do
-    "QFD preenchimento") — marque [fazer] ou [rejeitado] em cada uma
+1b. RESOLVIDOS RECENTES (13/10/2026)
 
---- Projeto informacional e QFD (da mais simples para a mais complexa) --------------------
+[RESOLVIDO] P05 - Concorrência nas Especificações: melhor valor dos concorrentes
+            abaixo da meta, botão "Usar como meta" (grava ≥ para ↑, ≤ para ↓) e
+            aviso quando a meta está abaixo do melhor concorrente.
 
-[ideia] Aviso de redação no requisito de cliente: deve ser "ser/ter/estar +
-            substantivo" (Fonseca, 2000). Com outro verbo ("eliminar plantas") o
-            requisito provavelmente é uma função: o sistema sugere marcá-lo como
-            "formador de função".
+[RESOLVIDO] P16 - Dificuldade técnica: linha na Matriz QFD, coluna nas
+            Especificações e lista de "requisitos críticos" no relatório (terço
+            superior com dificuldade 4 ou 5). Pesos inalterados.
 
-[ideia] Diagrama de Mudge com letras como no Roger (A = pouco, B = médio,
-            C = muito mais importante) e a coluna S/% do diagrama (Fig. 35).
-            Obs.: no texto da tese a ordem das letras está invertida em relação
-            à tabela da Fig. 35; a tabela é a que vale.
+[RESOLVIDO] P13 - Estado da técnica e referências: página "Referências" (tipo,
+            título, nº, link, data de consulta, resumo, requisitos ligados), no
+            cartão do requisito, no Dashboard e no relatório. Dados na versão 8.
 
-[ideia] Requisitos de cliente por fase do ciclo de vida (projeto, produção,
-            comercialização, uso: regulagem/operação/manutenção) e tipo de cliente
-            (interno, intermediário, externo) — Quadros 2 e 4. Lista e relatório
-            agrupados por fase; aviso de fase sem nenhum requisito.
+[RESOLVIDO] P15 - Fechamento (etapa 9; Relatório passou a 10): abstração em 5
+            passos, formulações do problema com a adotada e função global em
+            caixa-preta SVG (energia contínua, material dupla, sinal tracejada).
+            Seção no relatório. Dados na versão 9.
 
-[ideia] Valor do requisito de cliente em classes de 1 a 10 (campo 2 da casa da
-            qualidade), convertido do % do Mudge, como usado pelo Roger/Reis
-            (2003), em vez da pontuação bruta. Opção por projeto.
+[RESOLVIDO] Coluna "Forma de avaliação" nas Especificações (com sugestões).
 
-[ideia] Escala das relações da matriz configurável: o Roger usa fraco 1 /
-            médio 3 / forte 5; o sistema usa 1 / 3 / 9. Opção por projeto (muda os
-            pesos; precisa avisar e recalcular).
-
-[ideia] Hierarquização "com telhado" (campo 8 da Fig. 10): telhado com pesos
-            ++ = +5, + = +1, - = -1, -- = -5 e uma segunda lista de importância.
-            Comparar as duas listas por terços (Fonseca, 2000; Quadros 5 a 7) e
-            destacar os requisitos que mudam de terço. Precisa confirmar com o
-            Roger a fórmula exata (Reis, 2003) para reproduzir os valores da Fig. 36.
-
-[ideia] Verificação da lista de requisitos de projeto (Roozenburg & Eekels,
-            1995): validade, completude, operacionalidade, não redundância,
-            concisão e praticabilidade — checklist antes de ir para a matriz,
-            registrando os requisitos descartados e o motivo (30 → 26 no Roger).
-
-[ideia] Classificar cada requisito de projeto pelos atributos de Fonseca (2000):
-            funcionamento, econômico, segurança, ciclo de vida, geométricos,
-            energéticos, controle (Fig. 9 e 34). É uma alternativa às 17 categorias
-            de Pahl & Beitz da P04 (rejeitada por hora); mostra áreas sem requisito.
-
-[ideia] Registro da coleta de necessidades: clientes entrevistados, questionário
-            (perguntas), respostas resumidas e cálculo do tamanho da amostra
-            (Gil, 1999, eq. 1). Cada necessidade fica ligada aos requisitos que gerou.
-
-[ideia] Abstração orientada em 5 passos e função global com entradas e saídas de
-            energia, material e sinal (Fig. 37, Quadro 9 e Fig. 38) — o exemplo do
-            Roger mostra o formato pronto para a P15.
+[RESOLVIDO] Lista de Requisitos de Projeto sem estilo (número, cartões e botões
+            soltos): as regras de CSS da lista valiam só para Requisitos de
+            Cliente; agora valem para as duas páginas.
 
 --- Relatório final ----------------------------------------------------------------------
 
@@ -122,10 +114,6 @@ RESUMO
             de Projeto: um quadro por terço (posição, ID, requisito, sentido, imp.
             rel., dificuldade). A justificativa é escrita nas Especificações
             (abaixo do quadro) e sai no relatório.
-
-[aguardando Roger] Posição "com telhado" ao lado da posição sem telhado nos
-            quadros dos terços (Quadros 5 a 7). Depende da fórmula de Reis (2003)
-            — ver a ideia "Hierarquização com telhado" na seção 1b.
 
 [RESOLVIDO] Estrutura de documento técnico: capa (título, equipe, instituição,
             data, cliente), sumário. Dashboard -> "Projeto" ganhou Cliente,
@@ -255,6 +243,14 @@ RESUMO
 ==========================================================================================
 3. REJEITADOS
 
+[rejeitado] Diagrama de Mudge com letras (A/B/C) como no Roger (Fig. 35).
+[rejeitado] Escala das relações da matriz configurável (Roger: 1/3/5).
+[rejeitado por hora] Requisitos de cliente por fase do ciclo de vida e tipo de
+            cliente (Quadros 2 e 4).
+[rejeitado por hora] Atributos de Fonseca (2000) nos requisitos de projeto.
+[rejeitado por hora] Registro da coleta de necessidades (entrevistas,
+            questionário, tamanho da amostra).
+
 [rejeitado] P01 - Exigência ou Desejo.
 [rejeitado] P12 - Listas parciais por departamento.
 [rejeitado por hora] P03 - Origem, responsável e revisões da lista.
@@ -303,15 +299,25 @@ Dica: antes de começar, exporte um backup (Backup & Export -> Exportar Backup).
 [ ] 13. Exportar backup JSON, limpar os dados e importar -> projeto volta igual.
 [ ] 14. Importar um backup antigo (antes de out/2026) -> metas convertidas e nada
        perdido.
+[ ] 15. Especificações: dificuldade 5 num requisito do terço superior -> aviso
+       "importante e difícil"; melhor concorrente e "Usar como meta"; forma de
+       avaliação; justificativa da hierarquização.
+[ ] 16. Referências: norma ligada a 2 requisitos -> aparece nos 2 cartões e no
+       relatório.
+[ ] 17. Fechamento: 5 passos, 2 formulações (marcar a adotada) e função global
+       com entradas/saídas -> caixa-preta na página e no relatório.
+[ ] 18. Relatório: capa, sumário, terços em quadros, Mudge completo e quadro de
+       especificações em folha deitada no PDF.
 
-Testes automáticos (89): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
+Testes automáticos (94): powershell -ExecutionPolicy Bypass -File tests\rodar-testes.ps1
 
 ==========================================================================================
 5. PRÓXIMOS PASSOS
 
 - Fazer o commit e o git push; conferir o site publicado e o roteiro acima.
 - Conferir em Settings -> Pages do repositório se o GitHub Pages está ativo.
-- Enviar o documento do Roger (item [aguardando]).
+- Confirmar com o Roger a fórmula da hierarquização com telhado (Reis, 2003).
+- Itens 1 a 4 da seção 1 feitos em 14/10/2026; falta o 5 (celular).
 - P05, P16, P13 e P15 feitos em 13/10/2026 (prompts mantidos abaixo como registro).
 
 ==========================================================================================
@@ -324,8 +330,8 @@ Como usar:
   do item e o commit.
 - Feitos e removidos daqui: P02 (metas) e P10 (caderno de ideias).
   Rejeitados e removidos: P01 e P12.
-- A estrutura dos dados está na versão 9: um prompt que mude a estrutura deve
-  criar a versão 10 (SCHEMA_VERSION e SCHEMA_MIGRATIONS em js/database.js).
+- A estrutura dos dados está na versão 10: um prompt que mude a estrutura deve
+  criar a versão 11 (SCHEMA_VERSION e SCHEMA_MIGRATIONS em js/database.js).
 - Referência: Pahl, Beitz, Feldhusen, Grote - Engineering Design, 3ª ed.
   (Springer, 2007). As seções citadas estão em cada prompt.
 

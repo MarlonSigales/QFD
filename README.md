@@ -22,15 +22,15 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
 
 | # | Página | O que faz |
 |---|--------|-----------|
-| 1 | Requisitos de Cliente | Cadastro das necessidades do cliente, com texto explicativo opcional |
+| 1 | Requisitos de Cliente | Cadastro das necessidades do cliente, com texto explicativo opcional; aviso quando a redação não segue "ser/ter/estar + substantivo" (provável formador de função) |
 | 2 | Comparação Cliente | Diagrama de Mudge: comparação par a par (1, 3 ou 5) e hierarquização dos requisitos |
-| 3 | Requisitos de Projeto | Características técnicas, sentido de melhoria (↑ ↓ \*), dificuldade técnica (1–5) e texto explicativo |
+| 3 | Requisitos de Projeto | Características técnicas, sentido de melhoria (↑ ↓ \*), dificuldade técnica (1–5) e texto explicativo; verificação da lista (Roozenburg & Eekels, 1995), que pode ser exigida antes da Matriz, com registro dos requisitos descartados |
 | 4 | Correlação Projeto | Telhado da casa: correlações `++`, `+`, `0`, `-` e `--` entre requisitos de projeto |
-| 5 | Matriz QFD | Relação cliente × projeto (0, 1, 3 ou 9); importância absoluta, relativa e peso; linha com a dificuldade técnica |
+| 5 | Matriz QFD | Relação cliente × projeto (0, 1, 3 ou 9); importância absoluta, relativa e peso; linha com a dificuldade técnica; valor do requisito de cliente pela pontuação do Mudge ou em classes de 1 a 10 (opção do projeto) |
 | 6 | Especificações | Requisitos de projeto na ordem do QFD, com unidade, meta (mínimo ≥, máximo ≤, nominal = com tolerância ± ou intervalo; o tipo vem sugerido pelo sentido de melhoria), forma de avaliação (teste de campo, bancada, cálculo...), texto explicativo e aspectos indesejáveis (vindos das correlações `--`); abaixo da meta, o melhor valor dos concorrentes (Avaliação Competitiva), com "Usar como meta" e aviso quando a meta fica atrás; coluna e destaque da dificuldade técnica |
 | 7 | Avaliação Competitiva | Depois do QFD: notas dos clientes (1 a 5) para o nosso produto e os concorrentes, meta, índice de melhoria e prioridade; valores técnicos medidos de cada produto comparados com as metas das especificações; gráfico, pontos fortes, pontos a melhorar e inconsistências |
 | 8 | Atendimento aos Requisitos | Quanto os requisitos de projeto atendem a cada requisito de cliente: cobertura na matriz, metas atingidas (valor medido × meta) e diagnóstico |
-| 9 | Fechamento | Abstração da lista de requisitos em 5 passos, formulações do problema da mais restrita à mais ampla (com a adotada) e função global como caixa-preta, com entradas e saídas de energia, material e sinal (Pahl & Beitz, 6.2 e 6.3.1) |
+| 9 | Fechamento | Abstração da lista de requisitos em 5 passos, formulações do problema da mais restrita à mais ampla (com a adotada) e função global como caixa-preta, com entradas e saídas de energia, material e sinal (Pahl & Beitz, 6.2 e 6.3.1); botão "Sugerir" gera um rascunho de cada passo a partir dos dados |
 | 10 | Relatório PDF | Relatório configurável com as seções escolhidas, prévia e geração de PDF: capa de página inteira e sumário numerado, Diagrama de Mudge completo e quadro de especificações no formato do Quadro 8 (Spagnolo, 2011) em folha deitada |
 | — | Caderno de Ideias | Ideias de solução (ligadas a requisitos, com status) e falhas analisadas de produtos existentes, que geram requisitos neutros; fora da lista de requisitos (Pahl & Beitz, 5.4). Botão 💡 em cada requisito para registro rápido; anexo no relatório |
 | — | Referências | Estado da técnica (Pahl & Beitz, 3.1.4): patentes, normas, regulamentos, artigos, produtos e sites consultados, com link, data de consulta, resumo e os requisitos ligados (aparecem no cartão do requisito e no relatório) |
@@ -46,7 +46,8 @@ Sistema web para criação de QFD (Casa da Qualidade), voltado para engenheiros 
 ## Cálculos
 
 - **Peso do requisito de cliente:** pontuação no Diagrama de Mudge, normalizada para somar 100%.
-- **Importância absoluta do requisito de projeto:** `IA(j) = Σ peso_cliente(i) × influência(i,j)`.
+- **Valor do requisito de cliente na matriz:** a pontuação do Mudge (padrão) ou a classe de 1 a 10 = arredondar(10 × peso ÷ maior peso), mínimo 1.
+- **Importância absoluta do requisito de projeto:** `IA(j) = Σ valor_cliente(i) × influência(i,j)`.
 - **Requisito crítico:** terço superior da hierarquia e dificuldade técnica 4 ou 5. É destacado nas Especificações e listado no relatório; não altera os pesos.
 - **Peso relativo:** `PR(j) = IA(j) / Σ IA`. O ranking ordena por importância absoluta e divide os requisitos em terços (superior, médio, inferior).
 - **Avaliação competitiva:**

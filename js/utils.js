@@ -595,6 +595,70 @@ function htmlCampoClassificacao(idTipo, idJust, req = {}) {
         </div>`;
 }
 
+// ============================================================================
+// REDAÇÃO DO REQUISITO DE CLIENTE (Fonseca, 2000)
+// ============================================================================
+
+/** Palavras do início que não mudam a análise ("O produto deve ...") */
+const INICIO_NEUTRO = ['o', 'a', 'os', 'as', 'produto', 'equipamento', 'maquina', 'sistema', 'que',
+    'deve', 'devera', 'devem', 'deverao', 'precisa', 'precisam', 'tem', 'de'];
+/** Verbos aceitos pela regra "ser/ter/estar + substantivo" (e equivalentes) */
+const VERBOS_REQUISITO = ['ser', 'ter', 'estar', 'possuir', 'apresentar', 'poder'];
+/** Palavras terminadas em -ar/-er/-ir que não são verbos */
+const NAO_VERBOS = ['lugar', 'familiar', 'solar', 'popular', 'regular', 'similar', 'particular', 'mulher',
+    'colher', 'prazer', 'auxiliar', 'escolar', 'militar', 'nuclear', 'linear', 'modular', 'celular', 'par', 'mar', 'bar'];
+
+/**
+ * Requisito de cliente deve ser "ser/ter/estar + substantivo". Se começar por
+ * outro verbo no infinitivo ("eliminar plantas"), provavelmente descreve uma
+ * função. Retorna o verbo encontrado ou null.
+ */
+function verboDeFuncao(texto) {
+    const palavras = String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z\s-]/g, ' ').split(/\s+/).filter(Boolean);
+    while (palavras.length && INICIO_NEUTRO.includes(palavras[0])) palavras.shift();
+    const p = palavras[0];
+    if (!p || VERBOS_REQUISITO.includes(p) || NAO_VERBOS.includes(p)) return null;
+    return /^[a-z]{2,}(ar|er|ir)(-se)?$/.test(p) ? p : null;
+}
+
+/**
+ * Mostra, abaixo do campo de descrição, o aviso de redação e o botão que marca
+ * o requisito como formador de função. Só aviso: não impede salvar.
+ */
+function ligarAvisoRedacao(campo, idClassificacao, idJust) {
+    if (!campo) return;
+    let aviso = campo.parentElement.querySelector('.aviso-redacao');
+    if (!aviso) {
+        aviso = document.createElement('div');
+        aviso.className = 'aviso-redacao';
+        aviso.style.display = 'none';
+        campo.insertAdjacentElement('afterend', aviso);
+    }
+    const atualizar = () => {
+        const verbo = verboDeFuncao(campo.value);
+        const tipo = document.getElementById(idClassificacao);
+        if (!verbo || (tipo && tipo.value)) { aviso.style.display = 'none'; return; }
+        aviso.style.display = '';
+        aviso.innerHTML = `<i class="fas fa-spell-check"></i> Requisito de cliente deve ser "ser/ter/estar + substantivo" (Fonseca, 2000).
+            Começando por "<strong></strong>", ele provavelmente descreve uma função.
+            <button type="button" class="aviso-redacao-btn">Marcar como formador de função</button>`;
+        aviso.querySelector('strong').textContent = verbo;
+        aviso.querySelector('button').addEventListener('click', () => {
+            if (!tipo) return;
+            tipo.value = 'funcao';
+            toggleJustificativaClassificacao(idClassificacao, idJust);
+            aviso.style.display = 'none';
+            const just = document.getElementById(idJust);
+            if (just) just.focus();
+        });
+    };
+    campo.addEventListener('input', atualizar);
+    const tipo = document.getElementById(idClassificacao);
+    if (tipo) tipo.addEventListener('change', atualizar);
+    atualizar();
+}
+
 function toggleJustificativaClassificacao(idTipo, idJust) {
     const tipo = document.getElementById(idTipo);
     const box = document.getElementById(`${idJust}-box`);

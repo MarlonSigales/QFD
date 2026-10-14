@@ -25,7 +25,7 @@
  * Ao mudar a estrutura, incremente este número e adicione a migração
  * correspondente em SCHEMA_MIGRATIONS.
  */
-const SCHEMA_VERSION = 9;
+const SCHEMA_VERSION = 10;
 
 /** ID fixo do nosso produto na avaliação competitiva */
 const PRODUTO_NOSSO_ID = 'nosso';
@@ -204,6 +204,24 @@ const STATUS_IDEIA = { nova: 'Nova', promissora: 'Promissora', descartada: 'Desc
  */
 const TIPOS_FLUXO = { energia: 'Energia', material: 'Material', sinal: 'Sinal' };
 
+/**
+ * Verificação da lista de requisitos de projeto (Roozenburg & Eekels, 1995,
+ * como em Spagnolo, 2011) antes da Matriz QFD. Só bloqueia a Matriz se o
+ * usuário marcar "exigir".
+ */
+const CRITERIOS_VERIFICACAO = {
+    validade: { nome: 'Validade', dica: 'Cada requisito diz respeito a uma necessidade real do cliente ou a uma restrição do projeto.' },
+    completude: { nome: 'Completude', dica: 'Todas as necessidades dos clientes estão cobertas por algum requisito de projeto.' },
+    operacionalidade: { nome: 'Operacionalidade', dica: 'Cada requisito é mensurável (tem unidade e pode ter uma meta verificável).' },
+    naoRedundancia: { nome: 'Não redundância', dica: 'Não há dois requisitos medindo a mesma coisa.' },
+    concisao: { nome: 'Concisão', dica: 'A lista tem só os requisitos necessários, escritos de forma curta e clara.' },
+    praticabilidade: { nome: 'Praticabilidade', dica: 'É possível medir e atingir cada requisito com os recursos do projeto.' }
+};
+
+function criarVerificacaoVazia() {
+    return { exigir: false, criterios: {}, confirmadoEm: '', idsConfirmados: [], descartados: [] };
+}
+
 function criarFluxosVazios() {
     return { energia: [], material: [], sinal: [] };
 }
@@ -231,7 +249,21 @@ function criarCadernoVazio() {
 
 /** Dados gerais do projeto: nome e e-mails de quem recebe o backup */
 function criarProjetoVazio() {
-    return { nome: '', emails: [], cliente: '', instituicao: '', equipe: [], justificativaHierarquia: '' };
+    return { nome: '', emails: [], cliente: '', instituicao: '', equipe: [], justificativaHierarquia: '', escalaValorCliente: 'pontuacao' };
+}
+
+/**
+ * Valor do requisito de cliente usado na Matriz QFD (campo 2 da casa da
+ * qualidade): 'pontuacao' = soma do Diagrama de Mudge (padrão);
+ * 'classes' = classe de 1 a 10 proporcional ao maior peso, como em
+ * Reis (2003) / Spagnolo (2011).
+ */
+const ESCALAS_VALOR_CLIENTE = { pontuacao: 'Pontuação do Mudge', classes: 'Classes de 1 a 10' };
+
+/** Classe de 1 a 10 de um peso, proporcional ao maior peso (sem peso: 0) */
+function classeValorCliente(peso, pesoMax) {
+    if (!(peso > 0) || !(pesoMax > 0)) return 0;
+    return Math.max(1, Math.round((10 * peso) / pesoMax));
 }
 
 /**
@@ -395,6 +427,11 @@ const SCHEMA_MIGRATIONS = {
         if (!data.cadernoIdeias || typeof data.cadernoIdeias !== 'object') data.cadernoIdeias = criarCadernoVazio();
     },
 
+    // v10: verificação da lista de requisitos de projeto (Roozenburg & Eekels)
+    10(data) {
+        if (!data.verificacaoRP || typeof data.verificacaoRP !== 'object') data.verificacaoRP = criarVerificacaoVazia();
+    },
+
     // v9: fechamento (abstração, formulação do problema e função global)
     9(data) {
         if (!data.fechamento || typeof data.fechamento !== 'object') data.fechamento = criarFechamentoVazio();
@@ -461,6 +498,7 @@ class QFDDatabase {
             cadernoIdeias: criarCadernoVazio(),
             referencias: [],
             fechamento: criarFechamentoVazio(),
+            verificacaoRP: criarVerificacaoVazia(),
             metadata: {
                 created: new Date().toISOString(),
                 lastModified: new Date().toISOString(),
@@ -966,8 +1004,22 @@ class QFDDatabase {
         requisitos.forEach(req => {
             req.peso = totalImportancia > 0 ? req.importancia / totalImportancia : 0;
         });
-        
+        this._atualizarClasses(data.requisitosCliente);
+
         this.saveData(data);
+    }
+
+    /** Classe de 1 a 10 de cada requisito de cliente (fora do QFD: 0) */
+    _atualizarClasses(requisitosCliente) {
+        const noQFD = requisitosCliente.filter(estaNoQFD);
+        const pesoMax = Math.max(0, ...noQFD.map(r => r.peso || 0));
+        requisitosCliente.forEach(r => { r.classe = estaNoQFD(r) ? classeValorCliente(r.peso, pesoMax) : 0; });
+    }
+
+    /** Valor do requisito de cliente na Matriz, conforme a escala escolhida no projeto */
+    _valorCliente(data, rc) {
+        const escala = data.projeto && data.projeto.escalaValorCliente;
+        return escala === 'classes' ? (rc.classe || 0) : (rc.importancia || 0);
     }
 
     // ========================================================================
@@ -1111,6 +1163,8 @@ class QFDDatabase {
             r.importanciaAbsoluta = 0; r.importanciaRelativa = 0; r.pesoRelativo = 0;
         });
         
+        this._atualizarClasses(data.requisitosCliente);
+
         // Calcula importância absoluta para cada requisito de projeto
         requisitosProjeto.forEach(reqProj => {
             let importanciaAbsoluta = 0;
@@ -1119,7 +1173,7 @@ class QFDDatabase {
                 if (rel.requisitoProjeto === reqProj.id) {
                     const reqCliente = requisitosCliente.find(rc => rc.id === rel.requisitoCliente);
                     if (reqCliente) {
-                        importanciaAbsoluta += rel.influencia * reqCliente.importancia;
+                        importanciaAbsoluta += rel.influencia * this._valorCliente(data, reqCliente);
                     }
                 }
             });
@@ -1467,6 +1521,82 @@ class QFDDatabase {
     }
 
     // ========================================================================
+    // SEÇÃO: VERIFICAÇÃO DA LISTA DE REQUISITOS DE PROJETO
+    // ========================================================================
+
+    _ensureVerificacao(data) {
+        let v = data.verificacaoRP;
+        if (!v || typeof v !== 'object' || Array.isArray(v)) v = data.verificacaoRP = criarVerificacaoVazia();
+        v.exigir = !!v.exigir;
+        if (!v.criterios || typeof v.criterios !== 'object') v.criterios = {};
+        if (!Array.isArray(v.idsConfirmados)) v.idsConfirmados = [];
+        if (!Array.isArray(v.descartados)) v.descartados = [];
+        v.confirmadoEm = String(v.confirmadoEm || '');
+        return v;
+    }
+
+    _idsRPNoQFD(data) {
+        return (data.requisitosProjeto || []).filter(estaNoQFD).map(r => r.id).sort();
+    }
+
+    /**
+     * Estado da verificação: critérios marcados, se foi confirmada e se ainda
+     * vale (a lista de requisitos de projeto no QFD não mudou desde então)
+     */
+    getVerificacao() {
+        const data = this.loadData();
+        const v = JSON.parse(JSON.stringify(this._ensureVerificacao(data)));
+        const atuais = this._idsRPNoQFD(data);
+        const todosCriterios = Object.keys(CRITERIOS_VERIFICACAO).every(c => v.criterios[c]);
+        v.confirmada = !!v.confirmadoEm && todosCriterios;
+        v.atualizada = v.confirmada && JSON.stringify(atuais) === JSON.stringify(v.idsConfirmados);
+        v.bloqueiaMatriz = v.exigir && !v.atualizada;
+        return v;
+    }
+
+    setVerificacao(campos) {
+        const data = this.loadData();
+        const v = this._ensureVerificacao(data);
+        if (campos.exigir !== undefined) v.exigir = !!campos.exigir;
+        if (campos.criterios) {
+            Object.keys(CRITERIOS_VERIFICACAO).forEach(c => {
+                if (campos.criterios[c] !== undefined) v.criterios[c] = !!campos.criterios[c];
+            });
+            // desmarcar um critério desfaz a confirmação
+            if (!Object.keys(CRITERIOS_VERIFICACAO).every(c => v.criterios[c])) { v.confirmadoEm = ''; v.idsConfirmados = []; }
+        }
+        this.saveData(data);
+    }
+
+    /** Confirma a verificação para a lista atual (exige os 6 critérios marcados) */
+    confirmarVerificacao() {
+        const data = this.loadData();
+        const v = this._ensureVerificacao(data);
+        if (!Object.keys(CRITERIOS_VERIFICACAO).every(c => v.criterios[c])) {
+            throw new Error('Marque os 6 critérios antes de confirmar a verificação.');
+        }
+        v.confirmadoEm = new Date().toISOString();
+        v.idsConfirmados = this._idsRPNoQFD(data);
+        this.saveData(data);
+    }
+
+    /** Registra um requisito descartado na verificação e o motivo (30 → 26 no Roger) */
+    registrarDescarte(descricao, motivo) {
+        const data = this.loadData();
+        const d = { descricao: String(descricao || '').trim().slice(0, 300), motivo: String(motivo || '').trim().slice(0, 500), data: new Date().toISOString() };
+        if (!d.descricao || !d.motivo) return null;
+        this._ensureVerificacao(data).descartados.push(d);
+        this.saveData(data);
+        return d;
+    }
+
+    removerDescarte(indice) {
+        const data = this.loadData();
+        this._ensureVerificacao(data).descartados.splice(Number(indice), 1);
+        this.saveData(data);
+    }
+
+    // ========================================================================
     // SEÇÃO: FECHAMENTO - ABSTRAÇÃO E FUNÇÃO GLOBAL
     // ========================================================================
 
@@ -1683,7 +1813,8 @@ class QFDDatabase {
             cliente: p.cliente || '',
             instituicao: p.instituicao || '',
             equipe: Array.isArray(p.equipe) ? p.equipe : [],
-            justificativaHierarquia: p.justificativaHierarquia || ''
+            justificativaHierarquia: p.justificativaHierarquia || '',
+            escalaValorCliente: ESCALAS_VALOR_CLIENTE[p.escalaValorCliente] ? p.escalaValorCliente : 'pontuacao'
         };
     }
 
@@ -1703,6 +1834,9 @@ class QFDDatabase {
         }
         if (campos.cliente !== undefined) projeto.cliente = String(campos.cliente || '').trim().slice(0, 120);
         if (campos.instituicao !== undefined) projeto.instituicao = String(campos.instituicao || '').trim().slice(0, 160);
+        if (campos.escalaValorCliente !== undefined) {
+            projeto.escalaValorCliente = ESCALAS_VALOR_CLIENTE[campos.escalaValorCliente] ? campos.escalaValorCliente : 'pontuacao';
+        }
         if (campos.justificativaHierarquia !== undefined) {
             projeto.justificativaHierarquia = String(campos.justificativaHierarquia || '').trim().slice(0, 3000);
         }
@@ -1713,6 +1847,7 @@ class QFDDatabase {
         }
         data.projeto = projeto;
         this.saveData(data);
+        if (campos.escalaValorCliente !== undefined) this.calculateImportanciaProjeto();
         return projeto;
     }
 

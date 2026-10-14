@@ -161,6 +161,7 @@ function generatePreview() {
         if (isSectionChecked('section-client-req')) html += safeSection('Req. Cliente', generateClientReqs);
         if (isSectionChecked('section-project-req')) html += safeSection('Req. Projeto', generateProjectReqs);
         if (isSectionChecked('section-fora-qfd')) html += safeSection('Fora do QFD', generateForaQFD);
+        if (isSectionChecked('section-project-req')) html += safeSection('Verificação da lista', generateVerificacao);
         if (isSectionChecked('section-roof')) html += safeSection('Telhado', generateRoof);
         if (isSectionChecked('section-correlations')) html += safeSection('Correlações', generateCorrelationsAnalysis);
         if (isSectionChecked('section-qfd-matrix')) html += safeSection('Matriz QFD', generateMatrix);
@@ -230,6 +231,25 @@ function generateForaQFD() {
         });
         html += '</tbody></table>';
     });
+    return html + '</div>';
+}
+
+/** Verificação da lista de requisitos de projeto (Roozenburg & Eekels, 1995) e descartados */
+function generateVerificacao() {
+    const v = qfdDB.getVerificacao();
+    const marcados = Object.keys(CRITERIOS_VERIFICACAO).filter(c => v.criterios[c]);
+    if (!marcados.length && !v.descartados.length) return '';
+    let html = '<div class="report-section report-verificacao"><h3>Verificação da lista de requisitos de projeto</h3>';
+    html += `<p class="report-hint">Critérios de Roozenburg &amp; Eekels (1995). ${v.atualizada
+        ? `Verificação confirmada em ${escapeHtml(formatDate(v.confirmadoEm))}.`
+        : (v.confirmada ? 'A lista foi alterada depois da verificação.' : 'Verificação não confirmada.')}</p>`;
+    html += '<ul class="report-verificacao-criterios">' + Object.entries(CRITERIOS_VERIFICACAO)
+        .map(([k, c]) => `<li>${v.criterios[k] ? '✓' : '✗'} <strong>${c.nome}</strong> — ${c.dica}</li>`).join('') + '</ul>';
+    if (v.descartados.length) {
+        html += `<h4>Requisitos descartados (${v.descartados.length})</h4><table class="report-table"><thead><tr><th>Requisito</th><th>Motivo</th></tr></thead><tbody>`;
+        v.descartados.forEach(d => { html += `<tr><td>${escapeHtml(d.descricao)}</td><td>${escapeHtml(d.motivo)}</td></tr>`; });
+        html += '</tbody></table>';
+    }
     return html + '</div>';
 }
 
@@ -498,7 +518,8 @@ function generateMatrix() {
     requisitosProjeto.forEach((rp, i) => {
         html += `<th class="qfd-rp-header report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${i + 1}`, rp))}"><span>RP${i + 1}</span></th>`;
     });
-    html += '<th>Peso</th></tr></thead><tbody>';
+    const classes = qfdDB.getProjeto().escalaValorCliente === 'classes';
+    html += `<th>${classes ? 'Valor (1–10)' : 'Pontuação'}</th><th>Peso</th></tr></thead><tbody>`;
 
     requisitosCliente.forEach((rc, idx) => {
         html += `<tr><td class="qfd-rc-label report-has-tip" data-tooltip="${escapeAttr(reqTip(`RC${idx + 1}`, rc))}">RC${idx + 1}</td>`;
@@ -506,17 +527,17 @@ function generateMatrix() {
             const val = qfdDB.getMatrizQFD(rc.id, rp.id);
             html += `<td class="qfd-cell report-has-tip" data-tooltip="${escapeAttr(`RC${idx + 1} × RP${j + 1}: influência ${val || 'não definida'}`)}">${val || ''}</td>`;
         });
-        html += `<td>${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
+        html += `<td>${classes ? (rc.classe || 0) : (rc.importancia || 0)}</td><td>${((rc.peso || 0) * 100).toFixed(1)}%</td></tr>`;
     });
     html += '</tbody><tfoot>';
     html += '<tr class="qfd-sum-row qfd-sum-total"><th>Soma</th>'
-        + requisitosProjeto.map(rp => `<td>${(rp.importanciaAbsoluta || 0).toFixed(1)}</td>`).join('') + '<td></td></tr>';
+        + requisitosProjeto.map(rp => `<td>${(rp.importanciaAbsoluta || 0).toFixed(1)}</td>`).join('') + '<td></td><td></td></tr>';
     html += '<tr class="qfd-sum-row qfd-sum-percent"><th>%</th>'
-        + requisitosProjeto.map(rp => `<td>${((rp.pesoRelativo || 0) * 100).toFixed(1)}%</td>`).join('') + '<td></td></tr>';
+        + requisitosProjeto.map(rp => `<td>${((rp.pesoRelativo || 0) * 100).toFixed(1)}%</td>`).join('') + '<td></td><td></td></tr>';
     html += '<tr class="qfd-sum-row qfd-sum-rank"><th>Ranking</th>'
-        + requisitosProjeto.map(rp => `<td>${rp.importanciaAbsoluta > 0 ? `${rp.importanciaRelativa}º` : '-'}</td>`).join('') + '<td></td></tr>';
+        + requisitosProjeto.map(rp => `<td>${rp.importanciaAbsoluta > 0 ? `${rp.importanciaRelativa}º` : '-'}</td>`).join('') + '<td></td><td></td></tr>';
     html += '<tr class="qfd-sum-row qfd-sum-dif"><th>Dificuldade</th>'
-        + requisitosProjeto.map(rp => `<td>${seloDificuldade(rp.dificuldadeTecnica)}</td>`).join('') + '<td></td></tr>';
+        + requisitosProjeto.map(rp => `<td>${seloDificuldade(rp.dificuldadeTecnica)}</td>`).join('') + '<td></td><td></td></tr>';
     return html + '</tfoot></table></div></div>';
 }
 
