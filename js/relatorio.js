@@ -320,7 +320,7 @@ function generateAnexoIdeias() {
     let html = '<div class="report-section report-ideias"><h3>Anexo: Caderno de Ideias</h3>';
     if (ideias.length) {
         html += '<h4>Ideias de solução registradas</h4>';
-        html += '<table class="report-table"><thead><tr><th>Ideia</th><th>Status</th><th>Requisitos</th><th>Autor / data</th></tr></thead><tbody>';
+        html += '<table class="report-table"><thead><tr><th>Ideia</th><th>Status</th><th>Requisitos</th><th>Quem deu a ideia / data</th></tr></thead><tbody>';
         ideias.forEach(i => {
             html += `<tr>
                 <td><strong>${escapeHtml(i.titulo)}</strong>${i.descricao ? `<br><small>${escapeHtml(i.descricao)}</small>` : ''}</td>

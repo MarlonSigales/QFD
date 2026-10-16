@@ -777,6 +777,20 @@ function htmlBotaoIdeia(tipo, id) {
     </button>`;
 }
 
+/** Último nome informado em "Quem deu a ideia" (conveniência deste navegador; não vai no backup) */
+function ultimoAutorIdeia() {
+    try { return localStorage.getItem('qfd_ultimo_autor_ideia') || ''; } catch (e) { return ''; }
+}
+
+function lembrarAutorIdeia(nome) {
+    try { localStorage.setItem('qfd_ultimo_autor_ideia', normalizarAutores(nome)); } catch (e) { /* armazenamento indisponível */ }
+}
+
+/** Ao menos um nome em "Quem deu a ideia" é obrigatório na interface (ideias antigas sem nome continuam válidas) */
+function validarAutorIdeia(nome) {
+    if (!normalizarAutores(nome)) throw new Error('Informe quem deu a ideia (vários nomes: separe por vírgula).');
+}
+
 /** Janela de cadastro rápido de ideia já ligada ao requisito; ao salvar, chama loadRequisitos() se existir */
 function abrirRegistroIdeia(tipo, id) {
     const req = (tipo === 'cliente' ? qfdDB.getRequisitosCliente({ todos: true }) : qfdDB.getRequisitosProjeto({ todos: true }))
@@ -791,7 +805,7 @@ function abrirRegistroIdeia(tipo, id) {
             <p class="ideia-rapida-req"></p>
             <input type="text" class="form-control" id="ideia-rapida-titulo" maxlength="120" placeholder="Título da ideia">
             <textarea class="form-control" id="ideia-rapida-descricao" rows="3" maxlength="2000" placeholder="Descrição"></textarea>
-            <input type="text" class="form-control" id="ideia-rapida-autor" maxlength="60" placeholder="Autor (opcional)">
+            <input type="text" class="form-control" id="ideia-rapida-autor" maxlength="300" placeholder="Quem deu a ideia (vários: Ana, Bruno, Carla)" title="Obrigatório. Vários nomes: separe por vírgula">
             <small class="form-text">A ideia vai para o Caderno de Ideias, ligada a este requisito. Ela não entra na lista de requisitos.</small>
             <div class="ideia-rapida-acoes">
                 <button type="button" class="btn btn-secondary" data-acao="cancelar">Cancelar</button>
@@ -803,12 +817,15 @@ function abrirRegistroIdeia(tipo, id) {
     overlay.addEventListener('click', e => { if (e.target === overlay || e.target.dataset.acao === 'cancelar') fechar(); });
     overlay.querySelector('[data-acao="salvar"]').addEventListener('click', () => {
         try {
+            const autor = overlay.querySelector('#ideia-rapida-autor').value;
+            validarAutorIdeia(autor);
             qfdDB.addIdeia({
                 titulo: overlay.querySelector('#ideia-rapida-titulo').value,
                 descricao: overlay.querySelector('#ideia-rapida-descricao').value,
-                autor: overlay.querySelector('#ideia-rapida-autor').value,
+                autor,
                 requisitos: [{ tipo, id }]
             });
+            lembrarAutorIdeia(autor);
             fechar();
             showAlert('Ideia registrada no Caderno de Ideias.', 'success');
             if (typeof loadRequisitos === 'function') loadRequisitos();
@@ -816,6 +833,7 @@ function abrirRegistroIdeia(tipo, id) {
             showAlert(escapeHtml(err.message), 'warning');
         }
     });
+    overlay.querySelector('#ideia-rapida-autor').value = ultimoAutorIdeia();
     document.body.appendChild(overlay);
     overlay.querySelector('#ideia-rapida-titulo').focus();
 }

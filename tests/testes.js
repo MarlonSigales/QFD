@@ -378,6 +378,8 @@ suite('Caderno de ideias', () => {
         let erro = '';
         try { qfdDB.addIdeia({ titulo: '  ' }); } catch (e) { erro = e.message; }
         assert(/título/.test(erro), 'aceitou ideia sem título');
+        qfdDB.updateIdeia(ideia.id, { autor: ' Ana ,Bruno  Lima,, ana; Carla ' });
+        assertEqual(qfdDB.getIdeias()[0].autor, 'Ana, Bruno Lima, Carla', 'várias pessoas separadas por vírgula');
         qfdDB.updateIdeia(ideia.id, { status: 'promissora' });
         qfdDB.removeRequisitoProjeto(rp[0].id);
         const salva = qfdDB.getIdeias()[0];
@@ -918,6 +920,10 @@ suite('Páginas', () => {
             const janela = doc.querySelector('.ideia-rapida-overlay');
             assert(janela && janela.textContent.includes('Peso total (kg)'), 'janela não mostra o requisito');
             janela.querySelector('#ideia-rapida-titulo').value = 'Usar plástico reforçado';
+            janela.querySelector('#ideia-rapida-autor').value = '';
+            janela.querySelector('[data-acao="salvar"]').click();
+            assert(doc.querySelector('.ideia-rapida-overlay'), 'aceitou ideia sem o nome de quem deu');
+            janela.querySelector('#ideia-rapida-autor').value = 'Ana';
             janela.querySelector('[data-acao="salvar"]').click();
             assert(!doc.querySelector('.ideia-rapida-overlay'), 'janela não fechou');
             assertEqual(item().querySelector('.ideia-contador').textContent, '1', 'contador de ideias');

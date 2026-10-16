@@ -3972,6 +3972,30 @@ cursor: pointer;
     padding: 0.25rem 0.5rem;
 }
 
+.ideia-autor {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--qfd-teal);
+}
+
+.ideia-autor .ideia-autor-input {
+    width: auto;
+    flex: 1 1 20rem;
+    max-width: 32rem;
+    min-width: 0;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.88rem;
+}
+
+.ideia-autor .ideia-meta {
+    font-weight: normal;
+}
+
 .ideia-descricao {
     margin-top: 0.3rem;
     white-space: pre-line;

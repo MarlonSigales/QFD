@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     Object.entries(STATUS_IDEIA).forEach(([v, t]) => status.add(new Option(t, v)));
     document.getElementById('form-ideia').addEventListener('submit', handleAddIdeia);
     document.getElementById('form-falha').addEventListener('submit', handleAddFalha);
+    document.getElementById('ideia-autor').value = ultimoAutorIdeia();
     loadPage();
 });
 
@@ -54,11 +55,15 @@ function handleAddIdeia(event) {
     const requisitos = [...document.querySelectorAll('#ideia-requisitos input:checked')]
         .map(cb => ({ tipo: cb.dataset.tipo, id: cb.value }));
     try {
+        const autor = campo('ideia-autor').value;
+        validarAutorIdeia(autor);
         qfdDB.addIdeia({
             titulo: campo('ideia-titulo').value, descricao: campo('ideia-descricao').value,
-            autor: campo('ideia-autor').value, status: campo('ideia-status').value, requisitos
+            autor, status: campo('ideia-status').value, requisitos
         });
+        lembrarAutorIdeia(autor);
         event.target.reset();
+        campo('ideia-autor').value = normalizarAutores(autor);
         renderIdeias();
         showAlert('Ideia registrada.', 'success');
     } catch (err) {
@@ -86,13 +91,27 @@ function renderIdeias() {
                 <select class="form-control ideia-status-select"></select>
                 <button type="button" class="btn-icon btn-delete" title="Remover ideia"><i class="fas fa-trash"></i></button>
             </div>
+            <div class="ideia-autor">
+                <i class="fas fa-user"></i> Ideia de:
+                <input type="text" class="form-control ideia-autor-input" maxlength="300" placeholder="informe quem deu a ideia" title="Obrigatório. Vários nomes: separe por vírgula (editável)">
+                <small class="text-muted ideia-meta"></small>
+            </div>
             <div class="ideia-descricao"></div>
-            <div class="ideia-requisitos"></div>
-            <small class="text-muted ideia-meta"></small>`;
+            <div class="ideia-requisitos"></div>`;
         item.querySelector('.ideia-titulo').textContent = ideia.titulo;
         item.querySelector('.ideia-descricao').textContent = ideia.descricao;
-        item.querySelector('.ideia-meta').textContent =
-            `${ideia.autor ? ideia.autor + ' · ' : ''}${formatDate(ideia.data)}`;
+        item.querySelector('.ideia-meta').textContent = formatDate(ideia.data);
+        const autor = item.querySelector('.ideia-autor-input');
+        autor.value = ideia.autor || '';
+        autor.addEventListener('change', () => {
+            try {
+                validarAutorIdeia(autor.value);
+                ideia.autor = autor.value = qfdDB.updateIdeia(ideia.id, { autor: autor.value }).autor;
+            } catch (err) {
+                autor.value = ideia.autor || '';
+                showAlert(escapeHtml(err.message), 'warning');
+            }
+        });
         const select = item.querySelector('select');
         Object.entries(STATUS_IDEIA).forEach(([v, t]) => select.add(new Option(t, v)));
         select.value = ideia.status;

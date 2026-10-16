@@ -192,6 +192,17 @@ function estaNoQFD(req) {
  */
 const STATUS_IDEIA = { nova: 'Nova', promissora: 'Promissora', descartada: 'Descartada' };
 
+/** Quem deu a ideia: um ou mais nomes separados por vírgula ("Ana, Bruno"), sem vazios nem repetidos */
+function normalizarAutores(texto) {
+    const vistos = new Set();
+    return String(texto || '').split(/[,;]/).map(n => n.trim().replace(/\s+/g, ' ')).filter(n => {
+        const chave = n.toLowerCase();
+        if (!n || vistos.has(chave)) return false;
+        vistos.add(chave);
+        return true;
+    }).join(', ').slice(0, 300);
+}
+
 /**
  * Estado da técnica (Pahl & Beitz, 3.1.4 e 5.2.3): patentes, normas,
  * regulamentos, literatura e produtos consultados, ligados aos requisitos
@@ -242,7 +253,7 @@ const TIPOS_REFERENCIA = {
 
 function criarCadernoVazio() {
     return {
-        ideias: [],  // { id, titulo, descricao, autor, data, requisitos: [{ tipo: 'cliente'|'projeto', id }], status }
+        ideias: [],  // { id, titulo, descricao, autor ("Ana, Bruno"), data, requisitos: [{ tipo: 'cliente'|'projeto', id }], status }
         falhas: []   // { id, falha, causa, produto, data, requisitoGerado: { tipo, id } | null }
     };
 }
@@ -1474,7 +1485,7 @@ class QFDDatabase {
             if (!out.titulo) throw new Error('Informe o título da ideia.');
         }
         if (campos.descricao !== undefined) out.descricao = String(campos.descricao || '').trim().slice(0, 2000);
-        if (campos.autor !== undefined) out.autor = String(campos.autor || '').trim().slice(0, 60);
+        if (campos.autor !== undefined) out.autor = normalizarAutores(campos.autor);
         if (campos.status !== undefined) out.status = STATUS_IDEIA[campos.status] ? campos.status : 'nova';
         if (campos.requisitos !== undefined) out.requisitos = this._requisitosExistentes(data, campos.requisitos);
         return out;
