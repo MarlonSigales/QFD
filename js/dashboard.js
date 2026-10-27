@@ -106,6 +106,32 @@ function updateDashboard() {
     
     // Atualiza última modificação
     updateLastModified(stats.lastModified);
+    atualizarProximoPasso();
+}
+
+/**
+ * Faixa "Próximo passo" no topo do Dashboard: diz em uma linha o que fazer agora e leva direto à etapa.
+ * Também mostra quantos dados opcionais do projeto já foram preenchidos.
+ */
+function atualizarProximoPasso() {
+    const el = document.getElementById('proximo-passo');
+    if (el && typeof statusEtapasQFD === 'function') {
+        const st = statusEtapasQFD(), prox = proximaEtapaQFD(st);
+        const feitas = ETAPAS_QFD.slice(0, ETAPAS_ESSENCIAIS).filter(([id]) => st[id].estado === 'feito').length;
+        const tudo = feitas === ETAPAS_ESSENCIAIS && prox.id === 'relatorio';
+        const html = `<div class="proximo-passo-texto"><span class="proximo-passo-rotulo">${tudo ? 'Pronto' : 'Próximo passo'}</span>
+            <b>${prox.numero}. ${escapeHtml(prox.nome)}</b> <span class="proximo-passo-resumo">— ${escapeHtml(st[prox.id].resumo)}</span>
+            <div class="proximo-passo-barra" title="${feitas} de ${ETAPAS_ESSENCIAIS} etapas essenciais concluídas"><i style="width:${Math.round(feitas / ETAPAS_ESSENCIAIS * 100)}%"></i></div>
+            <small>${feitas} de ${ETAPAS_ESSENCIAIS} etapas essenciais concluídas (1 a 6). As etapas 7 a 9 são complementares.</small></div>
+            <a class="btn btn-primary" href="${caminhoPaginaQFD(prox.id)}">${tudo ? 'Gerar o relatório' : 'Ir para ' + escapeHtml(prox.nome)} →</a>`;
+        if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; } // não redesenha a cada 5 s à toa
+    }
+    const n = document.getElementById('projeto-mais-n');
+    if (n) {
+        const pj = qfdDB.getProjeto();
+        const qtd = [pj.emails.length, pj.cliente, pj.instituicao, pj.equipe.length].filter(Boolean).length;
+        n.textContent = qtd ? `· ${qtd} de 4 preenchido(s)` : '';
+    }
 }
 
 /**

@@ -12,7 +12,7 @@ RESUMO
   Por fazer ............ 0
   Aguardando ........... 2   (confirmações com o Roger)
   Futuro ............... 1   (P14)
-  Resolvidos ........... 41  (agrupados por área)
+  Resolvidos ........... 42  (agrupados por área)
   Rejeitados ........... 17
 
 ==========================================================================================
@@ -189,6 +189,20 @@ Nada pendente.
             logo, nome do projeto e Backup; barra lateral com as 10 etapas
             numeradas, Caderno de Ideias e Referências. No celular a barra lateral
             abre pelo botão ☰.
+
+[RESOLVIDO] Interface mais simples, no padrão do Gestão de Projetos (27/10/2026):
+            - barra lateral com a situação de cada etapa (✓ concluída, amarelo em
+              andamento) e a próxima a fazer destacada; bloco "Arquivo do projeto"
+              fixo embaixo (Baixar backup, Abrir backup, Enviar por e-mail; CSV em
+              "Mais opções"), no lugar do menu "Backup & Export" do topo;
+            - Dashboard: faixa "Próximo passo" com botão e barra das 6 etapas
+              essenciais; só o nome do projeto à vista (e-mails, cliente, instituição
+              e equipe em "Mais dados"); cartões compactos; "Sobre o QFD" recolhido;
+            - páginas com um título só, dicas recolhidas e "Voltar / Próxima etapa"
+              no fim da página; botões, cartões e campos como no Gestão de Projetos;
+            - nada sai da tela de 320×568 a 1920×1080; botão ☰ não depende mais da
+              biblioteca de ícones (sem internet o menu do celular não abria).
+            Dados, backup e relatório não mudaram (96 testes ok).
 
 [RESOLVIDO] Logos da Inova Agro (EMBRAPII), do NIMEq e do Lab InstAgri no rodapé;
             rodapé com © 2026, desenvolvedor e equipe; sem menção a IA.

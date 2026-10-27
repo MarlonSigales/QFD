@@ -16,6 +16,15 @@ document.addEventListener('DOMContentLoaded', setupLayout);
 function setupLayout() {
     const nome = document.getElementById('topbar-projeto-nome');
     if (nome && typeof qfdDB !== 'undefined') nome.textContent = qfdDB.getProjeto().nome || 'Projeto sem nome';
+    if (document.querySelector('.sidebar')) {
+        document.body.classList.add('layout-simples');
+        montarArquivoProjeto();
+        moverNavegacaoEtapas();
+        recolherDicas();
+        atualizarEtapasSidebar();
+        // a situação das etapas acompanha o que é preenchido (os dados ficam no navegador a cada alteração)
+        setInterval(() => { if (!document.hidden) atualizarEtapasSidebar(); }, 4000);
+    }
 
     const botao = document.querySelector('.sidebar-toggle');
     if (!botao) return;
@@ -29,6 +38,147 @@ function setupLayout() {
             document.body.classList.remove('sidebar-aberta');
             botao.setAttribute('aria-expanded', 'false');
         }
+    });
+}
+
+// ============================================================================
+// LAYOUT SIMPLES (padrão do Gestão de Projetos)
+// ============================================================================
+
+/** Etapas do QFD na ordem do menu: [página, nome curto]. As de 7 a 9 são complementares. */
+const ETAPAS_QFD = [
+    ['requisitos-cliente', 'Requisitos de Cliente'], ['comparacao-cliente', 'Comparação (Mudge)'],
+    ['requisitos-projeto', 'Requisitos de Projeto'], ['correlacao-projeto', 'Correlação (telhado)'],
+    ['matriz-qfd', 'Matriz QFD'], ['especificacoes', 'Especificações'],
+    ['avaliacao-competitiva', 'Avaliação Competitiva'], ['atendimento-requisitos', 'Atendimento'],
+    ['fechamento', 'Fechamento'], ['relatorio', 'Relatório']
+];
+const ETAPAS_ESSENCIAIS = 6; // 1 a 6 fazem a casa da qualidade e as especificações
+
+/**
+ * Situação de cada etapa: 'feito' | 'andamento' | 'vazio', com um resumo curto.
+ * Mesmas contas dos cartões do Dashboard.
+ */
+function statusEtapasQFD() {
+    const s = qfdDB.getProjectStats();
+    const pares = n => n * (n - 1) / 2;
+    const pct = (a, b) => (b > 0 ? Math.round(a / b * 100) : 0);
+    const porPct = (v, txt) => ({ estado: v >= 100 ? 'feito' : v > 0 ? 'andamento' : 'vazio', resumo: txt });
+    const out = {};
+    out['requisitos-cliente'] = { estado: s.requisitosCliente >= 2 ? 'feito' : s.requisitosCliente ? 'andamento' : 'vazio', resumo: `${s.requisitosCliente} requisito(s)` };
+    const pc = pct(s.comparacoesCliente, pares(s.requisitosCliente));
+    out['comparacao-cliente'] = porPct(s.requisitosCliente >= 2 ? pc : 0, `${pc}% das comparações`);
+    out['requisitos-projeto'] = { estado: s.requisitosProjeto >= 2 ? 'feito' : s.requisitosProjeto ? 'andamento' : 'vazio', resumo: `${s.requisitosProjeto} requisito(s)` };
+    const pt = pct(s.correlacoesProjeto, pares(s.requisitosProjeto));
+    out['correlacao-projeto'] = porPct(s.requisitosProjeto >= 2 ? pt : 0, `${pt}% do telhado`);
+    const pm = pct(s.relacoesQFD, s.requisitosCliente * s.requisitosProjeto);
+    out['matriz-qfd'] = { estado: s.relacoesQFD > 0 && pm >= 100 ? 'feito' : s.relacoesQFD > 0 ? 'andamento' : 'vazio', resumo: `${pm}% da matriz` };
+    out['especificacoes'] = porPct(s.especificacoesPercent || 0, `${s.especificacoesPercent || 0}% preenchidas`);
+    out['avaliacao-competitiva'] = porPct(s.concorrentes > 0 ? s.competitivaPercent : 0, s.concorrentes > 0 ? `${s.competitivaPercent}% das notas` : 'sem concorrentes');
+    let at = null;
+    try { at = qfdDB.getAnaliseAtendimento(false).atendimentoGeral; } catch (e) { at = null; }
+    out['atendimento-requisitos'] = { estado: at === null ? 'vazio' : 'feito', resumo: at === null ? 'sem medições' : `${Math.round(at * 100)}% atendido` };
+    let f = null;
+    try { f = qfdDB.getFechamento(); } catch (e) { f = null; }
+    const nPassos = f ? f.abstracao.filter(t => String(t || '').trim()).length : 0, temFuncao = !!(f && f.funcaoGlobal && f.funcaoGlobal.nome);
+    out['fechamento'] = { estado: nPassos === 5 && temFuncao ? 'feito' : (nPassos || temFuncao) ? 'andamento' : 'vazio', resumo: `${nPassos}/5 passos` };
+    const relatorioOk = s.requisitosCliente > 0 && s.requisitosProjeto > 0 && s.relacoesQFD > 0;
+    out['relatorio'] = { estado: relatorioOk ? 'feito' : 'vazio', resumo: relatorioOk ? 'pronto para gerar' : 'falta a matriz' };
+    return out;
+}
+
+/** Próxima etapa a fazer: a 1ª essencial não concluída; depois as complementares; por fim o relatório. */
+function proximaEtapaQFD(st) {
+    st = st || statusEtapasQFD();
+    const ordem = ETAPAS_QFD.slice(0, ETAPAS_ESSENCIAIS).concat(ETAPAS_QFD.slice(ETAPAS_ESSENCIAIS, 9));
+    const p = ordem.find(([id]) => st[id].estado !== 'feito');
+    return p ? { id: p[0], nome: p[1], numero: ETAPAS_QFD.findIndex(([id]) => id === p[0]) + 1 } : { id: 'relatorio', nome: 'Relatório', numero: 10 };
+}
+
+/** Caminho de uma página do sistema a partir da página atual (raiz ou pages/). */
+function caminhoPaginaQFD(id) {
+    const naRaiz = !/\/pages\//.test(location.pathname);
+    return (naRaiz ? 'pages/' : '') + id + '.html';
+}
+
+/** Marca na barra lateral as etapas feitas (✓), em andamento e a próxima a fazer. */
+function atualizarEtapasSidebar() {
+    if (typeof qfdDB === 'undefined') return;
+    let st;
+    try { st = statusEtapasQFD(); } catch (e) { return; }
+    const prox = proximaEtapaQFD(st);
+    ETAPAS_QFD.forEach(([id, nome], i) => {
+        const link = document.querySelector(`.sidebar a.sidebar-link[href$="${id}.html"]`);
+        if (!link) return;
+        const info = st[id], num = link.querySelector('.sidebar-num');
+        link.classList.remove('etapa-feito', 'etapa-andamento', 'etapa-vazio', 'etapa-proxima');
+        link.classList.add('etapa-' + info.estado);
+        if (id === prox.id && info.estado !== 'feito') link.classList.add('etapa-proxima');
+        if (num) num.textContent = info.estado === 'feito' ? '✓' : String(i + 1);
+        link.title = `${nome} — ${info.estado === 'feito' ? 'concluída' : info.estado === 'andamento' ? 'em andamento' : 'não iniciada'} (${info.resumo})${id === prox.id ? ' · próximo passo' : ''}`;
+    });
+    const quando = document.getElementById('arquivo-salvo-em');
+    if (quando) {
+        let lm = '';
+        try { lm = qfdDB.loadData().metadata.lastModified; } catch (e) { lm = ''; }
+        quando.textContent = lm ? 'última alteração ' + new Date(lm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    }
+}
+
+/**
+ * Bloco "Arquivo do projeto" fixo no pé da barra lateral, como no Gestão de Projetos: o salvamento é automático
+ * (neste navegador); os botões levam o projeto a outro lugar. As opções de CSV ficam em "Mais opções".
+ */
+function montarArquivoProjeto() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar || sidebar.querySelector('.sidebar-arquivo')) return;
+    const extras = Array.from(document.querySelectorAll('.topbar-backup .dropdown-menu a'))
+        .filter(a => !/exportProjectData\(\)|exportarEEnviarEmail\(\)|getElementById\('import-file'\)/.test(a.getAttribute('onclick') || ''));
+    const box = document.createElement('div');
+    box.className = 'sidebar-arquivo';
+    box.innerHTML = `<div class="sidebar-arquivo-rotulo">Arquivo do projeto</div>
+        <div class="sidebar-arquivo-estado" title="Cada alteração é guardada sozinha neste navegador. Para levar a outro computador, baixe o backup.">✓ salvo automaticamente <span id="arquivo-salvo-em"></span></div>
+        <button type="button" class="sidebar-arquivo-btn" onclick="exportProjectData()" title="Baixa o projeto inteiro num arquivo .json (backup)">💾 Baixar backup</button>
+        <button type="button" class="sidebar-arquivo-btn" onclick="document.getElementById('import-file').click()" title="Abre um backup .json (substitui o projeto deste navegador)">📂 Abrir backup</button>
+        <button type="button" class="sidebar-arquivo-btn" onclick="exportarEEnviarEmail()" title="Baixa o backup e abre o e-mail para os envolvidos">✉ Enviar por e-mail</button>
+        ${extras.length ? '<details class="sidebar-arquivo-mais"><summary>Mais opções (CSV)</summary><div></div></details>' : ''}`;
+    const destino = box.querySelector('.sidebar-arquivo-mais div');
+    extras.forEach(a => { const c = a.cloneNode(true); c.classList.add('sidebar-arquivo-link'); destino.appendChild(c); });
+    sidebar.appendChild(box);
+}
+
+/** Anterior / próxima etapa saem do topo e vão para o fim da página, onde a etapa termina. */
+function moverNavegacaoEtapas() {
+    const nav = document.querySelector('.topbar .nav-page-actions');
+    const conteudo = document.querySelector('.app-conteudo');
+    if (!nav || !conteudo) return;
+    nav.classList.add('etapa-nav');
+    nav.querySelectorAll('a.btn').forEach(a => {
+        const proximo = a.id === 'btn-proximo' || a.classList.contains('btn-primary');
+        a.classList.add(proximo ? 'etapa-nav-proxima' : 'etapa-nav-anterior');
+        const destino = a.textContent.trim();
+        const rot = document.createElement('small');
+        rot.textContent = proximo ? 'Próxima etapa' : 'Voltar';
+        a.textContent = '';
+        a.append(rot, document.createTextNode(proximo ? destino + ' →' : '← ' + destino));
+    });
+    const rodape = conteudo.querySelector('.footer');
+    conteudo.insertBefore(nav, rodape || null);
+}
+
+/** Cartões de dicas começam recolhidos: o que importa na tela é o formulário. */
+function recolherDicas() {
+    document.querySelectorAll('.card.info-card').forEach(card => {
+        const titulo = card.querySelector('.card-title');
+        if (!titulo || !/dica/i.test(titulo.textContent) || card.querySelector('details.dicas-recolhidas')) return;
+        const det = document.createElement('details');
+        det.className = 'dicas-recolhidas';
+        const sum = document.createElement('summary');
+        sum.textContent = '💡 ' + titulo.textContent.trim();
+        det.appendChild(sum);
+        Array.from(card.children).forEach(filho => { if (!filho.classList.contains('card-header')) det.appendChild(filho); });
+        card.querySelector('.card-header').remove();
+        card.appendChild(det);
     });
 }
 

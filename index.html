@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema QFD - Quality Function Deployment</title>
     <!-- Preload para o CSS carregar imediatamente (evita carregar só após clique no file://) -->
-    <link rel="preload" href="css/style.css" as="style">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="preload" href="css/style.css?v=20261027" as="style">
+    <link rel="stylesheet" href="css/style.css?v=20261027">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="page-dashboard">
@@ -71,14 +71,20 @@
         <div class="container">
             <div class="dashboard">
 
+                <div class="proximo-passo" id="proximo-passo"></div>
+
                 <div class="projeto-card">
                     <h3><i class="fas fa-folder-open"></i> Projeto</h3>
-                    <div class="projeto-campos">
+                    <div class="projeto-campos projeto-campos-nome">
                         <div class="form-group">
                             <label for="projeto-nome">Nome do projeto</label>
                             <input type="text" id="projeto-nome" class="form-control" maxlength="100" placeholder="Ex.: Semeadora compacta">
                             <small class="form-text">Usado no assunto do e-mail ("qfd - nome"), no nome do backup e no título do relatório.</small>
                         </div>
+                    </div>
+                    <details class="projeto-mais" id="projeto-mais">
+                        <summary>Mais dados do projeto (opcional) — e-mails, cliente, instituição e equipe <span id="projeto-mais-n"></span></summary>
+                        <div class="projeto-campos">
                         <div class="form-group">
                             <label for="projeto-emails">E-mails dos envolvidos</label>
                             <textarea id="projeto-emails" class="form-control" rows="2" placeholder="pessoa@exemplo.com, outra@exemplo.com"></textarea>
@@ -97,14 +103,15 @@
                             <textarea id="projeto-equipe" class="form-control" rows="3" placeholder="Uma pessoa por linha, ex.: Roger Spagnolo — coordenador"></textarea>
                             <small class="form-text">Aparecem na capa do relatório.</small>
                         </div>
-                    </div>
+                        </div>
                     <div class="projeto-acoes">
                         <button type="button" class="btn btn-primary" onclick="exportarEEnviarEmail()"><i class="fas fa-envelope"></i> Exportar e enviar por e-mail</button>
                         <button type="button" class="btn btn-secondary" id="btn-compartilhar" style="display: none;" onclick="compartilharBackup()"><i class="fas fa-share-alt"></i> Compartilhar com o arquivo anexado</button>
                     </div>
                     <p class="projeto-dica">O e-mail abre já com os envolvidos e o assunto; anexe o arquivo .json que é baixado na mesma hora (links de e-mail não conseguem anexar sozinhos).</p>
+                    </details>
                 </div>
-                
+
                 <div class="progress-section">
                     <h3>Progresso do Projeto</h3>
                     <div class="progress-cards">
@@ -253,8 +260,8 @@
                     </div>
                 </div>
 
-                <div class="info-section">
-                    <h3>Sobre o QFD</h3>
+                <details class="info-section sobre-qfd">
+                    <summary><h3>Sobre o QFD</h3></summary>
                     <p>O Quality Function Deployment (QFD) é uma metodologia de desenvolvimento de produtos que traduz as necessidades dos clientes em características técnicas específicas. Este sistema guia você através de todas as etapas necessárias para criar uma matriz QFD completa.</p>
                     
                     <div class="steps-overview">
@@ -322,7 +329,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </details>
             </div>
         </div>
     </main>
@@ -350,8 +357,8 @@
     </div>
 
     <script src="js/database.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/utils.js?v=20261027"></script>
+    <script src="js/dashboard.js?v=20261027"></script>
 </body>
 </html>
 
