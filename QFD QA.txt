@@ -12,7 +12,7 @@ RESUMO
   Por fazer ............ 0
   Aguardando ........... 2   (confirmações com o Roger)
   Futuro ............... 1   (P14)
-  Resolvidos ........... 45  (agrupados por área)
+  Resolvidos ........... 46  (agrupados por área)
   Rejeitados ........... 17
 
 ==========================================================================================
@@ -199,6 +199,10 @@ Nada pendente.
             páginas menos a capa. Ao imprimir (Ctrl+P) sai só o relatório, com a capa
             na 1ª página inteira (antes saía junto a tela de configuração).
 [RESOLVIDO] Nome corrigido no rodapé: Giusepe Stefanello (com um p).
+[RESOLVIDO] Matriz QFD no relatório: "RP1", "RP2"… na horizontal (girados ficavam de
+            cabeça para baixo e apertados) e colunas mais largas; com mais de 10 RP a
+            seção sai em folha deitada e, com mais de 20, as colunas ficam compactas,
+            para a matriz caber inteira no PDF (verificado de 6 a 28 RP).
 
 [RESOLVIDO] Botão "Marcar etapa como concluída" no título de cada etapa (27/10/2026), para
             as etapas que não precisam ser preenchidas 100% (ex.: telhado só com as

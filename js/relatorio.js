@@ -514,7 +514,9 @@ function generateCorrelationsAnalysis() {
 }
 
 function generateMatrix() {
-    let html = '<div class="report-section"><h3>Matriz QFD</h3><div class="qfd-matrix-report-wrapper"><table class="report-table qfd-matrix-report"><thead><tr><th class="qfd-corner-cell">RC \\ RP</th>';
+    // muitas colunas: folha deitada (mais de 10 RP) e colunas estreitas (mais de 20 RP), para a matriz caber inteira no PDF
+    const nRp = requisitosProjeto.length;
+    let html = `<div class="report-section${nRp > 10 ? ' pagina-paisagem' : ''}"><h3>Matriz QFD</h3><div class="qfd-matrix-report-wrapper"><table class="report-table qfd-matrix-report${nRp > 20 ? ' matriz-compacta' : ''}"><thead><tr><th class="qfd-corner-cell">RC \\ RP</th>`;
     requisitosProjeto.forEach((rp, i) => {
         html += `<th class="qfd-rp-header report-has-tip" data-tooltip="${escapeAttr(reqTip(`RP${i + 1}`, rp))}"><span>RP${i + 1}</span></th>`;
     });

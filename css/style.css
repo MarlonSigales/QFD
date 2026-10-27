@@ -5397,3 +5397,14 @@ details.sobre-qfd > summary h3 { display: inline; font-size: 1.05rem; }
   #report-content .report-section > h3 { break-after: avoid; }
   #report-content .report-table thead, #report-content .report-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* Matriz QFD no relatório: "RP1", "RP2"… na horizontal (são curtos; girados ficavam de cabeça para baixo e
+   apertados) e colunas com largura para os números da soma e do % */
+#report-content .qfd-matrix-report .qfd-rp-header { width: 54px; min-width: 54px; max-width: none; padding: 0.45rem 0.3rem; vertical-align: middle; }
+#report-content .qfd-matrix-report .qfd-rp-header span { writing-mode: horizontal-tb; transform: none; font-size: 0.82rem; white-space: nowrap; }
+#report-content .qfd-matrix-report .qfd-cell { width: 54px; min-width: 54px; max-width: none; height: 26px; font-size: 0.84rem; }
+#report-content .qfd-matrix-report td, #report-content .qfd-matrix-report tfoot td { text-align: center; }
+#report-content .qfd-matrix-report .qfd-rc-label, #report-content .qfd-matrix-report tfoot th { text-align: left; }
+#report-content .qfd-matrix-report.matriz-compacta .qfd-rp-header, #report-content .qfd-matrix-report.matriz-compacta .qfd-cell { width: 38px; min-width: 38px; padding-left: 1px; padding-right: 1px; }
+#report-content .qfd-matrix-report.matriz-compacta .qfd-rp-header span { font-size: 0.72rem; }
+#report-content .qfd-matrix-report.matriz-compacta td { font-size: 0.72rem; padding-left: 1px; padding-right: 1px; }
