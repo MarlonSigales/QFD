@@ -5408,3 +5408,6 @@ details.sobre-qfd > summary h3 { display: inline; font-size: 1.05rem; }
 #report-content .qfd-matrix-report.matriz-compacta .qfd-rp-header, #report-content .qfd-matrix-report.matriz-compacta .qfd-cell { width: 38px; min-width: 38px; padding-left: 1px; padding-right: 1px; }
 #report-content .qfd-matrix-report.matriz-compacta .qfd-rp-header span { font-size: 0.72rem; }
 #report-content .qfd-matrix-report.matriz-compacta td { font-size: 0.72rem; padding-left: 1px; padding-right: 1px; }
+/* atalho para a fase seguinte (projeto conceitual) no bloco "Arquivo do projeto" */
+a.sidebar-arquivo-btn { display: block; text-decoration: none; }
+.sidebar-arquivo-seguir { background: #fff; color: var(--qfd-teal); }

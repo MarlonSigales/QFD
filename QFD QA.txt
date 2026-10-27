@@ -38,6 +38,13 @@ Nada pendente.
 ==========================================================================================
 3. RESOLVIDOS
 
+--- Integração ----------------------------------------------------------------------------
+
+[RESOLVIDO] Botão "➜ Seguir para o projeto conceitual" no bloco "Arquivo do projeto":
+            abre o Sistema de Projeto Conceitual, que lê este QFD direto do
+            navegador (mesmo endereço github.io, chave qfd_data) em "Usar este
+            QFD", sem baixar arquivo. O Gestão de Projetos também lê o QFD daqui.
+
 --- Requisitos ---------------------------------------------------------------------------
 
 [RESOLVIDO] Texto explicativo em cada requisito e especificação, com balão
