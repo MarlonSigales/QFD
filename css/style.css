@@ -5324,3 +5324,4 @@ details.sobre-qfd > summary h3 { display: inline; font-size: 1.05rem; }
 @media print { .etapa-conclusao { display: none !important; } }
 /* número da etapa sempre redondo: não encolhe quando o nome quebra em duas linhas */
 .sidebar-num { flex: 0 0 22px; width: 22px; min-width: 22px; height: 22px; line-height: 1; aspect-ratio: 1 / 1; }
+.grafico-legenda .legenda-asterisco { display: inline-block; vertical-align: middle; margin-right: 0.35rem; }

@@ -730,6 +730,23 @@ suite('Avaliação competitiva', () => {
 //   RC1: RP1 1, RP2 3, RP3 5 | RC2: RP1 3, RP2 5, RP3 1 | RC3: RP1 5, RP2 1, RP3 3
 // Pesos (Mudge): RC1 8/9, RC2 1/9, RC3 0. RP1 ↓ meta 1,2 kg; RP2 ↓ e RP3 * sem meta.
 
+suite('Gráfico competitivo', () => {
+    test('nosso produto aparece como asterisco; concorrentes como círculos; legenda igual', () => {
+        const analise = {
+            produtos: [{ id: PRODUTO_NOSSO_ID, nome: 'Nosso produto' }, { id: 'c1', nome: 'Concorrente A' }],
+            clientes: [{ numero: 1, requisito: { descricao: 'Leve' }, notas: { [PRODUTO_NOSSO_ID]: 4, c1: 3 }, meta: 5 },
+                       { numero: 2, requisito: { descricao: 'Barato' }, notas: { [PRODUTO_NOSSO_ID]: 2, c1: 5 }, meta: null }]
+        };
+        const div = document.createElement('div');
+        div.innerHTML = buildGraficoCompetitivo(analise);
+        const svg = div.querySelector('svg.grafico-competitivo');
+        assertEqual(svg.querySelectorAll('circle').length, 2, 'círculos só do concorrente');
+        assertEqual(svg.querySelectorAll('g > path').length, 4, 'dois asteriscos (contorno + cor) do nosso produto');
+        assert(/Nosso produto — RC1: nota 4/.test(svg.querySelector('g > title').textContent), 'asterisco sem balão');
+        assert(div.querySelector('.grafico-legenda .legenda-asterisco'), 'legenda sem asterisco do nosso produto');
+    });
+});
+
 suite('Atendimento aos requisitos', () => {
     test('metaAtingida por sentido de melhoria (nominal com ±5%)', () => {
         assertEqual([qfdDB.metaAtingida('up', 10, 10), qfdDB.metaAtingida('up', 9.9, 10),

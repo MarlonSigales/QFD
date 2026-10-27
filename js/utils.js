@@ -446,6 +446,15 @@ function getSituacaoCompetitiva(situacao) {
  * @param {Object} analise - Resultado de qfdDB.getAnaliseCompetitiva()
  * @returns {string} HTML, ou '' se não houver nenhuma nota
  */
+/** Asterisco de 6 pontas (nosso produto no gráfico competitivo), com contorno branco para ler sobre as linhas. */
+function svgAsterisco(cx, cy, r, cor, titulo) {
+    const bracos = [0, 60, 120].map(g => {
+        const a = g * Math.PI / 180, dx = (r * Math.sin(a)).toFixed(2), dy = (r * Math.cos(a)).toFixed(2);
+        return `M${(cx - dx).toFixed(2)} ${(cy - dy).toFixed(2)}L${(cx + +dx).toFixed(2)} ${(cy + +dy).toFixed(2)}`;
+    }).join('');
+    return `<g>${titulo}<path d="${bracos}" stroke="white" stroke-width="5" stroke-linecap="round"/><path d="${bracos}" stroke="${cor}" stroke-width="2.6" stroke-linecap="round"/></g>`;
+}
+
 function buildGraficoCompetitivo(analise) {
     const { produtos, clientes } = analise;
     if (!clientes.some(c => produtos.some(p => c.notas[p.id]) || c.meta)) return '';
@@ -476,7 +485,10 @@ function buildGraficoCompetitivo(analise) {
         clientes.forEach((c, i) => {
             const nota = c.notas[p.id];
             if (!nota) return;
-            svg += `<circle cx="${x(nota)}" cy="${yRow(i) + offset(k)}" r="${k === 0 ? 6 : 5}" fill="${cor}" stroke="white" stroke-width="1.5"><title>${escapeHtml(p.nome)} — RC${c.numero}: nota ${nota}</title></circle>`;
+            const titulo = `<title>${escapeHtml(p.nome)} — RC${c.numero}: nota ${nota}</title>`;
+            svg += p.id === PRODUTO_NOSSO_ID
+                ? svgAsterisco(x(nota), yRow(i) + offset(k), 7.5, cor, titulo) // nosso produto: asterisco, para não confundir com os concorrentes
+                : `<circle cx="${x(nota)}" cy="${yRow(i) + offset(k)}" r="5" fill="${cor}" stroke="white" stroke-width="1.5">${titulo}</circle>`;
         });
     });
 
@@ -488,7 +500,10 @@ function buildGraficoCompetitivo(analise) {
 
     let legenda = '<div class="grafico-legenda">';
     produtos.forEach((p, k) => {
-        legenda += `<span><i style="background:${CORES_PRODUTOS[k % CORES_PRODUTOS.length]}"></i>${escapeHtml(p.nome)}</span>`;
+        const cor = CORES_PRODUTOS[k % CORES_PRODUTOS.length];
+        legenda += p.id === PRODUTO_NOSSO_ID
+            ? `<span><svg class="legenda-asterisco" viewBox="0 0 18 18" width="14" height="14" aria-hidden="true">${svgAsterisco(9, 9, 7, cor, '')}</svg>${escapeHtml(p.nome)}</span>`
+            : `<span><i style="background:${cor}"></i>${escapeHtml(p.nome)}</span>`;
     });
     legenda += '<span><i class="legenda-meta"></i>Meta</span></div>';
 
