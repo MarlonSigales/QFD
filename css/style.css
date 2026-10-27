@@ -5314,3 +5314,11 @@ details.sobre-qfd > summary h3 { display: inline; font-size: 1.05rem; }
 .layout-simples .sidebar-toggle::before { content: "☰"; font-size: 1.45rem; line-height: 1; }
 .layout-simples .sidebar-toggle { padding: 0.3rem 0.45rem; border-radius: 6px; }
 .layout-simples .sidebar-toggle:hover { background: var(--qfd-verde-claro); }
+
+/* concluir etapa manualmente (quando não precisa ser preenchida 100%) */
+.etapa-conclusao { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.etapa-conclusao:empty { display: none; }
+.etapa-selo-ok { display: inline-block; font-size: 0.82rem; font-weight: 700; color: #1f5f45; background: #e2f4ea; border: 1px solid #b9dcd2; border-radius: 12px; padding: 2px 10px; }
+.layout-simples .etapa-conclusao .btn-concluir { padding: 0.3rem 0.75rem; font-size: 0.85rem; }
+.etapa-conclusao-dica { font-size: 0.8rem; color: #6b7a78; }
+@media print { .etapa-conclusao { display: none !important; } }

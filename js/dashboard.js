@@ -104,6 +104,18 @@ function updateDashboard() {
                              stats.relacoesQFD > 0;
     updateReportStatus(canGenerateReport);
     
+    // etapas marcadas como concluídas pelo usuário (não precisavam ser preenchidas 100%)
+    const cartaoDaEtapa = { 'requisitos-cliente': 'cliente', 'comparacao-cliente': 'comparacao', 'requisitos-projeto': 'projeto',
+        'correlacao-projeto': 'correlacao', 'matriz-qfd': 'qfd', 'especificacoes': 'especificacoes',
+        'avaliacao-competitiva': 'competitiva', 'atendimento-requisitos': 'atendimento', 'fechamento': 'fechamento' };
+    qfdDB.getProjeto().etapasConcluidas.forEach(id => {
+        const tipo = cartaoDaEtapa[id], st = tipo && document.getElementById(`status-${tipo}`);
+        if (!st || /^Concluído/.test(st.textContent)) return;
+        st.textContent = 'Concluído (marcado)';
+        st.className = 'status completed';
+        document.getElementById(`progress-${tipo}`).style.borderLeftColor = getProgressColor(100, tipo);
+    });
+
     // Atualiza última modificação
     updateLastModified(stats.lastModified);
     atualizarProximoPasso();

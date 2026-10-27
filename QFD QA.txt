@@ -12,7 +12,7 @@ RESUMO
   Por fazer ............ 0
   Aguardando ........... 2   (confirmações com o Roger)
   Futuro ............... 1   (P14)
-  Resolvidos ........... 42  (agrupados por área)
+  Resolvidos ........... 43  (agrupados por área)
   Rejeitados ........... 17
 
 ==========================================================================================
@@ -189,6 +189,14 @@ Nada pendente.
             logo, nome do projeto e Backup; barra lateral com as 10 etapas
             numeradas, Caderno de Ideias e Referências. No celular a barra lateral
             abre pelo botão ☰.
+
+[RESOLVIDO] Botão "Marcar etapa como concluída" no título de cada etapa (27/10/2026), para
+            as etapas que não precisam ser preenchidas 100% (ex.: telhado só com as
+            correlações que existem). A etapa passa a contar como concluída no menu
+            lateral, no Dashboard ("Concluído (marcado)") e no próximo passo; dá para
+            desmarcar. Fica no projeto (projeto.etapasConcluidas, dados v11 com
+            migração) e vai no backup. Etapa concluída pelo preenchimento mostra só o
+            selo "Etapa concluída". 4 testes novos (100 ok).
 
 [RESOLVIDO] Interface mais simples, no padrão do Gestão de Projetos (27/10/2026):
             - barra lateral com a situação de cada etapa (✓ concluída, amarelo em

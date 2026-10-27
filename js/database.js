@@ -25,7 +25,7 @@
  * Ao mudar a estrutura, incremente este número e adicione a migração
  * correspondente em SCHEMA_MIGRATIONS.
  */
-const SCHEMA_VERSION = 10;
+const SCHEMA_VERSION = 11;
 
 /** ID fixo do nosso produto na avaliação competitiva */
 const PRODUTO_NOSSO_ID = 'nosso';
@@ -260,7 +260,7 @@ function criarCadernoVazio() {
 
 /** Dados gerais do projeto: nome e e-mails de quem recebe o backup */
 function criarProjetoVazio() {
-    return { nome: '', emails: [], cliente: '', instituicao: '', equipe: [], justificativaHierarquia: '', escalaValorCliente: 'pontuacao' };
+    return { nome: '', emails: [], cliente: '', instituicao: '', equipe: [], justificativaHierarquia: '', escalaValorCliente: 'pontuacao', etapasConcluidas: [] };
 }
 
 /**
@@ -441,6 +441,11 @@ const SCHEMA_MIGRATIONS = {
     // v10: verificação da lista de requisitos de projeto (Roozenburg & Eekels)
     10(data) {
         if (!data.verificacaoRP || typeof data.verificacaoRP !== 'object') data.verificacaoRP = criarVerificacaoVazia();
+    },
+    // v11: etapas marcadas como concluídas pelo usuário (as que não precisam ser preenchidas 100%)
+    11(data) {
+        if (!data.projeto || typeof data.projeto !== 'object') data.projeto = criarProjetoVazio();
+        if (!Array.isArray(data.projeto.etapasConcluidas)) data.projeto.etapasConcluidas = [];
     },
 
     // v9: fechamento (abstração, formulação do problema e função global)
@@ -1825,8 +1830,22 @@ class QFDDatabase {
             instituicao: p.instituicao || '',
             equipe: Array.isArray(p.equipe) ? p.equipe : [],
             justificativaHierarquia: p.justificativaHierarquia || '',
-            escalaValorCliente: ESCALAS_VALOR_CLIENTE[p.escalaValorCliente] ? p.escalaValorCliente : 'pontuacao'
+            escalaValorCliente: ESCALAS_VALOR_CLIENTE[p.escalaValorCliente] ? p.escalaValorCliente : 'pontuacao',
+            etapasConcluidas: Array.isArray(p.etapasConcluidas) ? p.etapasConcluidas.filter(e => typeof e === 'string') : []
         };
+    }
+
+    /** A etapa (nome da página, ex.: 'correlacao-projeto') foi marcada como concluída pelo usuário? */
+    isEtapaConcluida(etapa) {
+        return this.getProjeto().etapasConcluidas.includes(String(etapa));
+    }
+
+    /** Marca ou desmarca uma etapa como concluída (vale mesmo sem preencher 100%). */
+    setEtapaConcluida(etapa, concluida) {
+        const id = String(etapa || '').trim().slice(0, 40);
+        if (!/^[a-z0-9-]+$/.test(id)) throw new Error('Etapa inválida.');
+        const atual = this.getProjeto().etapasConcluidas.filter(e => e !== id);
+        return this.setProjeto({ etapasConcluidas: concluida ? atual.concat(id) : atual }).etapasConcluidas;
     }
 
     /**
@@ -1850,6 +1869,10 @@ class QFDDatabase {
         }
         if (campos.justificativaHierarquia !== undefined) {
             projeto.justificativaHierarquia = String(campos.justificativaHierarquia || '').trim().slice(0, 3000);
+        }
+        if (campos.etapasConcluidas !== undefined) {
+            const lista = Array.isArray(campos.etapasConcluidas) ? campos.etapasConcluidas : [];
+            projeto.etapasConcluidas = [...new Set(lista.map(e => String(e).trim().slice(0, 40)).filter(e => /^[a-z0-9-]+$/.test(e)))].slice(0, 30);
         }
         if (campos.equipe !== undefined) {
             // uma pessoa por linha (ex.: "Roger Spagnolo — coordenador")

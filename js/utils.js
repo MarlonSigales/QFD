@@ -59,7 +59,7 @@ const ETAPAS_ESSENCIAIS = 6; // 1 a 6 fazem a casa da qualidade e as especifica�
  * Situação de cada etapa: 'feito' | 'andamento' | 'vazio', com um resumo curto.
  * Mesmas contas dos cartões do Dashboard.
  */
-function statusEtapasQFD() {
+function statusEtapasQFD(opcoes = {}) {
     const s = qfdDB.getProjectStats();
     const pares = n => n * (n - 1) / 2;
     const pct = (a, b) => (b > 0 ? Math.round(a / b * 100) : 0);
@@ -84,7 +84,48 @@ function statusEtapasQFD() {
     out['fechamento'] = { estado: nPassos === 5 && temFuncao ? 'feito' : (nPassos || temFuncao) ? 'andamento' : 'vazio', resumo: `${nPassos}/5 passos` };
     const relatorioOk = s.requisitosCliente > 0 && s.requisitosProjeto > 0 && s.relacoesQFD > 0;
     out['relatorio'] = { estado: relatorioOk ? 'feito' : 'vazio', resumo: relatorioOk ? 'pronto para gerar' : 'falta a matriz' };
+    // etapas que o usuário marcou como concluídas (nem toda etapa precisa ser preenchida 100%)
+    if (!opcoes.semMarcadas) {
+        qfdDB.getProjeto().etapasConcluidas.forEach(id => {
+            if (out[id] && out[id].estado !== 'feito') out[id] = { estado: 'feito', resumo: out[id].resumo + ' · marcada como concluída', marcada: true };
+        });
+    }
     return out;
+}
+
+/** Página atual, se for uma etapa do QFD (menos o relatório, que não se conclui). */
+function etapaDaPagina() {
+    const id = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');
+    return ETAPAS_QFD.some(([e]) => e === id) && id !== 'relatorio' ? id : null;
+}
+
+/**
+ * Botão "Marcar etapa como concluída" no título da etapa: para quando a etapa não precisa ser preenchida 100%
+ * (ex.: telhado só com as correlações que existem). Concluída pelo preenchimento, mostra só o selo.
+ */
+function atualizarBotaoConcluir() {
+    const id = etapaDaPagina(), titulo = document.querySelector('.page-titulo');
+    if (!id || !titulo || typeof qfdDB === 'undefined') return;
+    let box = titulo.querySelector('.etapa-conclusao');
+    if (!box) { box = document.createElement('div'); box.className = 'etapa-conclusao'; titulo.appendChild(box); }
+    const auto = statusEtapasQFD({ semMarcadas: true })[id], marcada = qfdDB.isEtapaConcluida(id);
+    const estado = auto.estado === 'feito' ? 'auto' : marcada ? 'marcada' : 'aberta';
+    if (box.dataset.estado === estado) return;
+    box.dataset.estado = estado;
+    box.innerHTML = estado === 'auto'
+        ? '<span class="etapa-selo-ok">✓ Etapa concluída</span>'
+        : estado === 'marcada'
+            ? `<span class="etapa-selo-ok" title="Marcada por você: o preenchimento atual é suficiente (${escapeAttr(auto.resumo)})">✓ Marcada como concluída</span>
+               <button type="button" class="btn btn-secondary btn-concluir" data-concluir="0">Desmarcar</button>`
+            : `<button type="button" class="btn btn-secondary btn-concluir" data-concluir="1" title="Use quando esta etapa não precisa ser preenchida 100% (agora: ${escapeAttr(auto.resumo)}). Ela passa a contar como concluída no menu, no Dashboard e no próximo passo.">✓ Marcar etapa como concluída</button>
+               <span class="etapa-conclusao-dica">quando não precisar preencher tudo</span>`;
+    const b = box.querySelector('.btn-concluir');
+    if (b) b.addEventListener('click', () => {
+        try {
+            qfdDB.setEtapaConcluida(id, b.dataset.concluir === '1');
+            atualizarEtapasSidebar();
+        } catch (err) { showAlert('Não foi possível marcar a etapa: ' + escapeHtml(err.message), 'danger'); }
+    });
 }
 
 /** Próxima etapa a fazer: a 1ª essencial não concluída; depois as complementares; por fim o relatório. */
@@ -117,6 +158,7 @@ function atualizarEtapasSidebar() {
         if (num) num.textContent = info.estado === 'feito' ? '✓' : String(i + 1);
         link.title = `${nome} — ${info.estado === 'feito' ? 'concluída' : info.estado === 'andamento' ? 'em andamento' : 'não iniciada'} (${info.resumo})${id === prox.id ? ' · próximo passo' : ''}`;
     });
+    atualizarBotaoConcluir();
     const quando = document.getElementById('arquivo-salvo-em');
     if (quando) {
         let lm = '';

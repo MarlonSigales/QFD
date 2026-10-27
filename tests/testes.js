@@ -429,6 +429,45 @@ suite('Caderno de ideias', () => {
         assertEqual(qfdDB.loadData().verificacaoRP, criarVerificacaoVazia());
         assertEqual(qfdDB.getVerificacao().bloqueiaMatriz, false);
     });
+    test('v10 → v11: etapas concluídas manualmente começam vazias', () => {
+        const d = {
+            requisitosCliente: [], requisitosProjeto: [], comparacaoCliente: [], correlacaoProjeto: [],
+            matrizQFD: [], especificacoesProjeto: [], projeto: { nome: 'Antigo' }, metadata: { created: '2026-01-01', schemaVersion: 10 }
+        };
+        assert(qfdDB.importData(d), qfdDB.lastImportError);
+        assertEqual(qfdDB.loadData().projeto.etapasConcluidas, []);
+        assertEqual(qfdDB.getProjeto().nome, 'Antigo');
+    });
+});
+
+suite('Etapas marcadas como concluídas', () => {
+    test('marcar e desmarcar: conta como concluída no menu e no próximo passo', () => {
+        criarProjetoExemplo();
+        const antes = statusEtapasQFD();
+        assert(antes['avaliacao-competitiva'].estado !== 'feito', 'avaliação competitiva já estava concluída no exemplo');
+        qfdDB.setEtapaConcluida('avaliacao-competitiva', true);
+        assert(qfdDB.isEtapaConcluida('avaliacao-competitiva'), 'não ficou marcada');
+        const depois = statusEtapasQFD();
+        assertEqual(depois['avaliacao-competitiva'].estado, 'feito');
+        assert(depois['avaliacao-competitiva'].marcada, 'falta o indicador de marcada');
+        assert(statusEtapasQFD({ semMarcadas: true })['avaliacao-competitiva'].estado !== 'feito', 'semMarcadas deveria ignorar a marcação');
+        assert(proximaEtapaQFD().id !== 'avaliacao-competitiva', 'etapa marcada continua como próxima');
+        qfdDB.setEtapaConcluida('avaliacao-competitiva', false);
+        assertEqual(qfdDB.getProjeto().etapasConcluidas, []);
+    });
+    test('marcar não duplica, recusa etapa inválida e vai no backup', () => {
+        criarProjetoExemplo();
+        qfdDB.setEtapaConcluida('correlacao-projeto', true);
+        qfdDB.setEtapaConcluida('correlacao-projeto', true);
+        assertEqual(qfdDB.getProjeto().etapasConcluidas, ['correlacao-projeto']);
+        let erro = null;
+        try { qfdDB.setEtapaConcluida('<script>', true); } catch (e) { erro = e; }
+        assert(erro, 'aceitou etapa inválida');
+        const backup = JSON.parse(JSON.stringify(qfdDB.loadData()));
+        qfdDB.clearAllData();
+        assert(qfdDB.importData(backup), qfdDB.lastImportError);
+        assertEqual(qfdDB.getProjeto().etapasConcluidas, ['correlacao-projeto']);
+    });
 });
 
 suite('Projeto e envio por e-mail', () => {
@@ -857,6 +896,23 @@ function testarPagina(pagina) {
 
 suite('Páginas', () => {
     PAGINAS.forEach(p => test(p.arquivo.replace('../', ''), testarPagina(p)));
+    test('Etapa: botão "Marcar etapa como concluída" marca, mostra o selo e desmarca', async () => {
+        const iframe = await carregarPagina('../pages/avaliacao-competitiva.html');
+        try {
+            const win = iframe.contentWindow, doc = iframe.contentDocument;
+            if (qfdDB.isEtapaConcluida('avaliacao-competitiva')) qfdDB.setEtapaConcluida('avaliacao-competitiva', false);
+            win.atualizarEtapasSidebar();
+            const botao = () => doc.querySelector('.etapa-conclusao .btn-concluir');
+            assert(botao() && botao().dataset.concluir === '1', 'botão de marcar não apareceu');
+            botao().click();
+            assert(qfdDB.isEtapaConcluida('avaliacao-competitiva'), 'não marcou');
+            assert(/Marcada como concluída/.test(doc.querySelector('.etapa-conclusao').textContent), 'selo não apareceu');
+            const link = doc.querySelector('.sidebar a[href$="avaliacao-competitiva.html"]');
+            assert(link.classList.contains('etapa-feito'), 'menu lateral não mostra concluída');
+            botao().click();
+            assert(!qfdDB.isEtapaConcluida('avaliacao-competitiva'), 'não desmarcou');
+        } finally { iframe.remove(); }
+    });
     test('Requisitos de cliente: aviso de redação quando começa por verbo de função', async () => {
         assertEqual(['Eliminar plantas daninhas', 'O produto deve permitir regulagem', 'Ser leve', 'Ter baixo custo',
             'Fácil de usar', 'Estar sempre limpo', 'Regular a altura', 'Lugar para o operador']
