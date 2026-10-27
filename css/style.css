@@ -5322,3 +5322,5 @@ details.sobre-qfd > summary h3 { display: inline; font-size: 1.05rem; }
 .layout-simples .etapa-conclusao .btn-concluir { padding: 0.3rem 0.75rem; font-size: 0.85rem; }
 .etapa-conclusao-dica { font-size: 0.8rem; color: #6b7a78; }
 @media print { .etapa-conclusao { display: none !important; } }
+/* número da etapa sempre redondo: não encolhe quando o nome quebra em duas linhas */
+.sidebar-num { flex: 0 0 22px; width: 22px; min-width: 22px; height: 22px; line-height: 1; aspect-ratio: 1 / 1; }
