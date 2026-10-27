@@ -5411,3 +5411,11 @@ details.sobre-qfd > summary h3 { display: inline; font-size: 1.05rem; }
 /* atalho para a fase seguinte (projeto conceitual) no bloco "Arquivo do projeto" */
 a.sidebar-arquivo-btn { display: block; text-decoration: none; }
 .sidebar-arquivo-seguir { background: #fff; color: var(--qfd-teal); }
+/* fim do QFD: próxima fase (projeto conceitual) */
+.proxima-fase { display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; border-left: 5px solid var(--qfd-limao); background: #fbfdf6; }
+.proxima-fase-texto { flex: 1 1 360px; min-width: 0; }
+.proxima-fase h3 { color: var(--qfd-teal); margin: 0.3rem 0; }
+.proxima-fase p { margin: 0.2rem 0; }
+.proxima-fase-nota { font-size: 0.85rem; color: #5f6f6d; }
+.btn-proxima-fase { white-space: normal; text-align: center; }
+.proximo-passo-rotulo { display: inline-block; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; background: var(--qfd-limao); color: var(--qfd-teal); border-radius: 10px; padding: 1px 8px; }

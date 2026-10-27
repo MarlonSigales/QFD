@@ -172,7 +172,7 @@ function atualizarEtapasSidebar() {
  * (neste navegador); os botões levam o projeto a outro lugar. As opções de CSV ficam em "Mais opções".
  */
 /** Próxima fase: o Sistema de Projeto Conceitual lê este QFD direto do navegador (mesmo endereço github.io). */
-const URL_PROJETO_CONCEITUAL = 'https://marlonsigales.github.io/ProjetoConceitual/';
+const URL_PROJETO_CONCEITUAL = 'https://marlonsigales.github.io/ProjetoConceitual/#/inicio?qfd=navegador';
 
 function montarArquivoProjeto() {
     const sidebar = document.querySelector('.sidebar');
@@ -186,7 +186,7 @@ function montarArquivoProjeto() {
         <button type="button" class="sidebar-arquivo-btn" onclick="exportProjectData()" title="Baixa o projeto inteiro num arquivo .json (backup)">💾 Baixar backup</button>
         <button type="button" class="sidebar-arquivo-btn" onclick="document.getElementById('import-file').click()" title="Abre um backup .json (substitui o projeto deste navegador)">📂 Abrir backup</button>
         <button type="button" class="sidebar-arquivo-btn" onclick="exportarEEnviarEmail()" title="Baixa o backup e abre o e-mail para os envolvidos">✉ Enviar por e-mail</button>
-        <a class="sidebar-arquivo-btn sidebar-arquivo-seguir" href="${URL_PROJETO_CONCEITUAL}" target="_blank" rel="noopener" title="Abre o Sistema de Projeto Conceitual; lá, este QFD aparece em &quot;Usar este QFD&quot; (mesmo navegador), sem baixar arquivo">➜ Seguir para o projeto conceitual</a>
+        <a class="sidebar-arquivo-btn sidebar-arquivo-seguir" href="${URL_PROJETO_CONCEITUAL}" target="_blank" rel="noopener" title="Abre o Sistema de Projeto Conceitual, que importa este QFD sozinho (mesmo navegador), sem baixar arquivo">➜ Seguir para o projeto conceitual</a>
         ${extras.length ? '<details class="sidebar-arquivo-mais"><summary>Mais opções (CSV)</summary><div></div></details>' : ''}`;
     const destino = box.querySelector('.sidebar-arquivo-mais div');
     extras.forEach(a => { const c = a.cloneNode(true); c.classList.add('sidebar-arquivo-link'); destino.appendChild(c); });

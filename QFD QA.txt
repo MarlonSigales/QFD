@@ -45,6 +45,12 @@ Nada pendente.
             navegador (mesmo endereço github.io, chave qfd_data) em "Usar este
             QFD", sem baixar arquivo. O Gestão de Projetos também lê o QFD daqui.
 
+[RESOLVIDO] Fim do QFD (Fechamento): cartão "Próxima fase — Projeto conceitual"
+            com o botão "Abrir o projeto conceitual com este QFD", que abre o
+            sistema em outra aba (#/inicio?qfd=navegador) e importa o QFD sozinho,
+            já com as etapas pré-preenchidas. O botão da barra lateral usa o mesmo
+            endereço. Em outro computador: backup + "Importar do QFD".
+
 --- Requisitos ---------------------------------------------------------------------------
 
 [RESOLVIDO] Texto explicativo em cada requisito e especificação, com balão

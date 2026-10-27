@@ -828,7 +828,8 @@ const PAGINAS = [
     {
         arquivo: '../pages/fechamento.html', funcao: 'renderPassos',
         preparar: () => { criarProjetoExemplo(); qfdDB.setFuncaoGlobal({ nome: 'Eliminar <plantas>', entradas: { energia: 'Calor' } }); qfdDB.addFormulacao('Formulação <ampla>'); },
-        texto: 'Formulação <ampla>', seletores: ['#passos-abstracao textarea[data-passo="4"]', '#caixa-preta svg polygon', '#fechamento-lista-requisitos li', '#fluxos-saidas textarea[data-tipo="sinal"]']
+        texto: 'Formulação <ampla>', seletores: ['#passos-abstracao textarea[data-passo="4"]', '#caixa-preta svg polygon', '#fechamento-lista-requisitos li', '#fluxos-saidas textarea[data-tipo="sinal"]',
+            '#proxima-fase a[href$="ProjetoConceitual/#/inicio?qfd=navegador"]', '.sidebar-arquivo-seguir[href$="?qfd=navegador"]']
     },
     {
         arquivo: '../pages/referencias.html', funcao: 'renderReferencias',
