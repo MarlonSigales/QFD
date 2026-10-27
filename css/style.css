@@ -5325,3 +5325,75 @@ details.sobre-qfd > summary h3 { display: inline; font-size: 1.05rem; }
 /* número da etapa sempre redondo: não encolhe quando o nome quebra em duas linhas */
 .sidebar-num { flex: 0 0 22px; width: 22px; min-width: 22px; height: 22px; line-height: 1; aspect-ratio: 1 / 1; }
 .grafico-legenda .legenda-asterisco { display: inline-block; vertical-align: middle; margin-right: 0.35rem; }
+
+/* ========================================================================
+   RELATÓRIO — mesmo design do Gestão de Projetos (capa pontilhada, títulos
+   "1 TÍTULO" com linha limão, tabelas com cabeçalho verde e linhas zebradas).
+   A disposição das informações não muda; o PDF sai desta prévia.
+   ======================================================================== */
+#report-content .report-page { font-family: Roboto, "Segoe UI", Arial, sans-serif; color: #1d2b2b; border-radius: 4px; box-shadow: 0 6px 24px rgba(16,24,40,.10); border: 1px solid #d5e0dd; }
+#report-content { background: #e9efed; border-radius: 8px; border-color: #d5e0dd; }
+
+/* capa */
+#report-content .report-capa { position: relative; overflow: hidden; justify-content: flex-start; gap: 0; padding: 2.2rem 2.6rem 2.4rem;
+  background: #fff url('../img/relatorio-fundo-capa.png') left top / 42% auto no-repeat; border-bottom: 0; }
+#report-content .report-capa::before { content: ""; position: absolute; right: 0; bottom: 9%; width: 11%; height: 31%; background: var(--qfd-verde); }
+#report-content .report-capa::after { content: ""; position: absolute; right: 0; bottom: 0; width: 28.5%; height: 9.5%; background: var(--qfd-limao); }
+#report-content .capa-logos { justify-content: flex-start; gap: 1.4rem; }
+#report-content .capa-logos img { height: 46px; }
+#report-content .capa-centro { text-align: left; margin-top: 30%; position: relative; padding-left: 4.2rem; }
+#report-content .capa-centro::before { content: ""; position: absolute; left: 0; top: 0.1rem; width: 2.6rem; height: 2.6rem; background: var(--qfd-verde); }
+#report-content .capa-centro::after { content: ""; position: absolute; left: 2.2rem; top: 2.3rem; width: 1.9rem; height: 1.9rem; background: var(--qfd-limao); }
+#report-content .capa-centro p.capa-tipo { color: var(--qfd-teal); font-size: 1.9rem; font-weight: 400; letter-spacing: 0.01em; line-height: 1.2; margin: 0 0 1.4rem; text-transform: uppercase; }
+#report-content .capa-centro h1 { font-size: 1.45rem; font-weight: 700; color: var(--qfd-teal); margin: 0 0 0.9rem; }
+#report-content .capa-centro p { margin: 0.1rem 0; color: var(--qfd-teal); font-size: 0.92rem; }
+#report-content .capa-centro p span, #report-content .capa-rotulo { color: #1d2b2b; font-weight: 700; }
+#report-content .capa-equipe { text-align: left; margin-top: 2.2rem; padding-left: 4.2rem; font-size: 0.92rem; }
+#report-content .capa-equipe ul { margin: 0.2rem 0 0; }
+#report-content .capa-rodape { text-align: left; margin-top: auto; padding-right: 32%; color: #1d2b2b; font-size: 0.92rem; }
+#report-content .capa-rodape p:first-child { font-size: 1.15rem; color: var(--qfd-teal); }
+#report-content .capa-rodape .report-versao { font-size: 0.78rem; color: #5f6f6d; }
+
+/* cabeçalho simples (sem capa) */
+#report-content .report-header { background: #fff; color: #1d2b2b; border-bottom: 2px solid var(--qfd-limao); padding: 1.8rem 2.25rem 1rem; }
+#report-content .report-header h1 { color: var(--qfd-teal); font-size: 1.6rem; text-transform: uppercase; font-weight: 700; }
+#report-content .report-header h2 { color: var(--qfd-verde); }
+#report-content .report-header p { color: #5f6f6d; }
+
+/* seções: "1 TÍTULO" com linha limão embaixo */
+#report-content .report-section { border-top: 0; padding: 1rem 2.25rem 0.9rem; }
+#report-content .report-section > h3 { display: block; background: none; border: 0; border-bottom: 2px solid var(--qfd-limao); border-radius: 0;
+  padding: 0 0 0.3rem; margin: 0.5rem 0 0.8rem; color: var(--qfd-teal); font-size: 1.15rem; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; }
+#report-content .secao-num { color: var(--qfd-teal); margin-right: 0.15rem; }
+#report-content .report-section h4 { color: var(--qfd-verde); font-size: 0.98rem; font-weight: 700; margin: 0.9rem 0 0.35rem; }
+#report-content .report-section p { color: #1d2b2b; font-size: 0.92rem; line-height: 1.5; }
+#report-content .report-sumario ol { line-height: 1.75; color: #1d2b2b; font-size: 0.92rem; }
+
+/* tabelas: cabeçalho verde com texto branco, linhas zebradas, grade fina */
+#report-content .report-table, #report-content .roof-table, #report-content .dictionary-table { border: 1px solid #cfdcda; margin-top: 0.4rem; margin-bottom: 0.6rem; }
+#report-content .report-table thead, #report-content .roof-table thead, #report-content .dictionary-table thead { background: var(--qfd-verde); color: #fff; }
+#report-content .report-table th, #report-content .roof-table th, #report-content .dictionary-table th { background: var(--qfd-verde); color: #fff; font-size: 0.82rem; font-weight: 700; border-color: #cfdcda; }
+#report-content .report-table td, #report-content .roof-table td, #report-content .dictionary-table td { font-size: 0.84rem; border-color: #cfdcda; padding: 0.4rem 0.55rem; }
+#report-content .report-table th { padding: 0.45rem 0.55rem; }
+#report-content .report-table tbody tr:nth-child(even), #report-content .roof-table tbody tr:nth-child(even) { background: #f4f8f7; }
+#report-content .report-table tbody tr:hover, #report-content .roof-table tbody tr:hover { background: #eef7f4; }
+#report-content .report-table th small, #report-content .report-table th span { color: inherit; }
+
+/* caixas de destaque como as do Gestão de Projetos: barra à esquerda + fundo claro */
+#report-content .report-justificativa, #report-content div.report-hint, #report-content p.report-hint { border-radius: 0; border-left: 4px solid var(--qfd-verde); background: #eef7f4; }
+#report-content .report-criticos { border-radius: 0; border-left: 4px solid #c0392b; background: #fdf0ef; }
+
+/* Impressão do relatório (Ctrl+P na página Relatório): sai só o relatório, com a capa na 1ª página inteira */
+@media print {
+  body:has(#report-content .report-page) .page-titulo,
+  body:has(#report-content .report-page) .main-content .container > :not(#report-preview),
+  body:has(#report-content .report-page) #report-preview > .card-header,
+  body:has(#report-content .report-page) .alert { display: none !important; }
+  body:has(#report-content .report-page) #report-preview { border: 0 !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; display: block !important; }
+  body:has(#report-content .report-page) .main-content, body:has(#report-content .report-page) .main-content .container { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  #report-content { background: #fff !important; border: 0 !important; padding: 0 !important; }
+  #report-content .report-page { box-shadow: none !important; border: 0 !important; border-radius: 0 !important; }
+  #report-content .report-capa { min-height: 0 !important; height: 255mm; break-after: page; page-break-after: always; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #report-content .report-section > h3 { break-after: avoid; }
+  #report-content .report-table thead, #report-content .report-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

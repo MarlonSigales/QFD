@@ -390,7 +390,7 @@ function montarCapaESumario(content) {
     content.querySelectorAll('.report-section:not(.report-sumario) > h3').forEach(h3 => {
         n++;
         const titulo = h3.textContent.trim();
-        h3.insertAdjacentHTML('afterbegin', `<span class="secao-num">${n}.</span> `);
+        h3.insertAdjacentHTML('afterbegin', `<span class="secao-num">${n}</span> `);
         if (lista) lista.insertAdjacentHTML('beforeend', `<li><span></span></li>`);
         if (lista) lista.lastElementChild.firstElementChild.textContent = titulo;
     });
@@ -891,7 +891,42 @@ async function montarPDF(jsPDF, reportElement) {
             usado = h * util.w / canvas.width;
         }
     }
+    cabecalhoRodapePDF(pdf, reportElement);
     return pdf;
+}
+
+/**
+ * Cabeçalho e rodapé de cada página, como no Gestão de Projetos: "RELATÓRIO DE QFD – projeto" e o logo em cima,
+ * com linha limão; instituição, data de emissão e número da página embaixo. A capa fica sem os dois.
+ */
+function cabecalhoRodapePDF(pdf, reportElement) {
+    const total = pdf.getNumberOfPages(), temCapa = !!reportElement.querySelector('.report-capa');
+    const projeto = typeof qfdDB !== 'undefined' ? qfdDB.getProjeto() : {};
+    const titulo = String(reportConfig.title || projeto.nome || 'Relatório QFD');
+    const instituicao = String(projeto.instituicao || reportConfig.company || 'Sistema QFD');
+    const emitido = new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const logo = document.querySelector('.capa-logos img, .footer-logos img');
+    const teal = [8, 83, 87], verde = [64, 149, 128], lima = [168, 225, 86];
+    for (let i = temCapa ? 2 : 1; i <= total; i++) {
+        pdf.setPage(i);
+        const w = pdf.internal.pageSize.getWidth(), h = pdf.internal.pageSize.getHeight();
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7.5); pdf.setTextColor(...teal);
+        pdf.text('RELATÓRIO DE QFD', PDF_MARGEM, 12);
+        const larguraRotulo = pdf.getTextWidth('RELATÓRIO DE QFD ');
+        pdf.setFont('helvetica', 'normal'); pdf.setTextColor(...verde);
+        const maxTitulo = w - 2 * PDF_MARGEM - larguraRotulo - 28;
+        pdf.text('– ' + (pdf.splitTextToSize(titulo, maxTitulo)[0] || ''), PDF_MARGEM + larguraRotulo, 12);
+        if (logo && logo.naturalWidth) {
+            try {
+                const lh = 8, lw = lh * logo.naturalWidth / logo.naturalHeight;
+                pdf.addImage(logo, 'PNG', w - PDF_MARGEM - lw, 6, lw, lh);
+            } catch (e) { /* sem o logo (ex.: arquivo aberto do disco): fica só o texto */ }
+        }
+        pdf.setDrawColor(...lima); pdf.setLineWidth(0.6); pdf.line(PDF_MARGEM, 15.5, w - PDF_MARGEM, 15.5);
+        pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7); pdf.setTextColor(...teal);
+        pdf.text(pdf.splitTextToSize(`${instituicao} — emitido em ${emitido}`, w - 2 * PDF_MARGEM - 15)[0], PDF_MARGEM, h - 9);
+        pdf.text(String(i), w - PDF_MARGEM, h - 9, { align: 'right' });
+    }
 }
 
 async function generatePDF() {

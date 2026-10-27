@@ -12,7 +12,7 @@ RESUMO
   Por fazer ............ 0
   Aguardando ........... 2   (confirmações com o Roger)
   Futuro ............... 1   (P14)
-  Resolvidos ........... 43  (agrupados por área)
+  Resolvidos ........... 45  (agrupados por área)
   Rejeitados ........... 17
 
 ==========================================================================================
@@ -189,6 +189,16 @@ Nada pendente.
             logo, nome do projeto e Backup; barra lateral com as 10 etapas
             numeradas, Caderno de Ideias e Referências. No celular a barra lateral
             abre pelo botão ☰.
+
+[RESOLVIDO] Relatório com o design do Gestão de Projetos (27/10/2026), mesma disposição
+            das informações: capa com fundo pontilhado, "RELATÓRIO DE QFD — CASA DA
+            QUALIDADE" grande à esquerda e blocos teal/limão; títulos "1 TÍTULO" com
+            linha limão; subtítulos verdes; tabelas com cabeçalho verde e linhas
+            zebradas; caixas com barra lateral. No PDF, cabeçalho (título + logo +
+            linha limão) e rodapé (instituição, data de emissão e página) em todas as
+            páginas menos a capa. Ao imprimir (Ctrl+P) sai só o relatório, com a capa
+            na 1ª página inteira (antes saía junto a tela de configuração).
+[RESOLVIDO] Nome corrigido no rodapé: Giusepe Stefanello (com um p).
 
 [RESOLVIDO] Botão "Marcar etapa como concluída" no título de cada etapa (27/10/2026), para
             as etapas que não precisam ser preenchidas 100% (ex.: telhado só com as
