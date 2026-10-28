@@ -203,3 +203,7 @@ HTML5, CSS3 e JavaScript puro (sem build e sem dependências instaladas). jsPDF 
 ## Privacidade
 
 Os dados ficam só no navegador de quem usa; nada é enviado para servidores. Limpar os dados do site no navegador apaga o projeto, então exporte backups com frequência.
+
+## Licença
+
+© 2026 Marlon Sigales. Todos os direitos reservados. Copiar, reproduzir ou alterar o código exige autorização do autor; veja [LICENSE](LICENSE). jsPDF e html2canvas (carregadas de CDN) seguem suas próprias licenças (MIT).

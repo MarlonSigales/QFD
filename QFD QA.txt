@@ -806,3 +806,5 @@ Regras do projeto:
 === fim P11
 
 ==========================================================================================
+
+[resolvido 28/10/2026] Licença: o projeto agora é proprietário. Saiu do rodapé de todas as páginas "os códigos estão abertos… cópias são permitidas desde que devidamente citadas"; entrou o aviso de todos os direitos reservados e o arquivo LICENSE.
