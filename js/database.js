@@ -950,27 +950,8 @@ class QFDDatabase {
      * @returns {number} Valor da comparação (1, 3, 5) ou 0 se não existe ou se requisito1 perdeu
      */
     getComparacaoCliente(requisito1, requisito2) {
-        const data = this.loadData();
-        const comp = data.comparacaoCliente.find(
-            c => (c.requisito1 === requisito1 && c.requisito2 === requisito2) ||
-                 (c.requisito1 === requisito2 && c.requisito2 === requisito1)
-        );
-        
-        if (!comp) return 0;
-        
-        // No Diagrama de Mudge:
-        // Se requisito1 venceu (está salvo como requisito1), retorna o valor (1, 3 ou 5).
-        // Se requisito2 venceu (está salvo como requisito1), requisito1 recebe 0 pontos.
-        // Retornamos um objeto ou valor que indique quem venceu para a interface.
-        // Para manter compatibilidade com a matriz que espera um valor para req1:
-        if (comp.requisito1 === requisito1) {
-            return comp.valor;
-        } else {
-            // Retornamos um valor negativo ou especial para indicar que o outro venceu?
-            // Melhor retornar o valor mas com sinal de quem venceu para a lógica da matriz.
-            // Mas a matriz triangular superior usa i < j.
-            return 0; 
-        }
+        const comp = this.loadData().comparacaoCliente.find(c => c.requisito1 === requisito1 && c.requisito2 === requisito2);
+        return comp ? comp.valor : 0; // salva com o vencedor em requisito1; quem perdeu (ou sem comparação) fica com 0
     }
 
     /**

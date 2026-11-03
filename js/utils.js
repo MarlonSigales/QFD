@@ -11,6 +11,7 @@
 
 document.addEventListener('DOMContentLoaded', setupDropdownMenu);
 document.addEventListener('DOMContentLoaded', setupLayout);
+document.addEventListener('DOMContentLoaded', setupAcessibilidade);
 
 /** Nome do projeto na barra superior e botão ☰ da barra lateral (telas pequenas) */
 function setupLayout() {
@@ -39,6 +40,42 @@ function setupLayout() {
             botao.setAttribute('aria-expanded', 'false');
         }
     });
+}
+
+// ============================================================================
+// ACESSIBILIDADE (básico): nomes para botões só com ícone, células clicáveis pelo teclado, foco visível
+// ============================================================================
+
+/** Dá nome acessível a botões e links que só têm ícone (usa o title) e esconde os ícones dos leitores de tela. */
+function nomearControles(raiz) {
+    (raiz || document).querySelectorAll('i.fas, i.far, i.fab, i.fa').forEach(i => i.setAttribute('aria-hidden', 'true'));
+    (raiz || document).querySelectorAll('button, a.btn, [role="button"]').forEach(b => {
+        if (b.getAttribute('aria-label') || (b.textContent || '').trim()) return;
+        const t = b.getAttribute('title') || b.dataset.tooltip || '';
+        if (t) b.setAttribute('aria-label', t);
+    });
+    // células e itens clicáveis sem ser botão: entram na ordem do Tab e respondem a Enter/Espaço
+    (raiz || document).querySelectorAll('td[onclick], div[onclick], span[onclick], li[onclick]').forEach(el => {
+        if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+        if (!el.getAttribute('role')) el.setAttribute('role', 'button');
+    });
+}
+function setupAcessibilidade() {
+    if (!document.documentElement.lang) document.documentElement.lang = 'pt-BR';
+    const main = document.querySelector('.main-content, main');
+    if (main && !main.id) main.id = 'conteudo-principal';
+    if (main && !document.querySelector('.pular-conteudo')) {
+        const a = document.createElement('a'); a.className = 'pular-conteudo'; a.href = '#' + main.id; a.textContent = 'Pular para o conteúdo';
+        document.body.insertBefore(a, document.body.firstChild);
+    }
+    nomearControles();
+    document.addEventListener('keydown', e => {
+        const el = e.target;
+        if ((e.key === 'Enter' || e.key === ' ') && el && el.getAttribute && el.getAttribute('role') === 'button' && !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) { e.preventDefault(); el.click(); }
+    });
+    // o conteúdo é redesenhado pelas páginas: nomeia o que entrar depois
+    let t = null;
+    new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => nomearControles(), 200); }).observe(document.body, { childList: true, subtree: true });
 }
 
 // ============================================================================

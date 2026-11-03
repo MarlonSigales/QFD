@@ -270,7 +270,9 @@ Nada pendente.
 [rejeitado por hora] P09 - Árvore de requisitos do cliente.
 [rejeitado por hora] P11 - Requisitos de restrição.
 [não recomendado] Trocar o armazenamento por IndexedDB.
-[baixa prioridade] Acessibilidade (rever quando o resto estiver pronto).
+[RESOLVIDO 03/11/2026] Acessibilidade básica: botões só com ícone com nome acessível, células
+            clicáveis pelo teclado, foco visível e "Pular para o conteúdo". Font Awesome, jsPDF e
+            html2canvas agora em lib/ (sem CDN).
 
 ==========================================================================================
 5. ROTEIRO DE QA MANUAL (no site publicado)
